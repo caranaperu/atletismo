@@ -1,0 +1,317 @@
+/**
+ * Clase especifica para la definicion de la ventana para la edicion y creacion de los records mundiales,
+ * nacionales,etc-
+ *
+ *
+ * @version 1.00
+ * @since 1.00
+ * $Author: aranape $
+ * $Date: 2014-07-16 00:10:26 -0500 (mié, 16 jul 2014) $
+ * $Rev: 313 $
+ */
+isc.defineClass("WinRecordsForm", "WindowBasicFormExt");
+isc.WinRecordsForm.addProperties({
+    ID: "winRecordsForm",
+    title: "Mantenimiento de Records",
+    autoSize: false,
+    width: '600', height: '230',
+    createForm: function(formMode) {
+        return isc.DynamicFormExt.create({
+            ID: "formRecords",
+            fixedColWidths: false,
+            padding: 2,
+            dataSource: mdl_records,
+            formMode: this.formMode, // parametro de inicializacion
+            keyFields: ['records_id', 'records_tipo_codigo', 'apppruebas_codigo', 'atletas_codigo', 'atletas_resultados_id', 'categorias_codigo'],
+            saveButton: this.getButton('save'),
+            focusInEditFld: 'records_tipo_codigo',
+            fields: [
+                {name: "records_tipo_codigo", editorType: "comboBoxExt", length: 50, width: "200",
+                    valueField: "records_tipo_codigo", displayField: "records_tipo_descripcion",
+                    pickListFields: [
+                        {name: "records_tipo_descripcion", width: '70%'},
+                        {name: "records_tipo_abreviatura"}
+                    ],
+                    pickListWidth: 250,
+                    completeOnTab: true,
+                    // vital para indicar el opertion id , si se usa en otro lugar recarga por gusto.
+                    optionOperationId: 'fetch',
+                    editorProperties: {
+                        optionDataSource: mdl_records_tipo,
+                        minimumSearchLength: 3,
+                        autoFetchData: true,
+                        textMatchStyle: 'substring',
+                        sortField: "records_tipo_descripcion"
+                    }
+                },
+                {name: "apppruebas_codigo", title: 'Prueba', editorType: "comboBoxExt", length: 50, width: "200",
+                    valueField: "apppruebas_codigo", displayField: "apppruebas_descripcion",
+                    pickListFields: [
+                        {name: "apppruebas_descripcion"}
+                    ],
+                    pickListWidth: 250,
+                    completeOnTab: true,
+                    optionOperationId: 'fetchDescriptions',
+                    editorProperties: {
+                        optionDataSource: mdl_apppruebas_description,
+                        minimumSearchLength: 3,
+                        autoFetchData: false,
+                        textMatchStyle: 'substring',
+                        sortField: "apppruebas_descripcion",
+                    },
+                    changed: function(form, item, value) {
+                        // si la prueba es cambiada debe limpiarse el atleta ,competencia y
+                        // categorias elegidas.
+                        var record = item.getSelectedRecord();
+                        formRecords._setFieldStatus('atletas_codigo', (record ? false : true), true);
+                        formRecords._setFieldStatus('atletas_resultados_id', true, true);
+                        formRecords._setFieldStatus('categorias_codigo', true, true);
+                    }
+                },
+                {name: "atletas_codigo", title: 'Atleta', editorType: "comboBoxExt", length: 50, width: "250", disabled: true,
+                    valueField: "atletas_codigo", displayField: "atletas_nombre_completo",
+                    pickListFields: [{name: "atletas_codigo", width: '20%'}, {name: "atletas_nombre_completo", width: '80%'}],
+                    pickListWidth: 260,
+                    completeOnTab: true,
+                    optionOperationId: 'fetchForListByPruebaGenerica',
+                    editorProperties: {
+                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
+                        // en pickListProperties o afuera funciona de distinta manera.
+                        optionDataSource: mdl_atletas,
+                        minimumSearchLength: 3,
+                        autoFetchData: false,
+                        textMatchStyle: 'substring',
+                        sortField: "atletas_nombre_completo"
+                    },
+                    changed: function(form, item, value) {
+                        // si el codigo del atleta es cambiado  la competencia y
+                        // categorias elegidas deben ser apagadas.
+                        var record = item.getSelectedRecord();
+                        formRecords._setFieldStatus('atletas_resultados_id', (record ? false : true), true);
+                        formRecords._setFieldStatus('categorias_codigo', true, true);
+
+                    },
+                    /**
+                     * Se hace el override ya que este campo requiere que solo obtenga las pruebas
+                     * que dependen de la de la categoria y el sexo del atleta,el primero proviene
+                     * de la competencia y el segundo del atleta.
+                     */
+                    getPickListFilterCriteria: function() {
+                        // Recogo primero el filtro si existe uno y luego le agrego
+                        // la categoria y el sexo.
+                        var filter = this.Super("getPickListFilterCriteria", arguments);
+                        if (filter == null) {
+                            filter = {};
+                        }
+
+
+                        // Esta es una optimizacion realizada para que en mode edit solo lea un especifico registro.
+                        // YA QUE AHORA NO SE PUEDE EDITAR EL CODIGO DE PRUEBA AL EDITARSE!!! , DE LO CONTRARIO DEBERIA
+                        // LEERSE SIEMPRE TODO.
+                        //
+                        // Si existe un filtro ya pre digitado lo pongo en la criteria , de lo contrario
+                        // todos los posibles para la competencia indicada.
+                        if (filter.atletas_nombre_completo) {
+                            filter = {_constructor: "AdvancedCriteria",
+                                operator: "and", criteria: [
+                                    {fieldName: "atletas_nombre_completo", operator: "iContains", value: filter.atletas_nombre_completo},
+                                    {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')}
+                                ]};
+                        } else { // CASO NO EXISTE NADA DIGITADO.
+                            // En modo edit buscamos en gorma exacta el codigo
+                            if (formRecords.formMode == 'edit') {
+                                filter = {_constructor: "AdvancedCriteria",
+                                    operator: "and", criteria: [
+                                        {fieldName: "atletas_codigo", operator: "equals", value: value},
+                                        {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')}
+                                    ]};
+                            } else {
+                                // De lo contrario buscamos todas las posibles.
+                                filter = {_constructor: "AdvancedCriteria",
+                                    operator: "and", criteria: [
+                                        //   {fieldName: "atletas_nombre_completo", operator: "iContains", value: filter.atletas_nombre_completo},
+                                        {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')}
+                                    ]};
+                            }
+                        }
+                        return filter;
+                    }
+                },
+                {name: "atletas_resultados_id", title: 'Competecia/Marca', editorType: "comboBoxExt", length: 50, width: "450", disabled: true,
+                    valueField: "atletas_resultados_id", displayField: "competencias_descripcion",
+                    pickListFields: [
+                        {name: 'Resultado', formatCellValue: function(value, record, rownum, colnum) {
+                                if (record) {
+                                    var fvalue = record.numb_resultado;
+                                    if (record.ciudades_altura == true) {
+                                        fvalue += '(A)'
+                                    }
+                                    fvalue += ', V:' + record.competencias_pruebas_viento;
+                                    return fvalue;
+                                } else {
+                                    return '';
+                                }
+
+                            }, width: 100},
+                        {name: "competencias_pruebas_fecha", width: '60'},
+                        {name: "categorias_codigo", width: '70'},
+                        {name: 'Lugar', formatCellValue: function(value, record, rownum, colnum) {
+                                if (record) {
+                                    return record.competencias_descripcion + '/' + record.paises_descripcion + '/' + record.ciudades_descripcion;
+                                } else {
+                                    return '';
+                                }
+
+                            }}
+                    ],
+                    pickListWidth: 500,
+                    formatOnBlur: true,
+                    //   completeOnTab: true,
+                    editorProperties: {
+                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
+                        // en pickListProperties o afuera funciona de distinta manera.
+                        optionDataSource: mdl_atletaspruebas_resultados_for_records,
+                        minimumSearchLength: 3,
+                        textMatchStyle: 'substring',
+                        sortField: "competencias_pruebas_fecha",
+                        autoFetchData: false,
+                        formatValue: function(value, record, form, item) {
+                            var recordFinal = record;
+                            // Si recordFinal.atletas_resultados_id ya se selecciono un o o es una edicion.
+                            if (recordFinal != null && recordFinal.atletas_resultados_id) {
+                                // Si existe un registro ya seleccionado , partmos de alli
+                                if (item.getSelectedRecord()) {
+                                    recordFinal = item.getSelectedRecord();
+                                }
+                                var fvalue = 'Marca: ' + recordFinal.numb_resultado;
+                                if (recordFinal.ciudades_altura == true) {
+                                    fvalue += '(A)'
+                                }
+                                fvalue += ', V:' + recordFinal.competencias_pruebas_viento;
+                                fvalue += ', Cat: ' + recordFinal.categorias_codigo;
+
+                                // Siel campo lugar esta definido quiere decir que viene de una edicion y es suficiente
+                                // sacar el valor de record que viene de la grilla.
+                                // De lo contrario lo hacemos del record final seleccionadado en el campo.
+                                if (recordFinal.lugar) {
+                                    fvalue += ', ' + recordFinal.lugar;
+                                } else {
+                                    fvalue += ', ' + recordFinal.competencias_descripcion + '/' + recordFinal.paises_descripcion + '/' + recordFinal.ciudades_descripcion;
+                                }
+                                return fvalue;
+                            } else {
+                                return value;
+                            }
+                        }
+                    },
+                    /**
+                     * Se hace el override ya que este campo requiere que solo obtenga las pruebas
+                     * que dependen de la de la categoria y el sexo del atleta,el primero proviene
+                     * de la competencia y el segundo del atleta.
+                     */
+                    getPickListFilterCriteria: function() {
+                        // Recogo primero el filtro si existe uno y luego le agrego
+                        // la categoria y el sexo.
+                        var filter = this.Super("getPickListFilterCriteria", arguments);
+                        if (filter == null) {
+                            filter = {};
+                        }
+
+                        // Esta es una optimizacion realizada para que en mode edit solo lea un especifico registro.
+                        // YA QUE AHORA NO SE PUEDE EDITAR EL CODIGO DE PRUEBA AL EDITARSE!!! , DE LO CONTRARIO DEBERIA
+                        // LEERSE SIEMPRE TODO.
+                        //
+                        // Si existe un filtro ya pre digitado lo pongo en la criteria , de lo contrario
+                        // todos los posibles para la competencia indicada.
+                        if (filter.competencias_descripcion) {
+                            filter = {_constructor: "AdvancedCriteria",
+                                operator: "and", criteria: [
+                                    {fieldName: "competencias_descripcion", operator: "iContains", value: filter.competencias_descripcion},
+                                    {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')},
+                                    {fieldName: "atletas_codigo", operator: "equals", value: formRecords.getValue('atletas_codigo')}
+                                ]};
+                        } else { // CASO NO EXISTE NADA DIGITADO.
+                            // En modo edit buscamos en gorma exacta el codigo
+                            if (formRecords.formMode == 'edit') {
+                                filter = {_constructor: "AdvancedCriteria",
+                                    operator: "and", criteria: [
+                                        {fieldName: "atletas_resultados_id", operator: "equals", value: formRecords.getValue('atletas_resultados_id')}
+                                    ]};
+                            } else {
+                                // De lo contrario buscamos todas las posibles.
+                                filter = {_constructor: "AdvancedCriteria",
+                                    operator: "and", criteria: [
+                                        //   {fieldName: "atletas_nombre_completo", operator: "iContains", value: filter.atletas_nombre_completo},
+                                        {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')},
+                                        {fieldName: "atletas_codigo", operator: "equals", value: formRecords.getValue('atletas_codigo')}
+                                    ]};
+                            }
+                        }
+                        return filter;
+                    },
+                    changed: function(form, item, value) {
+                        // si el codigo del atleta es cambiado  la competencia y
+                        // categorias elegidas deben ser apagadas.
+                        var record = item.getSelectedRecord();
+                        if (record) {
+                            formRecords._setFieldStatus('categorias_codigo', false, false);
+                            formRecords.getItem('categorias_codigo').setValue(record.categorias_codigo);
+
+                        } else {
+                            formRecords._setFieldStatus('categorias_codigo', true, true);
+                        }
+                    }
+                },
+                {name: "categorias_codigo", editorType: "comboBoxExt", length: 50, width: "100",
+                    valueField: "categorias_codigo", displayField: "categorias_descripcion",
+                    pickListFields: [{name: "categorias_codigo", width: '20%'}, {name: "categorias_descripcion", width: '80%'}],
+                    pickListWidth: 240,
+                    editorProperties: {
+                        optionDataSource: mdl_categorias,
+                        autoFetchData: false,
+                    }
+                },
+                {name: "records_id", visible: false}
+            ],
+            /**
+             * Override para aprovecha que solo en modo add se blanqueen todas las variables de cache y el estado
+             * de los campos a su modo inicial o default.
+             *
+             * @param {string} mode 'add' o 'edit'
+             */
+            setEditMode: function(mode) {
+                this.Super("setEditMode", arguments);
+                if (mode == 'add') {
+                    formRecords.getItem('atletas_codigo').setDisabled(true);
+                    formRecords.getItem('atletas_resultados_id').setDisabled(true);
+                    formRecords.getItem('categorias_codigo').setDisabled(true);
+                }
+            },
+            isPostOperationDataRefreshMainListRequired: function(operationType) {
+                return true;
+            },
+            /*******************************************************************
+             *
+             * FUNCIONES DE SOPORTE PARA LA FORMA
+             */
+            /**
+             * Funcion de soporte para limpiar un campo , sus errores y activarlo o desactivarlo.
+             * @param {fieldName} nombre del campo de la forma
+             * @param {boolean} disable true para desactivar , false para activar.
+             * @param {boolean} clear true para limpiar campo, false no tocarlo.
+             */
+            _setFieldStatus: function(fieldName, disable, clear)
+            {
+                formRecords.getItem(fieldName).setDisabled(disable);
+                formRecords.clearFieldErrors(fieldName, true);
+                if (clear) {
+                    formRecords.getItem(fieldName).clearValue();
+                }
+            }
+            //  , cellBorder: 1
+        });
+    },
+    initWidget: function() {
+        this.Super("initWidget", arguments);
+    }
+});
