@@ -16,7 +16,7 @@ isc.RestDataSource.create({
     fields: [
         {name: "usuario_perfil_id", primaryKey: "true", canEdit: false},
         {name: "usuarios_id", required: true, hidden: true, canEdit: false},
-        {name: "perfil_id", title: 'Perfil', required: true, multiple: true, foreignKey: "mdl_perfil.perfil_id"},
+        {name: "perfil_id", title: 'Perfil', required: true/*, multiple: true*/, foreignKey: "mdl_perfil.perfil_id"},
         {name: "activo", type: 'boolean', getFieldValue: function(r, v, f, fn) {
                 return mdl_usuario_perfil._getBooleanFieldValue(v);
             }}
