@@ -67,7 +67,6 @@ isc.WinPerfilForm.addProperties({
         });
     },
     canShowTheDetailGridAfterAdd: function () {
-        console.log('Paso y solicito mode=')
         return true;
     },
     createDetailGridContainer: function (mode) {
