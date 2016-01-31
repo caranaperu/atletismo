@@ -38,9 +38,9 @@ isc.RestDataSource.create({
         {name: "competencias_pruebas_manual", title: 'Manual?', type: 'boolean', getFieldValue: function(r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }, required: true},
-        {name: "competencias_pruebas_origen_combinada", type: 'boolean', getFieldValue: function(r, v, f, fn) {
+        /*    {name: "competencias_pruebas_origen_combinada", type: 'boolean', getFieldValue: function(r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
-            }, required: true},
+            }, required: true},*/
         {name: "competencias_pruebas_observaciones", title: "Observaciones", validators: [{type: "lengthRange", max: 250}]},
         {name: "atletas_resultados_resultado", title: 'Marca', required: true},
         {name: "atletas_resultados_puntos", title: "Puntos", type: 'integer'},
