@@ -66,15 +66,13 @@ abstract class TSLAppCRUDBussinessService extends \TSLStandardBussinessService {
      * especificos en cada operacion, los errores o excepciones se retornaran dentro del DTO.
      */
     protected function doService($action, \TSLIDataTransferObj $dto) {
-        if ($action == 'list') {
-            return $this->fetch($dto);
-        } else if ($action == 'fetch') {
+        if ($action == 'fetch' || $action == 'list') {
             return $this->fetch($dto);
         } else if ($action == 'read') {
             return $this->read($dto);
-        } else if ($action == 'delete') {
+        } else if ($action == 'delete' || $action == 'del') {
             return $this->delete($dto);
-        } else if ($action == 'update') {
+        } else if ($action == 'update' || $action == 'upd') {
             return $this->update($dto);
         } else if ($action == 'add') {
             return $this->add($dto);
@@ -110,7 +108,7 @@ abstract class TSLAppCRUDBussinessService extends \TSLStandardBussinessService {
 
             /* @var $dao \TSLIBasicRecordDAO */
             $dao = \TSLDAOLoaderHelper::loadDAO($this->IdDAOName);
-            $ret = $dao->fetch($model, $constraints,$subOperation);
+            $ret = $dao->fetch($model, $constraints, $subOperation);
 
             /* @var $outMessage TSLOutMessage */
             $outMessage->setSuccess(true);
@@ -382,7 +380,7 @@ abstract class TSLAppCRUDBussinessService extends \TSLStandardBussinessService {
             $dao = \TSLDAOLoaderHelper::loadDAO($this->IdDAOName);
 
             /* @var $ret string */
-            $ret = $dao->add($model,$constraints);
+            $ret = $dao->add($model, $constraints);
 
             $CI = & get_instance();
             if ($ret === DB_ERR_ALLOK) {
