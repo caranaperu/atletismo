@@ -172,10 +172,12 @@
                 isc.ToolStrip.create({
                     overflow: "hidden",
                     width: "100%",
+                    autoDraw: false
                 }),
                 isc.HLayout.create({
                     width: "100%",
                     height: "100%",
+                    autoDraw: false,
                     members: [
                         isc.SectionStack.create({
                             ID: "sectionStack",
@@ -184,6 +186,7 @@
                             visibilityMode: "multiple",
                             width: "15%", height: "100%",
                             border: "1px solid blue",
+                            autoDraw: false,
                             sections: [
                                 {title: "Opciones", expanded: true, canCollapse: true, items: [
                                         isc.SystemTreeMenu.create()
@@ -193,13 +196,15 @@
                         }),
                         isc.VLayout.create({
                             width: "90%",
+                            autoDraw: false,
                             members: [
                                 isc.Label.create({
                                     contents: "Details",
                                     align: "center",
                                     overflow: "hidden",
                                     height: "70%",
-                                    border: "1px solid blue"
+                                    border: "1px solid blue",
+                                    autoDraw: false
                                 })
                             ]
                         })
