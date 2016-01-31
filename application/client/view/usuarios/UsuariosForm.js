@@ -23,7 +23,8 @@ isc.WinUsuariosForm.addProperties({
             dataSource: mdl_usuarios,
             formMode: this.formMode, // parametro de inicializacion
             saveButton: this.getButton('save'),
-            focusInEditFld: 'usuarios_code',
+            keyFields: ['usuarios_code'],
+            focusInEditFld: 'usuarios_password',
             fields: [
                 {name: "usuarios_code", width: 80, size: 15, showPending: true, endRow: true},
                 {name: "usuarios_password", size: 20, width: 150, showPending: true, endRow: true},
@@ -33,6 +34,9 @@ isc.WinUsuariosForm.addProperties({
             ]
                     //  disableValidation: true
         });
+    },
+    canShowTheDetailGridAfterAdd: function () {
+        return true;
     },
     createDetailGridContainer: function (mode) {
         return isc.DetailGridContainer.create({
