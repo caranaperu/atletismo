@@ -164,7 +164,7 @@ class atletasPruebasResultadosDetalleController extends app\common\controller\TS
 
         // ya que podria no haberse enviado y estar no definido
         $atletasPruebasResultadosDetalleId = $this->fixParameter('atletas_resultados_id', 'null', NULL);
-        $atletasPruebasResultadosDetalleId = $this->fixParameter('competencias_pruebas_id', 'null', NULL);
+        $this->fixParameter('competencias_pruebas_id', 'null', NULL);
 
         // Vemos si esta definido el tipo de suboperacion
         $operationId = $this->input->get_post('_operationId');
