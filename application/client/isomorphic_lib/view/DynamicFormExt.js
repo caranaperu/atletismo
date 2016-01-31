@@ -26,6 +26,7 @@
  * @version 1.00
  * @since 1.00
  * $Date: 2014-12-03 02:00:06 -0500 (mié, 03 dic 2014) $
+ * TODO : Verificar porque el autofus no siempre selecciona el campo
  */
 isc.defineClass("DynamicFormExt", isc.DynamicForm);
 isc.DynamicFormExt.addProperties({
@@ -38,6 +39,7 @@ isc.DynamicFormExt.addProperties({
     synchronousValidation: true,
     autoFocus: true,
     selectOnFocus: true,
+    selectOnClick: true,
     /**
      * @cfg {String} formMode
      * Puede ser 'add','edit' y representa el modo incial de edicion
