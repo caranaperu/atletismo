@@ -28,7 +28,7 @@ class usuariosController extends app\common\controller\TSLAppDefaultCRUDControll
                 "read" => ["langId" => 'usuarios', "validationId" => 'usuarios_validation', "validationGroupId" => 'v_usuarios', "validationRulesId" => 'getUsuarios'],
                 "add" => ["langId" => 'usuarios', "validationId" => 'usuarios_validation', "validationGroupId" => 'v_usuarios', "validationRulesId" => 'addUsuarios'],
                 "del" => ["langId" => 'usuarios', "validationId" => 'usuarios_validation', "validationGroupId" => 'v_usuarios', "validationRulesId" => 'delUsuarios'],
-                "upd" => ["langId" => 'usuarios', "validationId" => 'usuarios_validation', "validationGroupId" => 'v_usuarios', "validationRulesId" => 'delUsuarios']
+                "upd" => ["langId" => 'usuarios', "validationId" => 'usuarios_validation', "validationGroupId" => 'v_usuarios', "validationRulesId" => 'updUsuarios']
             ],
             "paramsList" => [
                 "fetch" => [],
