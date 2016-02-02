@@ -169,7 +169,7 @@ class TSLAppPerfilDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postg
                 'perfil_descripcion=\'' . $record->get_perfil_descripcion() . '\',' .
                 'activo=\'' . $record->getActivo() . '\'' .
                 ',"usuario_mod"=\'' . $record->get_Usuario_mod() . '\'' .
-                ' where "perfil_id" = \'' . $record->getId() . '\'  and xmin =' . $record->getVersionId();
+                ' where "perfil_id" = \'' . $record->get_perfil_id() . '\'  and xmin =' . $record->getVersionId();
 
         return $sql;
     }
