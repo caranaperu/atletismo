@@ -101,7 +101,6 @@ abstract class TSLAppDefaultCRUDController extends TSLAppDefaultController {
      */
     protected $setupOpts;
 
-
     public function __construct() {
         parent::__construct();
         $this->setupData();
@@ -110,6 +109,8 @@ abstract class TSLAppDefaultCRUDController extends TSLAppDefaultController {
     abstract protected function getBussinessService();
 
     abstract protected function setupData();
+
+    protected function preExecuteOperation($operationCode) {}
 
     private function executeCrudOperation($operationCode) {
 
@@ -125,6 +126,9 @@ abstract class TSLAppDefaultCRUDController extends TSLAppDefaultController {
 
             // Si todo esta ok procedemos
             if ($validateResult == TRUE) {
+
+                // Algun procesamiento especial  antes de la operacion ?
+                $this->preExecuteOperation($operationCode);
 
                 // Pasamos parametros al DATA TRANSFER OBJECT
                 $params = $this->setupOpts["paramsList"][$operationCode];
@@ -175,11 +179,11 @@ abstract class TSLAppDefaultCRUDController extends TSLAppDefaultController {
         // procedemos a efectuar dicha accion
         $paramsFixableToValue = $this->setupOpts["paramsFixableToValue"];
         if (isset($paramsFixableToValue) && count($paramsFixableToValue) > 0) {
-            foreach ($paramsFixableToValue as $paramFixableToValue) {
+            foreach ($paramsFixableToValue as $paramToFix=>$paramFixableToValue) {
                 if (isset($paramFixableToValue["isID"]) and $paramFixableToValue["isID"] == TRUE) {
-                    $Id = $this->parseParameters($paramFixableToValue, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
+                    $Id = $this->fixParameter($paramToFix, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
                 } else {
-                    $this->parseParameters($paramFixableToValue, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
+                    $this->fixParameter($paramFixableToValue, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
                 }
             }
         }
