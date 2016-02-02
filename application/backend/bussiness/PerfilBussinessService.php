@@ -47,7 +47,7 @@ class PerfilBussinessService extends \app\common\bussiness\TSLAppCRUDBussinessSe
     protected function &getModelToUpdate(\TSLIDataTransferObj $dto) {
         $model = new \app\common\model\impl\TSLAppPerfilModel();
         //
-        $model->setId($dto->getParameterValue('id'));
+        $model->set_perfil_id($dto->getParameterValue('perfil_id'));
         $model->set_sys_systemcode($dto->getParameterValue('sys_systemcode'));
         $model->set_perfil_codigo($dto->getParameterValue('perfil_codigo'));
         $model->set_perfil_descripcion($dto->getParameterValue('perfil_descripcion'));
@@ -75,7 +75,7 @@ class PerfilBussinessService extends \app\common\bussiness\TSLAppCRUDBussinessSe
      */
     protected function &getModelToDelete(\TSLIDataTransferObj $dto) {
         $model = new \app\common\model\impl\TSLAppPerfilModel();
-        $model->setId($dto->getParameterValue('id'));
+        $model->set_perfil_id($dto->getParameterValue('perfil_id'));
         $model->setVersionId($dto->getParameterValue('versionId'));
         $model->set_Usuario_mod($dto->getSessionUser());
         return $model;
