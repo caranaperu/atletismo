@@ -33,8 +33,8 @@ isc.WinPerfilWindow.addProperties({
                     completeOnTab: true,
                     width: '20%'
                 },
-                {name: "perfil_codigo", width: '10%'},
-                {name: "perfil_descripcion", width: '70%'}],
+                {name: "perfil_codigo", width: '15%'},
+                {name: "perfil_descripcion", width: '65%'}],
             canReorderFields: false,
             showFilterEditor: true,
             autoDraw: false,
