@@ -15,7 +15,7 @@ isc.WinPerfilForm.addProperties({
     title: "Mantenimiento de Perfiles",
     joinKeyFields: [{fieldName: 'perfil_id', fieldValue: ''}],
     width: 575,
-    height: 200,
+    height: 210,
     createForm: function (formMode) {
 
         return isc.DynamicFormExt.create({
