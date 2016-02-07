@@ -4,22 +4,25 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 /**
- * Controlador para las operaciones CRUD de las marcas
+ * Controlador para las operaciones CRUD de los usuarios del sistema.
  *
- * @author $Author: aranape@gmail.com $
- * @since 17-May-2012
- * @version $Id: usuariosController.php 61 2015-08-23 22:59:12Z aranape@gmail.com $
  *
- * $Date: 2015-08-23 17:59:12 -0500 (dom, 23 ago 2015) $
- * $Rev: 61 $
+ * @author  Carlos Arana Reategui <aranape@gmail.com>
+ * @version 0.1
+ * @package SoftAthletics
+ * @copyright 2015-2016 Carlos Arana Reategui.
+ * @license GPL
+ *
  */
 class usuariosController extends app\common\controller\TSLAppDefaultCRUDController {
-
 
     public function __construct() {
         parent::__construct();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected function setupData() {
 
         $this->setupOpts = [
@@ -43,6 +46,9 @@ class usuariosController extends app\common\controller\TSLAppDefaultCRUDControll
         ];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected function getBussinessService() {
         return new UsuariosBussinessService();
     }

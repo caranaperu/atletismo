@@ -4,16 +4,15 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 /**
- * Controlador para las operaciones CRUD de los tipos de documentos de tramite.
+ * Controlador para las operaciones CRUD de los perfiles a aplicar a los usuarios.
  *
  *
- * @author  $Author: aranape $
- * @since   06-FEB-2013
- * @version $Id: perfilController.php 395 2014-01-11 09:22:31Z aranape $
- * @history ''
+ * @author  Carlos Arana Reategui <aranape@gmail.com>
+ * @version 0.1
+ * @package SoftAthletics
+ * @copyright 2015-2016 Carlos Arana Reategui.
+ * @license GPL
  *
- * $Date: 2014-01-11 04:22:31 -0500 (sáb, 11 ene 2014) $
- * $Rev: 395 $
  */
 class perfilController extends app\common\controller\TSLAppDefaultCRUDController {
 
@@ -21,6 +20,9 @@ class perfilController extends app\common\controller\TSLAppDefaultCRUDController
         parent::__construct();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected function setupData() {
 
         $this->setupOpts = [
@@ -36,7 +38,7 @@ class perfilController extends app\common\controller\TSLAppDefaultCRUDController
                 "read" => ['perfil_id', 'verifyExist'],
                 "add" => ['perfil_codigo', 'perfil_descripcion', 'sys_systemcode', 'activo'],
                 "del" => ['perfil_id', 'versionId'],
-                "upd" => ['perfil_id','perfil_codigo', 'perfil_descripcion', 'sys_systemcode', 'versionId', 'activo'],
+                "upd" => ['perfil_id', 'perfil_codigo', 'perfil_descripcion', 'sys_systemcode', 'versionId', 'activo'],
             ],
             "paramsFixableToNull" => ['perfil_', 'sys_'],
             "paramsFixableToValue" => ["perfil_codigo" => ["valueToFix" => 'null', "valueToReplace" => NULL, "isID" => true]],
@@ -44,10 +46,16 @@ class perfilController extends app\common\controller\TSLAppDefaultCRUDController
         ];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected function getBussinessService() {
         return new PerfilBussinessService();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected function preExecuteOperation($operationCode) {
         if ($operationCode == 'add') {
             $constraints = NULL;
@@ -61,4 +69,5 @@ class perfilController extends app\common\controller\TSLAppDefaultCRUDController
             }
         }
     }
+
 }
