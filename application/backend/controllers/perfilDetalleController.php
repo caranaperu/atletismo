@@ -8,7 +8,7 @@ if (!defined('BASEPATH'))
  *
  *
  * @author  Carlos Arana Reategui <aranape@gmail.com>
- * @version GIT: $Id$ stable.
+ * @version 0.1
  * @package SoftAthletics
  * @copyright 2015-2016 Carlos Arana Reategui.
  * @license GPL
