@@ -48,9 +48,9 @@
 $active_group = 'default';
 $active_record = FALSE;
 
-$db['default']['hostname'] = '192.168.1.24';
+$db['default']['hostname'] = '192.168.1.42';
 $db['default']['username'] = 'atluser';
-$db['default']['password'] = 'atluser';
+$db['default']['password'] = 'melivane';
 $db['default']['database'] = 'db_atletismo';
 $db['default']['dbdriver'] = 'postgre';
 $db['default']['dbprefix'] = '';
