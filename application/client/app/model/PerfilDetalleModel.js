@@ -20,7 +20,7 @@ isc.RestDataSource.create({
     fields: [
         {name: "perfdet_id", title: "id", type: 'integer', primaryKey: "true", canEdit: "false", required: true},
         {name: "perfil_id", title: "perfil_id", required: true},
-        {name: "perfdet_accessdef", title: "Permisos", required: true},
+        {name: "perfdet_accessdef", title: "Permisos"},
         {name: "perfdet_accleer", title: "Leer", type: 'boolean', getFieldValue: function(r, v, f, fn) {
                 return mdl_perfil_detalle._getBooleanFieldValue(v);
             }},
