@@ -12,7 +12,7 @@ isc.defineClass("WinCiudadesForm", "WindowBasicFormExt");
 isc.WinCiudadesForm.addProperties({
     ID: "winCiudadesForm",
     title: "Mantenimiento de Ciudades",
-    width: 470, height: 195,
+    width: 470, height: 205,
     createForm: function(formMode) {
         return isc.DynamicFormExt.create({
             ID: "formCiudades",
@@ -34,10 +34,9 @@ isc.WinCiudadesForm.addProperties({
                     pickListFields: [{name: "paises_codigo", width: '20%'}, {name: "paises_descripcion", width: '80%'}],
                     pickListWidth: 260,
                     completeOnTab: true,
-                    pickListProperties: {
-                        showFilterEditor: true,
-                        sortField: "paises_descripcion"
-                    },
+                    // Solo es pasado al servidor si no existe cache data all en el modelo
+                    // de lo contrario el sort se hace en el lado cliente.
+                    initialSort: [{property: 'paises_descripcion'}]
                 },
                 {name: "ciudades_altura", title: 'Esta en Altura?'}
             ]
