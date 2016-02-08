@@ -39,8 +39,9 @@ class EntidadBussinessService extends \app\common\bussiness\TSLAppCRUDBussinessS
         $model->set_entidad_fax($dto->getParameterValue('entidad_fax'));
         $model->set_entidad_web_url($dto->getParameterValue('entidad_web_url'));
         $model->set_entidad_correo($dto->getParameterValue('entidad_correo'));
-        if ($dto->getParameterValue('activo') != NULL)
-            $model->setActivo($dto->getParameterValue('activo'));
+
+        // En el caso de agregar una entidad siempre ira en true
+        $model->setActivo(TRUE);
         $model->setUsuario($dto->getSessionUser());
         return $model;
     }
