@@ -183,7 +183,7 @@ abstract class TSLAppDefaultCRUDController extends TSLAppDefaultController {
                 if (isset($paramFixableToValue["isID"]) and $paramFixableToValue["isID"] == TRUE) {
                     $Id = $this->fixParameter($paramToFix, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
                 } else {
-                    $this->fixParameter($paramFixableToValue, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
+                    $this->fixParameter($paramToFix, $paramFixableToValue["valueToFix"], $paramFixableToValue["valueToReplace"]);
                 }
             }
         }
