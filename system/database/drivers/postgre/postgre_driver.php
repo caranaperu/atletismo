@@ -70,6 +70,8 @@ class CI_DB_postgre_driver extends CI_DB {
 				$connect_string .= " $val=".$this->$key;
 			}
 		}
+                // PARCHE PARA SOPORTAR LOS ACENTOS Y LETRAS EN ESPAÑOL
+               $connect_string .= " options='--client_encoding=LATIN9'";
 		return trim($connect_string);
 	}
 
