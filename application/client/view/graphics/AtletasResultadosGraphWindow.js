@@ -22,7 +22,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
     height: '400',
     title: 'Resultados Atletas - Grafico',
     // Inicialiamos los widgets interiores
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
 
         // Botones principales del header
@@ -36,7 +36,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     width: '100',
                     autoDraw: false,
                     title: "Limpiar",
-                    click: function() {
+                    click: function () {
                         formGraphAtletasResultados.focusInItem('apppruebas_codigo');
                         formButtons.getMember(1).setDisabled(true);
                         formGraphAtletasResultados.clearValues();
@@ -49,7 +49,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     width: '100',
                     autoDraw: false,
                     disabled: true,
-                    click: function() {
+                    click: function () {
                         sections.expandSection(1);
                         // prepara la llamada
                         var atleta_num;
@@ -93,7 +93,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
             autoSize: true,
             fields: [
                 {name: "report_type", title: 'Tipo TopN', type: "checkbox",
-                    changed: function(form, item, value) {
+                    changed: function (form, item, value) {
                         if (value == false) {
                             form.getItem('n_records').setDisabled(true);
                             form.clearFieldErrors('n_records', true);
@@ -102,6 +102,11 @@ isc.AtletasResultadosGraphWindow.addProperties({
                             form.getItem('n_records').setDisabled(false);
                             form.setValue('n_records', '10');
                         }
+                        // Se habilita ingreso al primer ateta , se limpian los demas y se desabilitan.
+                        formGraphAtletasResultados.getItem('atletas_codigo_01').setDisabled(false);
+                        formGraphAtletasResultados.clearAtletasCodigo(1, 5);
+                        formGraphAtletasResultados.setAtletasCodigoDisabledState(2, 5, true);
+
                     }},
                 {name: "n_records", title: '#Registros', type: "integer", length: 2, width: 50,
                     validators: [{
@@ -115,15 +120,10 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     pickListFields: [{name: "apppruebas_codigo", width: '30%'}, {name: "apppruebas_descripcion", width: '80%'}],
                     pickListWidth: 280,
                     optionOperationId: 'fetchJoined',
-                    editorProperties: {
-                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                        // en pickListProperties o afuera funciona de distinta manera.
-                        optionDataSource: mdl_apppruebas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "apppruebas_descripcion"
-                    },
-                    changed: function(form, item, value) {
+                    optionDataSource: mdl_apppruebas,
+                    textMatchStyle: 'substring',
+                    sortField: "apppruebas_descripcion",
+                    changed: function (form, item, value) {
                         // si la prueba es cambiada debe limpiarse los atletas elegidos y ademas
                         // dejar enabled solo el ingreso al primero de ellos.
                         var record = item.getSelectedRecord();
@@ -138,7 +138,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     }
                 },
                 {name: "atletas_sexo", title: 'sexo', valueMap: ["M", "F"], defaultValue: 'M', required: true, width: 60, endRow: true,
-                    changed: function(form, item, value) {
+                    changed: function (form, item, value) {
                         // si el sexo para la prueba  es cambiada debe limpiarse los atletas elegidos y ademas
                         // dejar enabled solo el ingreso al primero de ellos.
                         formGraphAtletasResultados.getItem('atletas_codigo_01').setDisabled(false);
@@ -151,15 +151,13 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     pickListWidth: 240,
                     optionOperationId: 'fetchWithPesos',
                     defaultValue: 'MAY',
-                    editorProperties: {
-                        optionDataSource: mdl_categorias_pesos,
-                    },
+                    optionDataSource: mdl_categorias_pesos,
                     validators: [
                         // Valida que la categoria inicial no sea mayor que la final
                         {type: "categoriaMenorCheck",
                             // Valida que la marca menor no sea mayor que la final
                             // dado que en este momento se tratan como string normalizamos y comparamos
-                            condition: function(item, validator, value) {
+                            condition: function (item, validator, value) {
                                 var record_desde = item.getSelectedRecord();
                                 var record_hasta = formGraphAtletasResultados.getItem('categorias_hasta').getSelectedRecord();
                                 if (!record_desde) {
@@ -185,15 +183,13 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     pickListWidth: 240,
                     optionOperationId: 'fetchWithPesos',
                     defaultValue: 'MAY',
-                    editorProperties: {
-                        optionDataSource: mdl_categorias_pesos,
-                    },
+                    optionDataSource: mdl_categorias_pesos,
                     validators: [
                         // Valida que la categoria final no sea menor que la inicial
                         {type: "categoriaMayorCheck",
                             // Valida que la marca menor no sea mayor que la final
                             // dado que en este momento se tratan como string normalizamos y comparamos
-                            condition: function(item, validator, value) {
+                            condition: function (item, validator, value) {
                                 var record_hasta = item.getSelectedRecord();
                                 var record_desde = formGraphAtletasResultados.getItem('categorias_desde').getSelectedRecord();
                                 if (!record_hasta) {
@@ -217,7 +213,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     validators: [
                         {type: "fechaMenorCheck",
                             // Valida que la decha menor no sea mayor que la final
-                            condition: function(item, validator, value) {
+                            condition: function (item, validator, value) {
                                 var fecha_hasta = formGraphAtletasResultados.getValue('fecha_hasta');
                                 var fecha_desde = value;
 
@@ -236,7 +232,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     validators: [
                         {type: "fechaMayorCheck",
                             // Valida que la fecha mayor no sea menor que la inicial.
-                            condition: function(item, validator, value) {
+                            condition: function (item, validator, value) {
                                 var fecha_desde = formGraphAtletasResultados.getValue('fecha_desde');
                                 var fecha_hasta = value;
 
@@ -257,18 +253,18 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     pickListWidth: 260,
                     completeOnTab: true,
                     required: true,
-                    disabled: true,
+                    disabled: false,
                     optionOperationId: 'fetchForListByPrueba',
-                    editorProperties: {
-                        optionDataSource: mdl_atletas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo"
-                    },
-                    changed: function(form, item, value) {
+                    optionDataSource: mdl_atletas,
+                    textMatchStyle: 'substring',
+                    sortField: "atletas_nombre_completo",
+                    changed: function (form, item, value) {
                         var record = item.getSelectedRecord();
                         if (record) {
-                            formGraphAtletasResultados.getItem('atletas_codigo_02').setDisabled(false);
+                            // solo se abre el siguiente input si es un reporte topn
+                            if (formGraphAtletasResultados.getValue('report_type') == true) {
+                                formGraphAtletasResultados.getItem('atletas_codigo_02').setDisabled(false);
+                            }
                         } else {
                             formGraphAtletasResultados.clearAtletasCodigo(2, 5);
                             formGraphAtletasResultados.setAtletasCodigoDisabledState(2, 5, true);
@@ -278,7 +274,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la prueba y sexo seleccionados
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         return formGraphAtletasResultados.getPickListFilterCriteriaForAtletasCodigo(this);
                     }
                 },
@@ -289,13 +285,10 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     completeOnTab: true,
                     disabled: true,
                     optionOperationId: 'fetchForListByPrueba',
-                    editorProperties: {
-                        optionDataSource: mdl_atletas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo"
-                    },
-                    changed: function(form, item, value) {
+                    optionDataSource: mdl_atletas,
+                    textMatchStyle: 'substring',
+                    sortField: "atletas_nombre_completo",
+                    changed: function (form, item, value) {
                         var record = item.getSelectedRecord();
                         if (record) {
                             formGraphAtletasResultados.getItem('atletas_codigo_03').setDisabled(false);
@@ -308,7 +301,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la prueba y sexo seleccionados
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         return formGraphAtletasResultados.getPickListFilterCriteriaForAtletasCodigo(this);
                     }
                 },
@@ -319,13 +312,10 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     completeOnTab: true,
                     disabled: true,
                     optionOperationId: 'fetchForListByPrueba',
-                    editorProperties: {
-                        optionDataSource: mdl_atletas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo"
-                    },
-                    changed: function(form, item, value) {
+                    optionDataSource: mdl_atletas,
+                    textMatchStyle: 'substring',
+                    sortField: "atletas_nombre_completo",
+                    changed: function (form, item, value) {
                         var record = item.getSelectedRecord();
                         if (record) {
                             formGraphAtletasResultados.getItem('atletas_codigo_04').setDisabled(false);
@@ -338,7 +328,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la prueba y sexo seleccionados
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         return formGraphAtletasResultados.getPickListFilterCriteriaForAtletasCodigo(this);
                     }
                 },
@@ -349,17 +339,14 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     completeOnTab: true,
                     disabled: true,
                     optionOperationId: 'fetchForListByPrueba',
-                    editorProperties: {
-                        optionDataSource: mdl_atletas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo"
-                    },
+                    optionDataSource: mdl_atletas,
+                    textMatchStyle: 'substring',
+                    sortField: "atletas_nombre_completo",
                     /**
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la prueba y sexo seleccionados
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         return formGraphAtletasResultados.getPickListFilterCriteriaForAtletasCodigo(this);
                     }
                 },
@@ -380,14 +367,14 @@ isc.AtletasResultadosGraphWindow.addProperties({
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la prueba y sexo seleccionados
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         return formGraphAtletasResultados.getPickListFilterCriteriaForAtletasCodigo(this);
                     }
                 },
                 {name: "incluye_manuales", title: 'Resultados Manuales', defaultValue: true, type: 'boolean', length: 50},
                 {name: "incluye_observadas", title: 'Resultados Observados', defaultValue: true, type: 'boolean', length: 50, endRow: true}
             ],
-            itemChanged: function() {
+            itemChanged: function () {
                 formButtons.getMember(1).setDisabled(!formGraphAtletasResultados.valuesAreValid(false));
             },
             /**
@@ -395,7 +382,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
              * que dependen de la de la categoria y el sexo del atleta,el primero proviene
              * de la competencia y el segundo del atleta.
              */
-            getPickListFilterCriteriaForAtletasCodigo: function(item) {
+            getPickListFilterCriteriaForAtletasCodigo: function (item) {
                 // Recogo primero el filtro si existe uno y luego le agrego
                 // la categoria y el sexo.
                 var filter = item.Super("getPickListFilterCriteria", arguments);
@@ -413,13 +400,13 @@ isc.AtletasResultadosGraphWindow.addProperties({
             /**
              * SOPORTE PARA EVITAR CODIGO REPETITIVO.
              */
-            setAtletasCodigoDisabledState: function(from, to, disabled) {
+            setAtletasCodigoDisabledState: function (from, to, disabled) {
                 for (i = from; i <= to; i++) {
                     var atleta_num = 'atletas_codigo_0' + i;
                     formGraphAtletasResultados.getItem(atleta_num).setDisabled(disabled);
                 }
             },
-            clearAtletasCodigo: function(from, to) {
+            clearAtletasCodigo: function (from, to) {
                 for (i = from; i <= to; i++) {
                     var atleta_num = 'atletas_codigo_0' + i;
                     formGraphAtletasResultados.getItem(atleta_num).clearValue();
@@ -448,7 +435,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                 {title: "Filtro", expanded: true, items: [formGraphAtletasResultados, formButtons], ID: 'SectionFiltroAtletasResultados'},
                 {title: "Grafico", expanded: false, canCollapse: true, items: [graphAtletasResultadosPane], ID: 'SectionGraficoAtletasResultados'}
             ],
-            collapseSection: function(sections, callback) {
+            collapseSection: function (sections, callback) {
                 this.Super('collapseSection', arguments);
                 // Se cambia el tamaño del contenido de la seccion de acuerdo sea la seccion de filtro o
                 // la seccion de graficos.
@@ -469,7 +456,7 @@ isc.AtletasResultadosGraphWindow.addProperties({
                     width: '100',
                     autoDraw: false,
                     title: "Salir",
-                    click: function() {
+                    click: function () {
                         atletasResultadosGraphWindow.hide();
                     }
                 })

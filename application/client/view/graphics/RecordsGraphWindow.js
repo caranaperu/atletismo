@@ -19,10 +19,10 @@ isc.RecordsGraphWindow.addProperties({
     isModal: true,
     autoDraw: false,
     width: '700',
-    height: '255',
+    height: '275',
     title: 'Records - Grafico',
     // Inicialiamos los widgets interiores
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
 
         // Botones principales del header
@@ -36,11 +36,10 @@ isc.RecordsGraphWindow.addProperties({
                     width: '100',
                     autoDraw: false,
                     title: "Limpiar",
-                    click: function() {
+                    click: function () {
                         formGraphRecords.focusInItem('apppruebas_codigo');
                         formButtons.getMember(1).setDisabled(true);
                         formGraphRecords.clearValues();
-                        formGraphRecords.getItem('atletas_codigo').setDisabled(true);
                     }
                 }),
                 isc.Button.create({
@@ -49,7 +48,7 @@ isc.RecordsGraphWindow.addProperties({
                     width: '100',
                     autoDraw: false,
                     disabled: true,
-                    click: function() {
+                    click: function () {
                         sections.expandSection(1);
                         // prepara la llamada
                         var url = '/atletismo/application/client/view/graphics/RecordsGraphOutput.php';
@@ -83,27 +82,18 @@ isc.RecordsGraphWindow.addProperties({
                     pickListFields: [{name: "records_tipo_codigo", width: '30%'}, {name: "records_tipo_descripcion", width: '80%'}],
                     pickListWidth: 280,
                     optionOperationId: 'fetchJoined',
-                    editorProperties: {
-                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                        // en pickListProperties o afuera funciona de distinta manera.
-                        optionDataSource: mdl_records_tipo,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "records_tipo_descripcion"
-                    }},
+                    optionDataSource: mdl_records_tipo,
+                    textMatchStyle: 'substring',
+                    sortField: "records_tipo_descripcion"
+                },
                 {name: "apppruebas_codigo", title: 'prueba', editorType: "comboBoxExt", length: 50, width: "200", required: true, endRow: true,
                     valueField: "apppruebas_codigo", displayField: "apppruebas_descripcion",
                     pickListFields: [{name: "apppruebas_codigo", width: '30%'}, {name: "apppruebas_descripcion", width: '80%'}],
                     pickListWidth: 280,
                     optionOperationId: 'fetchJoined',
-                    editorProperties: {
-                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                        // en pickListProperties o afuera funciona de distinta manera.
-                        optionDataSource: mdl_apppruebas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "apppruebas_descripcion"
-                    }
+                    optionDataSource: mdl_apppruebas,
+                    textMatchStyle: 'substring',
+                    sortField: "apppruebas_descripcion"
                 },
                 {name: "atletas_sexo", title: 'sexo', valueMap: ["M", "F"], defaultValue: 'M', required: true, width: 60, endRow: true},
                 {name: "categorias_codigo", title: 'Categoria', editorType: "comboBoxExt", length: 50, width: "100", endRow: true,
@@ -112,15 +102,13 @@ isc.RecordsGraphWindow.addProperties({
                     pickListWidth: 240,
                     optionOperationId: 'fetchWithPesos',
                     defaultValue: 'MAY',
-                    editorProperties: {
-                        optionDataSource: mdl_categorias_pesos,
-                    }
+                    optionDataSource: mdl_categorias_pesos
                 },
                 {name: "fecha_desde", title: 'Fechas Desde', type: "date",
                     validators: [
                         {type: "fechaMenorCheck",
                             // Valida que la decha menor no sea mayor que la final
-                            condition: function(item, validator, value) {
+                            condition: function (item, validator, value) {
                                 var fecha_hasta = formGraphRecords.getValue('fecha_hasta');
                                 var fecha_desde = value;
 
@@ -139,7 +127,7 @@ isc.RecordsGraphWindow.addProperties({
                     validators: [
                         {type: "fechaMayorCheck",
                             // Valida que la fecha mayor no sea menor que la inicial.
-                            condition: function(item, validator, value) {
+                            condition: function (item, validator, value) {
                                 var fecha_desde = formGraphRecords.getValue('fecha_desde');
                                 var fecha_hasta = value;
 
@@ -154,54 +142,12 @@ isc.RecordsGraphWindow.addProperties({
                         }
                     ]
                 },
-//                {name: "atletas_codigo", title: 'Atleta', editorType: "comboBoxExt", length: 50, colSpan: '4', width: "*", endRow: true,
-//                    valueField: "atletas_codigo", displayField: "atletas_nombre_completo",
-//                    pickListFields: [{name: "atletas_codigo", width: '30%'}, {name: "atletas_nombre_completo", width: '80%'}],
-//                    pickListWidth: 260,
-//                    completeOnTab: true,
-//                    required: true,
-//                    disabled: true,
-//                    optionOperationId: 'fetchForListByPrueba',
-//                    editorProperties: {
-//                        optionDataSource: mdl_atletas,
-//                        minimumSearchLength: 3,
-//                        textMatchStyle: 'substring',
-//                        sortField: "atletas_nombre_completo"
-//                    },
-//                    /**
-//                     * Se hace el override ya que este campo requiere que solo obtenga las pruebas
-//                     * que dependen de la de la prueba y sexo seleccionados
-//                     */
-//                    getPickListFilterCriteria: function() {
-//                        return formGraphRecords.getPickListFilterCriteriaForAtletasCodigo(this);
-//                    }
-//                },
                 {name: "incluye_manuales", title: 'Resultados Manuales', defaultValue: true, type: 'boolean', length: 50},
                 {name: "incluye_altura", title: 'Resultados en Altura', defaultValue: true, type: 'boolean', length: 50, endRow: true}
             ],
-            itemChanged: function() {
+            itemChanged: function () {
                 formButtons.getMember(1).setDisabled(!formGraphRecords.valuesAreValid(false));
             },
-            /**
-             * Se hace el override ya que este campo requiere que solo obtenga las pruebas
-             * que dependen de la de la categoria y el sexo del atleta,el primero proviene
-             * de la competencia y el segundo del atleta.
-             */
-//            getPickListFilterCriteriaForAtletasCodigo: function(item) {
-//                // Recogo primero el filtro si existe uno y luego le agrego
-//                // la categoria y el sexo.
-//                var filter = item.Super("getPickListFilterCriteria", arguments);
-//                if (filter == null) {
-//                    filter = {};
-//                }
-//
-//                filter = {_constructor: "AdvancedCriteria",
-//                    operator: "and", criteria: [
-//                        {fieldName: "pruebas_generica_codigo", operator: "equals", value: formGraphRecords.getValue('apppruebas_codigo')},
-//                        {fieldName: 'atletas_sexo', operator: 'equals', value: formGraphRecords.getValue('atletas_sexo')}
-//                    ]};
-//                return filter;
-//            }
             // , cellBorder: 1
         });
 
@@ -225,14 +171,14 @@ isc.RecordsGraphWindow.addProperties({
                 {title: "Filtro", expanded: true, items: [formGraphRecords, formButtons], ID: 'SectionFiltroRecords'},
                 {title: "Grafico", expanded: false, canCollapse: true, items: [graphRecordsPane], ID: 'SectionGraficoRecords'}
             ],
-            collapseSection: function(sections, callback) {
+            collapseSection: function (sections, callback) {
                 this.Super('collapseSection', arguments);
                 // Se cambia el tamaño del contenido de la seccion de acuerdo sea la seccion de filtro o
                 // la seccion de graficos.
                 if (sections.name == 'SectionFiltroRecords') {
                     recordsGraphWindow.resizeTo(820, 560);
                 } else {
-                    recordsGraphWindow.resizeTo(700, 255);
+                    recordsGraphWindow.resizeTo(700, 275);
                 }
             }
         });
@@ -246,7 +192,7 @@ isc.RecordsGraphWindow.addProperties({
                     width: '100',
                     autoDraw: false,
                     title: "Salir",
-                    click: function() {
+                    click: function () {
                         recordsGraphWindow.hide();
                     }
                 })
