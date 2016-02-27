@@ -29,41 +29,32 @@
  * $Rev: 360 $
  */
 isc.defineClass("ComboBoxExtItem", isc.ComboBoxItem);
-isc.ComboBoxExtItem.addProperties({
-    addUnknownValues: false,
-    searchStringTooShortMessage: 'Ingrese al menos 3 caracteres....',
-    initWidget: function () {
-        this.Super("initWidget", arguments);
-    },
-    forceRefresh: function () {
-        // Forzamos la relectura indicando no usa cache (solo pase)
-        if (this.optionDataSource) {
-            var cacheAllDataCopy = this.optionDataSource.cacheAllData;
-            this.optionDataSource.setCacheAllData(false);
-            this.fetchData(function (it, r, d, r) {
-                // restauramos
-                this.optionDataSource.setCacheAllData(cacheAllDataCopy);
-            });
-        }
-
-    },
-    // Agregamos el icono
-    icons: [{
-            src: "[SKIN]/actions/refresh.png",
-            showOver: true,
-            hspace: 1,
-            tabIndex: -1,
-            click: function (form, item) {
-                item.forceRefresh();
-                // Forzamos la relectura indicando no usa cache (solo pase)
-                /*if (item.optionDataSource) {
-                    var cacheAllDataCopy = item.optionDataSource.cacheAllData;
-                    item.optionDataSource.setCacheAllData(false);
-                    item.fetchData(function (it, r, d, r) {
+        isc.ComboBoxExtItem.addProperties({
+        addUnknownValues: false,
+        minimumSearchLength: 3,
+        searchStringTooShortMessage: 'Ingrese al menos 3 caracteres....',
+        initWidget: function () {
+                this.Super("initWidget", arguments);
+        },
+        forceRefresh: function () {
+            // Forzamos la relectura indicando no usa cache (solo pase)
+            if (this.optionDataSource) {
+                var cacheAllDataCopy = this.optionDataSource.cacheAllData;
+                        this.optionDataSource.setCacheAllData(false);
+                        this.fetchData(function (it, r, d, r) {
                         // restauramos
-                        item.optionDataSource.setCacheAllData(cacheAllDataCopy);
-                    });
-                }*/
-            }
+                        this.optionDataSource.setCacheAllData(cacheAllDataCopy);
+                        });
+                }
+        },
+        // Agregamos el icono
+        icons: [{
+                src: "[SKIN]/actions/refresh.png",
+                showOver: true,
+                hspace: 1,
+                tabIndex: - 1,
+                click: function (form, item) {
+                item.forceRefresh();
+                }
         }]
 });
