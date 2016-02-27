@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.3.10
+-- Dumped from database version 9.3.11
 -- Dumped by pg_dump version 9.3.10
--- Started on 2016-01-24 20:06:05 PET
+-- Started on 2016-02-26 22:15:48 PET
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -22,7 +22,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 2626 (class 0 OID 0)
+-- TOC entry 2627 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
@@ -33,7 +33,7 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 620 (class 1247 OID 16387)
+-- TOC entry 621 (class 1247 OID 16390)
 -- Name: sexo_full_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -47,7 +47,7 @@ CREATE TYPE sexo_full_type AS ENUM (
 ALTER TYPE public.sexo_full_type OWNER TO postgres;
 
 --
--- TOC entry 623 (class 1247 OID 16394)
+-- TOC entry 624 (class 1247 OID 16398)
 -- Name: sexo_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -60,7 +60,7 @@ CREATE TYPE sexo_type AS ENUM (
 ALTER TYPE public.sexo_type OWNER TO postgres;
 
 --
--- TOC entry 280 (class 1255 OID 25255)
+-- TOC entry 236 (class 1255 OID 16403)
 -- Name: fn_get_combinada_resultados_as_text(integer, character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -132,7 +132,7 @@ $$;
 ALTER FUNCTION public.fn_get_combinada_resultados_as_text(p_competencia_id integer, p_atleta_codigo character varying, p_categoria_codigo character varying) OWNER TO atluser;
 
 --
--- TOC entry 237 (class 1255 OID 16399)
+-- TOC entry 239 (class 1255 OID 16404)
 -- Name: fn_get_marca_normalizada(character varying, character varying, boolean, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -257,7 +257,7 @@ $$;
 ALTER FUNCTION public.fn_get_marca_normalizada(p_timetotest character varying, p_type character varying, p_ismanual boolean, p_adjustmanualtime numeric) OWNER TO postgres;
 
 --
--- TOC entry 238 (class 1255 OID 16400)
+-- TOC entry 240 (class 1255 OID 16405)
 -- Name: fn_get_marca_normalizada_tonumber(character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -352,7 +352,7 @@ $$;
 ALTER FUNCTION public.fn_get_marca_normalizada_tonumber(p_marca character varying, p_type character varying) OWNER TO postgres;
 
 --
--- TOC entry 239 (class 1255 OID 16401)
+-- TOC entry 241 (class 1255 OID 16406)
 -- Name: fn_get_marca_normalizada_totext(character varying, character varying, boolean, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -529,7 +529,7 @@ $$;
 ALTER FUNCTION public.fn_get_marca_normalizada_totext(p_timetotest character varying, p_type character varying, p_ismanual boolean, p_adjustmanualtime numeric) OWNER TO postgres;
 
 --
--- TOC entry 283 (class 1255 OID 25342)
+-- TOC entry 242 (class 1255 OID 16408)
 -- Name: fn_get_records_for_result_as_text(integer, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -589,7 +589,78 @@ $$;
 ALTER FUNCTION public.fn_get_records_for_result_as_text(p_atletas_resultados_id integer, p_min_records_tipo_peso integer) OWNER TO atluser;
 
 --
--- TOC entry 240 (class 1255 OID 16403)
+-- TOC entry 249 (class 1255 OID 16428)
+-- Name: old_sp_atletas_resultados_delete_for_atleta(character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION old_sp_atletas_resultados_delete_for_atleta(p_atletas_codigo character varying, p_usuario_mod character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 01-04-2014
+
+Stored procedure que elimina todos los resultados de un atleta previa verificacion que exista.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos .
+
+Historia : Creado 03-04-2014
+*/
+
+BEGIN
+
+	IF EXISTS( select 1 from tb_atletas where atletas_codigo = p_atletas_codigo)
+	THEN
+		DELETE FROM tb_atletas_resultados where atletas_codigo = p_atletas_codigo;
+	ELSE
+		-- La prueba no existe
+		RAISE 'No se puede eliminar los resultados del atleta de codigo % ya que no existe',p_atletas_codigo USING ERRCODE = 'restrict_violation';
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.old_sp_atletas_resultados_delete_for_atleta(p_atletas_codigo character varying, p_usuario_mod character varying) OWNER TO atluser;
+
+--
+-- TOC entry 250 (class 1255 OID 16429)
+-- Name: old_sp_atletas_resultados_delete_for_competencia(character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION old_sp_atletas_resultados_delete_for_competencia(p_competencias_codigo character varying, p_usuario_mod character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+/**
+Elimina todos los resultados que petenecen a una competencia.
+
+Autor : Carlos arana Reategui
+Fecha : 01-04-2014
+
+Stored procedure que elimina todos los resultados que corresponden a una competencia.
+Historia : Creado 03-04-2014
+*/
+BEGIN
+
+	IF EXISTS( select 1 from tb_competencias where competencias_codigo = p_competencias_codigo)
+	THEN
+		DELETE FROM tb_atletas_resultados where atletas_resultados_id in
+		(
+			select atletas_resultados_id from tb_competencias_pruebas co
+			inner join tb_atletas_resultados ar on ar.competencias_pruebas_id = co.competencias_pruebas_id
+			where competencias_codigo = p_competencias_codigo
+		);
+	ELSE
+		-- La competencia no existe
+		RAISE 'No se puede eliminar los resultados de las pruebas para la competencia % ya que no existe',p_competencias_codigo USING ERRCODE = 'restrict_violation';
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.old_sp_atletas_resultados_delete_for_competencia(p_competencias_codigo character varying, p_usuario_mod character varying) OWNER TO atluser;
+
+--
+-- TOC entry 243 (class 1255 OID 16409)
 -- Name: old_sp_atletas_resultados_detalle_save_record_old(integer, integer, character varying, character varying, numeric, boolean, integer, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -846,7 +917,7 @@ $$;
 ALTER FUNCTION public.old_sp_atletas_resultados_detalle_save_record_old(p_atletas_resultados_detalle_id integer, p_atletas_resultados_id integer, p_pruebas_codigo character varying, p_atletas_resultados_detalle_resultado character varying, p_atletas_resultados_detalle_viento numeric, p_atletas_resultados_detalle_manual boolean, p_atletas_resultados_detalle_puntos integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 241 (class 1255 OID 16406)
+-- TOC entry 237 (class 1255 OID 16412)
 -- Name: old_sp_atletas_resultados_save_record(integer, character varying, character varying, character varying, date, character varying, numeric, integer, boolean, boolean, character varying, character, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -1230,7 +1301,7 @@ $$;
 ALTER FUNCTION public.old_sp_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_atletas_resultados_fecha date, p_atletas_resultados_resultado character varying, p_atletas_resultados_viento numeric, p_atletas_resultados_puesto integer, p_atletas_resultados_manual boolean, p_atletas_resultados_invalida boolean, p_atletas_resultados_observaciones character varying, p_atletas_resultados_origen character, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 242 (class 1255 OID 16409)
+-- TOC entry 238 (class 1255 OID 16415)
 -- Name: old_sp_atletas_resultados_save_record_old(integer, character varying, character varying, character varying, date, character varying, numeric, integer, boolean, boolean, boolean, character varying, character, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -1619,3022 +1690,11 @@ $$;
 ALTER FUNCTION public.old_sp_atletas_resultados_save_record_old(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_atletas_resultados_fecha date, p_atletas_resultados_resultado character varying, p_atletas_resultados_viento numeric, p_atletas_resultados_puesto integer, p_atletas_resultados_manual boolean, p_atletas_resultados_altura boolean, p_atletas_resultados_invalida boolean, p_atletas_resultados_observaciones character varying, p_atletas_resultados_origen character, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 236 (class 1255 OID 16412)
--- Name: sp_apppruebas_save_record(character varying, character varying, character varying, character varying, character varying, boolean, boolean, boolean, numeric, numeric, integer, numeric, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+-- TOC entry 267 (class 1255 OID 16460)
+-- Name: old_sp_pruebas_atletas_resultados_save_record(integer, character varying, character varying, character varying, boolean, date, numeric, character varying, integer, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
-CREATE FUNCTION sp_apppruebas_save_record(p_apppruebas_codigo character varying, p_apppruebas_descripcion character varying, p_pruebas_clasificacion_codigo character varying, p_apppruebas_marca_menor character varying, p_apppruebas_marca_mayor character varying, p_apppruebas_multiple boolean, p_apppruebas_verifica_viento boolean, p_apppruebas_viento_individual boolean, p_apppruebas_viento_limite_normal numeric, p_apppruebas_viento_limite_multiple numeric, p_apppruebas_nro_atletas integer, p_apppruebas_factor_manual numeric, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza los registros de los pruebas genericas.
-Previo verifica que no se definan limies de viento innecesriamente y asi mismo que la marca menor
-sea siempre menor que la marca mayor.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_apppruebas_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-DECLARE v_apppruebas_multiple BOOLEAN = FALSE;
-DECLARE v_unidad_medida_codigo CHARACTER VARYING(8);
-DECLARE v_marcaMenorValida INTEGER;
-DECLARE v_marcaMayorValida INTEGER;
-
-BEGIN
-	IF p_apppruebas_multiple = TRUE
-	THEN
-		IF p_apppruebas_verifica_viento = true OR
-			p_apppruebas_viento_limite_normal IS NOT NULL OR
-			p_apppruebas_viento_limite_multiple IS NOT NULL
-		THEN
-			RAISE 'Las pruebas multiples no pueden tener control de viento' USING ERRCODE = 'restrict_violation';
-		END IF;
-	ELSE IF p_apppruebas_verifica_viento = true
-		THEN
-			IF  p_apppruebas_viento_limite_normal IS NULL
-			THEN
-				RAISE 'Indique al menos el  limite de viento standard para la prueba' USING ERRCODE = 'restrict_violation';
-			END IF;
-		END IF;
-	END IF;
-
-	-- Verificamos si alguno con el mismo nombre existe e indicamos el error.
-	IF EXISTS (SELECT 1 FROM tb_app_pruebas_values
-		  where apppruebas_codigo != p_apppruebas_codigo and UPPER(LTRIM(RTRIM(apppruebas_descripcion))) = UPPER(LTRIM(RTRIM(p_apppruebas_descripcion))))
-	THEN
-		-- Excepcion de prueba con ese nombre existe
-		RAISE 'Ya existe un prueba con ese nombre pero diferente codigo' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Se verifica que el numero de atletas sea 1 o 4 , en el caso de null el default sera 1
-	IF p_apppruebas_nro_atletas is not null AND p_apppruebas_nro_atletas != 1 and p_apppruebas_nro_atletas != 4
-	THEN
-		-- Excepcion de numero de atletas incorecto.
-		RAISE 'Las pruebas pueden ser de uno o 4 atletas' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-
-	-- Leemos el tipo de prueba para saber la unidad de medida para la prueba
-	SELECT unidad_medida_codigo INTO
-		v_unidad_medida_codigo
-	FROM tb_pruebas_clasificacion c
-	WHERE c.pruebas_clasificacion_codigo = p_pruebas_clasificacion_codigo;
-
-	-- No lo pongo como constraint ya que por ahora es un string y requiere tratamiento especial
-	-- posiblemente estos campos requieran cambios.
-	-- Normalizamos a milisegundos , sin iportar si es manual o no ya que ambas medidas deben estar en las mismas
-	-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
-	-- normalizados.
-	v_marcaMenorValida := fn_get_marca_normalizada(p_apppruebas_marca_menor, v_unidad_medida_codigo, false, 0);
-	v_marcaMayorValida := fn_get_marca_normalizada(p_apppruebas_marca_mayor, v_unidad_medida_codigo, false, 0);
-
-	IF v_marcaMenorValida >= v_marcaMayorValida
-	THEN
-		RAISE 'EL limite de menor para la marca de la prueba no puede ser mayor o igual que el limite mayor' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-
-	IF p_is_update = '1'
-	THEN
-
-		-- Leemos el status actual de la prueba , si es multiple o no
-		SELECT apppruebas_multiple INTO
-			v_apppruebas_multiple
-		FROM tb_app_pruebas_values p
-		WHERE p.apppruebas_codigo = p_apppruebas_codigo;
-
-		-- SI actualmente es una prueba multiple y se desea pasar a prueba simple
-		-- verificamos si alguna prueba en la tabla de pruebas tiene ya definido la subpruebas
-		-- de ser asi no se permitira ,mientras no se elimine la prueba o se retire los detalles.
-		IF v_apppruebas_multiple = TRUE and p_apppruebas_multiple = FALSE
-		THEN
-			IF EXISTS (SELECT 1 FROM tb_pruebas pr
-			INNER JOIN tb_app_pruebas_values pv on pv.apppruebas_codigo = pr.pruebas_generica_codigo
-			INNER JOIN tb_pruebas_detalle pd  on pd.pruebas_codigo = pr.pruebas_codigo
-			WHERE pv.apppruebas_codigo = p_apppruebas_codigo LIMIT 1)
-			THEN
-				RAISE 'Esta prueba generica es actualmente multiple y ya tiene pruebas combinadas especificas con sus respectivas pruebas.<br>Corriga primero las pruebas especificas si es que no es un error de digitacion.' USING ERRCODE = 'restrict_violation';
-			END IF;
-		END IF;
-
-		-- HACEMOS EL UPDATE
-		UPDATE
-			tb_app_pruebas_values
-		SET
-			apppruebas_descripcion=p_apppruebas_descripcion,
-			pruebas_clasificacion_codigo=p_pruebas_clasificacion_codigo,
-			apppruebas_marca_menor=p_apppruebas_marca_menor,
-			apppruebas_marca_mayor=p_apppruebas_marca_mayor,
-			apppruebas_multiple=p_apppruebas_multiple,
-			apppruebas_verifica_viento=p_apppruebas_verifica_viento,
-			apppruebas_viento_individual=p_apppruebas_viento_individual,
-			apppruebas_viento_limite_normal=p_apppruebas_viento_limite_normal,
-			apppruebas_viento_limite_multiple=p_apppruebas_viento_limite_multiple,
-			apppruebas_nro_atletas=p_apppruebas_nro_atletas,
-			apppruebas_factor_manual=p_apppruebas_factor_manual,
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE apppruebas_codigo = p_apppruebas_codigo and xmin =p_version_id ;
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RAISE '' USING ERRCODE = 'record modified';
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_app_pruebas_values
-			(apppruebas_codigo,apppruebas_descripcion,pruebas_clasificacion_codigo,apppruebas_marca_menor,
-			 apppruebas_marca_mayor,apppruebas_multiple,apppruebas_verifica_viento,apppruebas_viento_individual,
-			 apppruebas_viento_limite_normal,
-			 apppruebas_viento_limite_multiple,apppruebas_nro_atletas,apppruebas_factor_manual,activo,usuario)
-		VALUES(p_apppruebas_codigo,
-			p_apppruebas_descripcion,
-			p_pruebas_clasificacion_codigo,
-			p_apppruebas_marca_menor,
-			p_apppruebas_marca_mayor,
-			p_apppruebas_multiple,
-			p_apppruebas_verifica_viento,
-			p_apppruebas_viento_individual,
-			p_apppruebas_viento_limite_normal,
-			p_apppruebas_viento_limite_multiple,
-			p_apppruebas_nro_atletas,
-			p_apppruebas_factor_manual,
-			p_activo,
-			p_usuario);
-
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_apppruebas_save_record(p_apppruebas_codigo character varying, p_apppruebas_descripcion character varying, p_pruebas_clasificacion_codigo character varying, p_apppruebas_marca_menor character varying, p_apppruebas_marca_mayor character varying, p_apppruebas_multiple boolean, p_apppruebas_verifica_viento boolean, p_apppruebas_viento_individual boolean, p_apppruebas_viento_limite_normal numeric, p_apppruebas_viento_limite_multiple numeric, p_apppruebas_nro_atletas integer, p_apppruebas_factor_manual numeric, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 286 (class 1255 OID 59194)
--- Name: sp_asigperfiles_save_record(integer, integer, integer, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_asigperfiles_save_record(p_asigperfiles_id integer, p_perfil_id integer, p_usuarios_id integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza los registros de aisgnacion de perfiles.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_asigperfiles_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 08-10-2013
-*/
-BEGIN
-
-	IF p_is_update = '1'
-	THEN
-		UPDATE
-			tb_sys_asigperfiles
-		SET
-			asigperfiles_id=p_asigperfiles_id,
-			perfil_id=p_perfil_id,
-			usuarios_id=p_usuarios_id,
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE asgper_id = p_asgper_id and xmin =p_version_id ;
-                --RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_sys_asigperfiles
-			(perfil_id,usuarios_id,activo,usuario)
-		VALUES(p_perfil_id,
-		       usuarios_id,
-		       p_activo,
-		       p_usuario);
-
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_asigperfiles_save_record(p_asigperfiles_id integer, p_perfil_id integer, p_usuarios_id integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 243 (class 1255 OID 16415)
--- Name: sp_atletas_pruebas_resultados_detalle_save_record(integer, integer, character varying, date, numeric, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_pruebas_resultados_detalle_save_record(p_atletas_resultados_id integer, p_competencias_pruebas_id integer, p_atletas_codigo character varying, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza un resultado de alguna prueba componente de una combinada sea
-heptatlon, decatlon , etc.
-
-Este stored procedure trata los registos de la tb_competencias_pruebas y tb_atletas_resultado a la vez ,
-pero solo permitira agregar o modificar a los rsuultados , a la otra tabla solo podra actualizarla , POR
-LO QUE SE REQUIERE QUE EXISTA EL REGISTRO DE LA PRUEBA SIEMPRE.
-
-
-DADO QUE ALGUNOS DATOS DE LA PRUEBA PUEDEN TAMBIEN SER MODIFICADOS, ESTE SP ES UTIL CUANDO LOS RESULTADOS
-SE AGREGAN DIRECTAMENTE A UN ATLETA, Y NO POR EL LADO DE LAS COMPETENCIAS.
-
-En la tabla tb_competencias_pruebas solo podra modificarse lo que respecta a lasc condiciones de
-la prueba , digase viento,material,puntosfecha , observaciones , nada mas.
-
-El registro de la competencia principal solo sera actualizado en lo que respecta a los puntos acumulados y lo que es viento,material,anemometro.
-
-
-Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
-consistentemente,
-
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-SI EL PARAMETRO p_atletas_resultados_id es null se asumira es un add de lo contrario se asumira un update.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_pruebas_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-DECLARE v_categorias_codigo_competencia character varying(15);
-DECLARE v_pruebas_codigo character varying(15);
-DECLARE v_competencias_codigo character varying(15);
-DECLARE v_pruebas_sexo_new  character(1);
-DECLARE v_atletas_sexo_new  character(1);
-DECLARE v_atletas_fecha_nacimiento_new DATE;
-DECLARE v_apppruebas_marca_menor_new character varying(12);
-DECLARE v_apppruebas_marca_mayor_new character varying(12);
-DECLARE v_apppruebas_verifica_viento boolean;
-DECLARE v_agnos INT;
-DECLARE v_marca_test integer;
-DECLARE v_unidad_medida_codigo character varying(8);
-DECLARE v_marcaMenorValida integer;
-DECLARE v_marcaMayorValida integer;
-DECLARE v_competencias_pruebas_origen_id integer;
-DECLARE v_competencias_pruebas_id integer;
-DECLARE v_prueba_saved integer=0;
-DECLARE v_unidad_medida_tipo character(1);
-DECLARE v_apppruebas_viento_individual boolean;
-
-BEGIN
-
-	-- VERIFICACIONES PARA LA COMPETENCIA / PRUEBA ENVIADA.
-
-	-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
-	-- de lo contrario es imposible hacer un update.
-	-- Solo busca aquellas que no son parte de una combinada.
-	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_codigo
-		INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_codigo
-	FROM tb_competencias_pruebas cp
-	WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
-
-	--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
-	--RAISE NOTICE 'v_competencias_pruebas_origen_id %',v_competencias_pruebas_origen_id;
-
-	IF v_competencias_pruebas_id IS  NULL
-	THEN
-		-- La prueba no existe
-		RAISE 'Para la competencia , la prueba no se ha encontrado , esto es incorrecto durante una actualizacion de resultados'  USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	IF v_competencias_pruebas_origen_id IS NULL
-	THEN
-		-- La prueba no existe
-		RAISE 'Solo resultados para pruebas dentro de una combinada son permitidos'  USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- En las combinadas un atleta solo puede realizar una vez la prueba ya que no existin semifinales y finales sino
-	-- solo se agrupan pero el resultado es consolidado. (solo durante add osea p_atletas_resultados_id IS NULL)
-	IF v_competencias_pruebas_origen_id IS NOT NULL and p_atletas_resultados_id IS NULL
-	THEN
-		IF EXISTS(SELECT 1 FROM tb_competencias_pruebas  cp
-				INNER JOIN tb_atletas_resultados ar on ar.competencias_pruebas_id = cp.competencias_pruebas_id
-				WHERE cp.pruebas_codigo = v_pruebas_codigo AND
-					competencias_pruebas_origen_id = v_competencias_pruebas_origen_id AND
-					atletas_codigo=p_atletas_codigo)
-		THEN
-			RAISE 'El atleta ya registra resultado para dicha prueba, en el caso de las combinadas no puede realizar una prueba mas de una vez'  USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-
-	-- Busxcamos la categoria de la competencia, los datos de la prueba y del atleta
-	-- basados en los datos actuales a grabar, esto no permitira saber si la relacion
-	-- COmPETencia,PrueBA;ATLETA es correcta , digase si la competencia es de mayores
-	-- la prueba debe ser de mayores y el atleta debe ser mayor, asi mismo si la prueba es para
-	-- el sexo femenino , el atleta debe ser mujer
-	SELECT categorias_codigo,competencias_fecha_inicio,competencias_fecha_final INTO
-		v_categorias_codigo_competencia
-	FROM tb_competencias where competencias_codigo=v_competencias_codigo;
-
-
-	-- Buscamos los datos de la gnerica de prueba que actualmente se quiere grabar para saber si tambien sera multiple.
-	SELECT pruebas_sexo,apppruebas_marca_menor,
-		apppruebas_marca_mayor,c.unidad_medida_codigo,apppruebas_verifica_viento,unidad_medida_tipo,
-		apppruebas_viento_individual
-	INTO
-		v_pruebas_sexo_new,v_apppruebas_marca_menor_new,
-		v_apppruebas_marca_mayor_new,v_unidad_medida_codigo,v_apppruebas_verifica_viento,v_unidad_medida_tipo,
-		v_apppruebas_viento_individual
-	FROM tb_pruebas pr
-	INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
-	INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
-	INNER JOIN tb_unidad_medida um on um.unidad_medida_codigo = c.unidad_medida_codigo
-	where pr.pruebas_codigo = v_pruebas_codigo;
-
-	-- Se busca el sexo del atleta
-	SELECT atletas_sexo,atletas_fecha_nacimiento INTO
-		v_atletas_sexo_new,v_atletas_fecha_nacimiento_new
-	FROM tb_atletas at
-	where at.atletas_codigo = p_atletas_codigo;
-
-		raise notice 'v_atletas_sexo_new: %',v_atletas_sexo_new;
-		raise notice 'v_pruebas_sexo_new: %',v_pruebas_sexo_new;
-
-	-- Luego si el sexo del atleta y el sexo de la prueba corresponden.
-	IF coalesce(v_atletas_sexo_new,'X') != coalesce(v_pruebas_sexo_new,'Y')
-	THEN
-		RAISE 'El sexo del atleta no corresponde a la de la prueba indicada, ambos deben ser iguales ' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- La mas dificil , si en la fecha de la prueba el atleta pertenecia a la categoria de
-	-- la competencia. Para esto
-	-- a) Que edad tenia el atleta en la fecha de la competencia.
-	-- b) hasta que edad permite la categoria.
-	select date_part( 'year'::text,p_competencias_pruebas_fecha::date)-date_part( 'year'::text,v_atletas_fecha_nacimiento_new::date) INTO
-		v_agnos;
-
-	-- Veamos en la categoria si esta dentro del rango
-	IF NOT EXISTS(SELECT 1 from tb_categorias WHERE categorias_codigo = v_categorias_codigo_competencia AND
-		v_agnos >= categorias_edad_inicial AND v_agnos <= categorias_edad_final )
-	THEN
-		-- Excepcion el atleta no esta dentro de la categoria
-		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',p_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo_competencia USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Si el resultado de la prueba esta dentro de los valores validos
-	------------------------------------------------------------------------------------
-
-	-- Normalizamos a milisegundos , sin importar si es manual o no ya que ambas medidas deben estar en las mismas
-	-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
-	-- normalizados.
-	raise notice 'marca menor : %',v_apppruebas_marca_menor_new;
-	raise notice 'marca mayor : %',v_apppruebas_marca_mayor_new;
-	raise notice 'unidad_medida : %',v_unidad_medida_codigo;
-	raise notice 'p_atletas_resultados_resultado : %',p_atletas_resultados_resultado;
-
-	v_marcaMenorValida := fn_get_marca_normalizada(v_apppruebas_marca_menor_new, v_unidad_medida_codigo, false, 0);
-	v_marcaMayorValida := fn_get_marca_normalizada(v_apppruebas_marca_mayor_new, v_unidad_medida_codigo, false, 0);
-	v_marca_test := fn_get_marca_normalizada(p_atletas_resultados_resultado, v_unidad_medida_codigo, false, 0);
-
-	IF v_marca_test < v_marcaMenorValida OR v_marca_test > v_marcaMayorValida
-	THEN
-		--La marca indicada esta fuera del rango permitido
-		RAISE 'La marca indicada de % esta fuera del rango permitido entre % y % ', p_atletas_resultados_resultado,v_apppruebas_marca_menor_new,v_apppruebas_marca_mayor_new USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Si se indica marca , deben indicarse puntos , por aqui solo se graban los componentes de la
-	-- conmbinada o pruebas normales, dado validacion anterior
-	IF v_competencias_pruebas_origen_id IS NOT NULL
-	THEN
-		IF v_marca_test != 0 AND coalesce(p_atletas_resultados_puntos,0) = 0 OR
-			v_marca_test = 0 AND coalesce(p_atletas_resultados_puntos,0) != 0
-		THEN
-			RAISE 'Si la marca o puntos son mayores que cero , ambos deben estar indicados ' USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-
-	IF v_apppruebas_verifica_viento = TRUE --AND v_apppruebas_viento_individual = TRUE
-	THEN
-		IF p_competencias_pruebas_viento is null
-		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
-		END IF;
-	ELSE
-		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
-		p_competencias_pruebas_viento := NULL;
-	END IF;
-
-	-- Si la unidad de medida de la prueba no es tiempo
-	-- se blanquea (false) al campo que indica si la medida manual.
-	IF v_unidad_medida_tipo != 'T'
-	THEN
-		p_competencias_pruebas_manual := false;
-	END IF;
-
-	-- Si la prueba no requiere verificacion de viento ponemos
-	-- que si tuvo.
-	IF v_apppruebas_verifica_viento = FALSE
-	THEN
-		p_competencias_pruebas_anemometro := true;
-	END IF;
-
-	---------------------------------------------------------------------
-	-- FIN VALIDACIONES PRIMARIAS - AHORA GRABACION.
-	----------------------------------------------------------------------
-
-	-- Grabamos cambios a la prueba
-	select * from (
-		select sp_competencias_pruebas_save_record(
-			v_competencias_pruebas_id::integer,
-			v_competencias_codigo,
-			v_pruebas_codigo,
-			NULL::integer,
-			p_competencias_pruebas_fecha,
-			p_competencias_pruebas_viento,
-			p_competencias_pruebas_manual,
-			'FI', -- NO ES VARIABLE PARA ESTE CASO
-			1,  -- N ES VARIABLE PARA ESTE CASO
-			p_competencias_pruebas_anemometro,
-			p_competencias_pruebas_material_reglamentario,
-			p_competencias_pruebas_observaciones,
-			p_atletas_resultados_protected,
-			p_activo ,
-			p_usuario,
-			NULL::integer,
-			1::bit) as updins) as ans
-	 into v_prueba_saved
-	 where updins is not null;
-
-	 IF v_prueba_saved != 1
-	 THEN
-		-- La prueba no existe
-		RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
-	 END IF;
-
-	-- Si se conoce la id del resultado se trata de un update.
-	IF p_atletas_resultados_id IS NOT NULL
-	THEN
-		IF NOT EXISTS(SELECT 1 FROM tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id
-			AND atletas_codigo =  p_atletas_codigo)
-		THEN
-			-- La prueba no existe
-			RAISE 'Al actualizar un resultado no puede cambiarse el atleta o el registro fue eliminado, verifique por favor...'  USING ERRCODE = 'restrict_violation';
-		END IF;
-
-		-- Dado que durante un update no se actualiza el codigo del del atleta , y este parametro podria ser null o cualquier valor
-		-- no valido , obtenemos el atleta del registro correspondiente , para uso posterior , en al caso de un add el atleta
-		-- en el parametro debe ser obviamente validoy se tomara del parametroo mismo.
-		select atletas_codigo into p_atletas_codigo from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id;
-
-		-- El  update
-		-- Se hace el update del resultado , en este caso todos son parte de una combinada.
-		UPDATE
-			tb_atletas_resultados
-		SET
-			-- Aqui solo llegan pruebas parte de una combinada
-			atletas_resultados_resultado =  p_atletas_resultados_resultado,
-			atletas_resultados_puntos =  p_atletas_resultados_puntos,
-			atletas_resultados_puesto =  coalesce(p_atletas_resultados_puesto,0),
-			atletas_resultados_protected =  p_atletas_resultados_protected,
-			atletas_resultados_viento = (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end),
-			activo = p_activo,
-			usuario_mod = p_usuario
-		WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
-	ELSE
-		-- Con el id de la prueba creada o existente grabamos el resultado.
-		INSERT INTO
-			tb_atletas_resultados
-			(
-			 competencias_pruebas_id,
-			 atletas_codigo,
-			 atletas_resultados_resultado,
-			 atletas_resultados_puesto,
-			 atletas_resultados_puntos,
-			 atletas_resultados_viento,
-			 atletas_resultados_protected,
-			 activo,
-			 usuario)
-		VALUES(
-			 v_competencias_pruebas_id,
-			 p_atletas_codigo,
-			 p_atletas_resultados_resultado,
-			 coalesce(p_atletas_resultados_puesto,0),
-			 p_atletas_resultados_puntos,
-			 (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end),
-			 p_atletas_resultados_protected,
-			 p_activo,
-			 p_usuario);
-
-		-- esta por gusto nadie la usa
-		--SELECT currval(pg_get_serial_sequence('tb_atletas_resultados', 'atletas_resultados_id'))
-		--	INTO p_atletas_resultados_id;
-
-	END IF;
-
-	-- Todo ok , si es una prueba parte de una combinada actualizamos el total de puntos
-	-- en la principal.
-	IF FOUND THEN
-		-- Vemos si alguna prueba de esta competencia tiene datos que invalidan la prueba , ya sea anemometro , material , o si
-		-- el resultado es manual , para asi actualizar la prueba principal.
-		UPDATE tb_competencias_pruebas t1
-		  SET
-			competencias_pruebas_manual = (case when t2.cpm > 0 then TRUE else FALSE end),
-			competencias_pruebas_anemometro = (case when t2.cpa > 0 then FALSE else TRUE end),
-			competencias_pruebas_material_reglamentario = (case when t2.cpmr > 0 then FALSE else TRUE end)
-		  FROM (
-			select
-			max(competencias_pruebas_origen_id) as competencias_pruebas_origen_id,
-			sum((case when competencias_pruebas_manual = TRUE then 1 else 0 end)) as cpm,
-			sum((case when competencias_pruebas_anemometro = FALSE then 1 else 0 end)) as cpa,
-			sum((case when competencias_pruebas_material_reglamentario = FALSE then 1 else 0 end)) as cpmr
-			 from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id
-		  ) t2
-		  WHERE  t1.competencias_pruebas_id=t2.competencias_pruebas_origen_id;
-
-		-- Aqui todas son parte de una combinada.
-		-- actualizamos el resultado de la principal con el nuevo acumulado de puntos
-		UPDATE
-		tb_atletas_resultados
-		SET
-			atletas_resultados_resultado =  (
-				select sum(atletas_resultados_puntos) from tb_atletas_resultados
-					where competencias_pruebas_id in  (
-						select competencias_pruebas_id from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id and atletas_codigo=p_atletas_codigo)
-						)
-		WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo;
-
-		RETURN 1;
-	ELSE
-		--RAISE '' USING ERRCODE = 'record modified';
-		RETURN null;
-	END IF;
-
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_pruebas_resultados_detalle_save_record(p_atletas_resultados_id integer, p_competencias_pruebas_id integer, p_atletas_codigo character varying, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer) OWNER TO atluser;
-
---
--- TOC entry 244 (class 1255 OID 16418)
--- Name: sp_atletas_pruebas_resultados_save_record(integer, character varying, character varying, character varying, boolean, date, numeric, character varying, integer, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_pruebas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza los registros de los resultados de las pruebas, pero
-ADEMAS agrega las pruebas de no existir, basicamente debe ser usado si se desea agregar o actualizar
-un resultado de un atleta , pero condicionado a que la prueba exista , en otras palabras
-para agregar un resultado este sp asegura que la prueba deba existir.
-
-ALGUNOS DATOS DE LA PRUEBA PUEDEN TAMBIEN SER MODIFICADOS, ESTE SP ES UTIL CUANDO LOS RESULTADOS
-SE AGREGAN DIRECTAMENTE A UN ATLETA, Y NO POR EL LADO DE LAS COMPETENCIAS.
-
-Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
-consistentemente,
-
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_pruebas_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-DECLARE v_prueba_multiple_new boolean= FALSE;
-DECLARE v_categorias_codigo_competencia character varying(15);
-DECLARE v_pruebas_sexo_new  character(1);
-DECLARE v_atletas_sexo_new  character(1);
-DECLARE v_atletas_fecha_nacimiento_new DATE;
-DECLARE v_apppruebas_marca_menor_new character varying(12);
-DECLARE v_apppruebas_marca_mayor_new character varying(12);
-DECLARE v_agnos INT;
-DECLARE v_marca_test integer;
-DECLARE v_unidad_medida_codigo character varying(8);
-DECLARE v_marcaMenorValida integer;
-DECLARE v_marcaMayorValida integer;
-DECLARE v_competencias_pruebas_origen_id integer;
-DECLARE v_competencias_pruebas_id integer;
-DECLARE v_competencias_pruebas_changed_id integer;
-DECLARE v_prueba_saved integer=0;
-DECLARE v_isFromCombinada boolean := false;
-DECLARE v_competencias_pruebas_tipo_serie_old character varying(2);
-DECLARE v_competencias_pruebas_nro_serie_old integer;
-DECLARE v_apppruebas_viento_individual BOOLEAN;
-
-BEGIN
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-
-	-- Busxcamos la categoria de la competencia, los datos de la prueba y del atleta
-	-- basados en los datos actuales a grabar, esto no permitira saber si la relacion
-	-- COmPETencia,PrueBA;ATLETA es correcta , digase si la competencia es de mayores
-	-- la prueba debe ser de mayores y el atleta debe ser mayor, asi mismo si la prueba es para
-	-- el sexo femenino , el atleta debe ser mujer
-	SELECT categorias_codigo,competencias_fecha_inicio,competencias_fecha_final INTO
-		v_categorias_codigo_competencia
-	FROM tb_competencias where competencias_codigo=p_competencias_codigo;
-
-
-	-- Buscamos los datos de la gnerica de prueba que actualmente se quiere grabar para saber si tambien sera multiple.
-	SELECT apppruebas_multiple,pruebas_sexo,apppruebas_marca_menor,
-		apppruebas_marca_mayor,c.unidad_medida_codigo,apppruebas_viento_individual
-	INTO
-		v_prueba_multiple_new,v_pruebas_sexo_new,v_apppruebas_marca_menor_new,
-		v_apppruebas_marca_mayor_new,v_unidad_medida_codigo,v_apppruebas_viento_individual
-	FROM tb_pruebas pr
-	INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
-	INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
-	where pr.pruebas_codigo = p_pruebas_codigo;
-
-	-- Se busca el sexo del atleta
-	SELECT atletas_sexo,atletas_fecha_nacimiento INTO
-		v_atletas_sexo_new,v_atletas_fecha_nacimiento_new
-	FROM tb_atletas at
-	where at.atletas_codigo = p_atletas_codigo;
-
-	--	raise notice 'v_atletas_sexo_new: %',v_atletas_sexo_new;
-	--	raise notice 'v_pruebas_sexo_new: %',v_pruebas_sexo_new;
-
-	-- Luego si el sexo del atleta y el sexo de la prueba corresponden.
-	IF coalesce(v_atletas_sexo_new,'X') != coalesce(v_pruebas_sexo_new,'Y')
-	THEN
-		RAISE 'El sexo del atleta no corresponde a la de la prueba indicada, ambos deben ser iguales ' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- La mas dificil , si en la fecha de la prueba el atleta pertenecia a la categoria de
-	-- la competencia. Para esto
-	-- a) Que edad tenia el atleta en la fecha de la competencia.
-	-- b) hasta que edad permite la categoria.
-	select date_part( 'year'::text,p_competencias_pruebas_fecha::date)-date_part( 'year'::text,v_atletas_fecha_nacimiento_new::date) INTO
-		v_agnos;
-
-	-- Veamos en la categoria si esta dentro del rango
-	-- Importante , basta que la atleta sea menor para la categoria que compitio , ya que una juvenil o menor
-	-- podrian competir en una prueba de mayores , por ende si se toma como rango no
-	-- funcionaria.
-	IF NOT  EXISTS(SELECT 1 from tb_categorias WHERE categorias_codigo = v_categorias_codigo_competencia AND
-		 v_agnos <= categorias_edad_final )
-	THEN
-		-- Excepcion el atleta no esta dentro de la categoria
-		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',p_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo_competencia USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Si el resultado de la prueba esta dentro de los valores validos
-	------------------------------------------------------------------------------------
-	-- Si la prueba a grabar no es multiple , esto ya que las combinadas no conocen el resultado
-	-- hasta que se ingrese su detalle y es alli donde se valida, es por esto que este campo de resultado es
-	-- actualizado durante la insercion de los detalles.
-	IF v_prueba_multiple_new != TRUE -- OR (v_prueba_multiple_new = TRUE and p_is_update = '1')
-	THEN
-		-- Normalizamos a milisegundos , sin importar si es manual o no ya que ambas medidas deben estar en las mismas
-		-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
-		-- normalizados.
-		--raise notice 'marca menor : %',v_apppruebas_marca_menor_new;
-		--raise notice 'marca mayor : %',v_apppruebas_marca_mayor_new;
-		--raise notice 'unidad_medida : %',v_unidad_medida_codigo;
-		--raise notice 'p_atletas_resultados_resultado : %',p_atletas_resultados_resultado;
-
-		v_marcaMenorValida := fn_get_marca_normalizada(v_apppruebas_marca_menor_new, v_unidad_medida_codigo, false, 0);
-		v_marcaMayorValida := fn_get_marca_normalizada(v_apppruebas_marca_mayor_new, v_unidad_medida_codigo, false, 0);
-		v_marca_test := fn_get_marca_normalizada(p_atletas_resultados_resultado, v_unidad_medida_codigo, false, 0);
-
-		IF v_marca_test < v_marcaMenorValida OR v_marca_test > v_marcaMayorValida
-		THEN
-			--La marca indicada esta fuera del rango permitido
-			RAISE 'La marca indicada de % esta fuera del rango permitido entre % y % ', p_atletas_resultados_resultado,v_apppruebas_marca_menor_new,v_apppruebas_marca_mayor_new USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-
-
-	IF p_is_update = '1'
-	THEN
-		-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
-		-- de lo contrario es imposible hacer un update.
-		-- Solo busca aquellas que no son parte de una combinada.
-		SELECT competencias_pruebas_id,competencias_pruebas_origen_id,competencias_pruebas_tipo_serie,competencias_pruebas_nro_serie
-			INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,
-				v_competencias_pruebas_tipo_serie_old,v_competencias_pruebas_nro_serie_old
-		FROM tb_competencias_pruebas cp
-		WHERE cp.competencias_pruebas_id =  (select competencias_pruebas_id from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id);
-
-
-		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
-		--RAISE NOTICE 'v_competencias_pruebas_origen_id %',v_competencias_pruebas_origen_id;
-
-		IF v_competencias_pruebas_id IS  NULL
-		THEN
-			-- La prueba no existe
-			RAISE 'Para la competencia , la prueba no se ha encontrado , esto es incorrecto durante una actualizacion de resultados'  USING ERRCODE = 'restrict_violation';
-		END IF;
-
-		IF v_competencias_pruebas_origen_id IS NOT NULL
-		THEN
-			-- es parte de una combinada
-			v_isFromCombinada := true;
-		END IF;
-
-		--Si es null el numero de serie le ponemos 1
-		p_competencias_pruebas_nro_serie := coalesce(p_competencias_pruebas_nro_serie,1);
-		--RAISE NOTICE 'v_competencias_pruebas_tipo_serie_old = %',v_competencias_pruebas_tipo_serie_old;
-		--RAISE NOTICE 'p_competencias_pruebas_tipo_serie = %',p_competencias_pruebas_tipo_serie;
-		--RAISE NOTICE 'v_competencias_pruebas_nro_serie_old = %',v_competencias_pruebas_nro_serie_old;
-		--RAISE NOTICE 'p_competencias_pruebas_nro_serie = %',p_competencias_pruebas_nro_serie;
-
-		-- en este caso necesitamos agregar la prueba o hacerle update si ya existe.
-		-- Debemos recordar que el tipo y nro de serie hacen unica una prueba por ende si estos valores han cmbiado
-		-- en realidad estamos cambiando de prueba al resultado, por ende haremos 2 cosas.
-		-- 1 Tratar de agregar la prueba (se creara si no existe).
-		-- Trataremos de eliminar la anterior prueba siempre que no tenga resultados adjuntos.
-		IF v_competencias_pruebas_tipo_serie_old != p_competencias_pruebas_tipo_serie OR v_competencias_pruebas_nro_serie_old != p_competencias_pruebas_nro_serie
-		THEN
-			--RAISE NOTICE 'ESTA MODIFICADO';
-			-- Buscamos si esta posible nueva prueba ya existe
-			SELECT competencias_pruebas_id INTO v_competencias_pruebas_changed_id
-			FROM tb_competencias_pruebas cp
-			WHERE cp.competencias_codigo =  p_competencias_codigo AND
-				cp.pruebas_codigo =  p_pruebas_codigo AND
-				cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
-				cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie AND
-				cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
-
-			--Si existe un id , ya existe y actualizamos de lo contrario agregamos.
-			IF v_competencias_pruebas_changed_id IS NOT NULL
-			THEN
-
-				-- Debemos actualizar la prueba
-				-- Ejecutamos sin interesarnos el retorno ya que no chequearemos
-				-- si fue cambiada por exo xemin (versionId) es null.
-				PERFORM  sp_competencias_pruebas_save_record(
-					v_competencias_pruebas_changed_id::integer,
-					p_competencias_codigo,
-					p_pruebas_codigo,
-					NULL::integer,
-					p_competencias_pruebas_fecha,
-					p_competencias_pruebas_viento,
-					p_competencias_pruebas_manual,
-					p_competencias_pruebas_tipo_serie,
-					p_competencias_pruebas_nro_serie,
-					p_competencias_pruebas_anemometro,
-					p_competencias_pruebas_material_reglamentario,
-					p_competencias_pruebas_observaciones,
-					p_atletas_resultados_protected,
-					p_activo ,
-					p_usuario,
-					NULL::integer,
-					1::bit);
-
-				v_competencias_pruebas_id := v_competencias_pruebas_changed_id;
-			ELSE
-				-- Debemos agregar la prueba a la competencia ya que no existe.
-				PERFORM  sp_competencias_pruebas_save_record(
-					NULL::integer,
-					p_competencias_codigo,
-					p_pruebas_codigo,
-					NULL::integer,
-					p_competencias_pruebas_fecha,
-					p_competencias_pruebas_viento,
-					p_competencias_pruebas_manual,
-					p_competencias_pruebas_tipo_serie,
-					p_competencias_pruebas_nro_serie,
-					p_competencias_pruebas_anemometro,
-					p_competencias_pruebas_material_reglamentario,
-					p_competencias_pruebas_observaciones,
-					p_atletas_resultados_protected,
-					p_activo ,
-					p_usuario,
-					NULL::integer,
-					0::bit);
-
-				-- Si se ha grabado obtenemos el id.
-				SELECT competencias_pruebas_id INTO v_competencias_pruebas_id
-				FROM tb_competencias_pruebas cp
-				WHERE cp.competencias_codigo =  p_competencias_codigo AND
-				      cp.pruebas_codigo =  p_pruebas_codigo AND
-				      cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
-				      cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie AND
-				      cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
-
-
-			END IF;
-
-		ELSE
-			--RAISE NOTICE 'NOOOOOOO ESTA MODIFICADO';
-			-- Grabamos cambios a la prueba
-			select * from (
-				select sp_competencias_pruebas_save_record(
-					v_competencias_pruebas_id::integer,
-					p_competencias_codigo,
-					p_pruebas_codigo,
-					NULL::integer,
-					p_competencias_pruebas_fecha,
-					p_competencias_pruebas_viento,
-					p_competencias_pruebas_manual,
-					p_competencias_pruebas_tipo_serie,
-					p_competencias_pruebas_nro_serie,
-					p_competencias_pruebas_anemometro,
-					p_competencias_pruebas_material_reglamentario,
-					p_competencias_pruebas_observaciones,
-					p_atletas_resultados_protected,
-					p_activo ,
-					p_usuario,
-					NULL::integer,
-					1::bit) as updins) as ans
-			 into v_prueba_saved
-			 where updins is not null;
-
-			RAISE NOTICE 'GRABO LA COMPETENCIA';
-
-			 IF v_prueba_saved != 1
-			 THEN
-				-- La prueba no existe
-				RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
-			 END IF;
-		END IF;
-
-		-- El  update
-		-- Se hace el update del resultado , de ser un resultado de una prueba que es parte de una prueba
-		-- combinada o multiple se hace el update de la principal con la nueva suma total de puntos acumulados.
-		UPDATE
-			tb_atletas_resultados
-		SET
-			atletas_resultados_id = p_atletas_resultados_id,
-			competencias_pruebas_id = v_competencias_pruebas_id,
-			atletas_codigo =  p_atletas_codigo,
-			-- Si la prueba es multiple el update no modifica el valor del resultado ya que este es actualizado
-			-- cada vez que se inserta o modifica un detalle , de lo contrario si se actualiza de acuerdo al parametro
-			atletas_resultados_resultado =  (case when v_prueba_multiple_new = true then atletas_resultados_resultado else p_atletas_resultados_resultado end),
-			atletas_resultados_puntos =  (case when v_prueba_multiple_new = false and v_isFromCombinada = true then p_atletas_resultados_puntos else atletas_resultados_puntos end),
-			atletas_resultados_puesto =  p_atletas_resultados_puesto,
-			-- el viento solo si es una prueba que la requiera individualmente y no sea la principal combinada.
-			atletas_resultados_viento = (case when coalesce(v_prueba_multiple_new,false) = TRUE
-				THEN NULL
-				ELSE (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end)
-			END),
-			atletas_resultados_protected =  p_atletas_resultados_protected,
-			activo = p_activo,
-			usuario_mod = p_usuario
-		WHERE atletas_resultados_id = p_atletas_resultados_id  and xmin =p_version_id ;
-
-		RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-		-- Todo ok , si es una prueba parte de una combinada actualizamos el total de puntos
-		-- en la principal.
-		IF FOUND THEN
-			--RAISE NOTICE  'ACTUALIZA EL RESULTADO';
-
-			-- Vemos si alguna prueba de esta competencia tiene datos que invalidan la prueba , ya sea anemometro , material , o si
-			-- el resultado es manual , para asi actualizar la prueba principal.
-			UPDATE tb_competencias_pruebas t1
-			  SET
-				competencias_pruebas_manual = (case when t2.cpm > 0 then TRUE else FALSE end),
-				competencias_pruebas_anemometro = (case when t2.cpa > 0 then FALSE else TRUE end),
-				competencias_pruebas_material_reglamentario = (case when t2.cpmr > 0 then FALSE else TRUE end)
-			  FROM (
-				select
-				max(competencias_pruebas_origen_id) as competencias_pruebas_origen_id,
-				sum((case when competencias_pruebas_manual = TRUE then 1 else 0 end)) as cpm,
-				sum((case when competencias_pruebas_anemometro = FALSE then 1 else 0 end)) as cpa,
-				sum((case when competencias_pruebas_material_reglamentario = FALSE then 1 else 0 end)) as cpmr
-				 from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id
-
-			  ) t2
-			  WHERE  t1.competencias_pruebas_id=t2.competencias_pruebas_origen_id;
-
-			-- Si es parte de una combinada actualizo el resultado de la principal.
-			IF v_isFromCombinada = TRUE
-			THEN
-				UPDATE
-				tb_atletas_resultados
-				SET
-					atletas_resultados_resultado =  (
-						select sum(atletas_resultados_puntos) from tb_atletas_resultados
-							where competencias_pruebas_id in  (
-								select distinct competencias_pruebas_id from tb_competencias_pruebas
-									where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id))
-				WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id AND atletas_codigo = p_atletas_codigo;
-			END IF;
-
-			RETURN 1;
-		ELSE
-			--RAISE '' USING ERRCODE = 'record modified';
-			RETURN null;
-		END IF;
-
-	ELSE
-		-- En el caso de agregar un resultado , verificamos si ya existe la prueba , de existir usamo el id
-		-- de lo ocntrario creamos la prueba, en la competencia reqquerida.
-		-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
-		-- de lo contrario es imposible hacer un update.
-		-- Asi mismo no puede ser parte de una combinada (cp.competencias_pruebas_origen_combinada = FALSE)
-		--RAISE NOTICE 'El origen combinada a chequear es %',p_competencias_pruebas_origen_combinada;
-		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
-
-		SELECT competencias_pruebas_id ,competencias_pruebas_origen_id
-		INTO v_competencias_pruebas_id ,v_competencias_pruebas_origen_id
-		FROM tb_competencias_pruebas cp
-		WHERE cp.competencias_codigo =  p_competencias_codigo AND
-		      cp.pruebas_codigo =  p_pruebas_codigo AND
-		      cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
-		      cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie AND
-		      cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
-
-
-		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
-
-		-- Si  la prueba es parte de una combinada ya sea porque tiene un origen o la misma prueba sea parte de una combinada
-		-- verificado a traves de si esta en algun detalle de combinada (tb_pruebas_detalle)
-		-- No se permite ingresar por este lado.
-		IF v_competencias_pruebas_origen_id IS NOT NULL OR EXISTS(select 1 from tb_pruebas_detalle where pruebas_detalle_prueba_codigo = p_pruebas_codigo)
-		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'Los resultados para las pruebas que componen una combinada no pueden agregarse  individualmente, agregue la prueba combinada'  USING ERRCODE = 'restrict_violation';
-		END IF;
-
-		-- Si la prueba no existe la creamos
-		IF v_competencias_pruebas_id IS NULL
-		THEN
-			-- La prueba multiple usara siempre estos defaults, para grabarse
-			IF coalesce(v_prueba_multiple_new,false) = TRUE
-			THEN
-				p_competencias_pruebas_tipo_serie := 'FI';
-				p_competencias_pruebas_nro_serie := 1;
-
-			END IF;
-
-			-- Si es null el numero de serie le ponemos 1
-			p_competencias_pruebas_nro_serie := coalesce(p_competencias_pruebas_nro_serie,1);
-
-			-- Debemos agregar la prueba a la competencia ya que no existe.
-			PERFORM  sp_competencias_pruebas_save_record(
-				NULL::integer,
-				p_competencias_codigo,
-				p_pruebas_codigo,
-				NULL::integer,
-				p_competencias_pruebas_fecha,
-				p_competencias_pruebas_viento,
-				p_competencias_pruebas_manual,
-				p_competencias_pruebas_tipo_serie,
-				p_competencias_pruebas_nro_serie,
-				p_competencias_pruebas_anemometro,
-				p_competencias_pruebas_material_reglamentario,
-				p_competencias_pruebas_observaciones,
-				p_atletas_resultados_protected,
-				p_activo ,
-				p_usuario,
-				NULL::integer,
-				0::bit);
-
-			-- La prueba multiple usara siempre estos defaults.
-			IF coalesce(v_prueba_multiple_new,false) = TRUE
-			THEN
-				p_competencias_pruebas_viento := NULL;
-				p_competencias_pruebas_manual := FALSE;
-				p_competencias_pruebas_anemometro := TRUE;
-				p_competencias_pruebas_material_reglamentario := TRUE;
-
-			END IF;
-
-			-- Si se ha grabado obtenemos el id.
-			SELECT competencias_pruebas_id INTO v_competencias_pruebas_id
-			FROM tb_competencias_pruebas cp
-			WHERE cp.competencias_codigo =  p_competencias_codigo AND
-			      cp.pruebas_codigo =  p_pruebas_codigo AND
-			      cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
-			      cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie AND
-			      cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
---
--- 			RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
--- 			RAISE NOTICE 'p_competencias_codigo %',p_competencias_codigo;
--- 			RAISE NOTICE 'p_pruebas_codigo %',p_pruebas_codigo;
--- 			RAISE NOTICE 'p_competencias_pruebas_tipo_serie %',p_competencias_pruebas_tipo_serie;
--- 			RAISE NOTICE 'p_competencias_pruebas_nro_serie %',p_competencias_pruebas_nro_serie;
--- 			RAISE NOTICE 'p_competencias_pruebas_origen_combinada %',p_competencias_pruebas_origen_combinada;
-
-
-		END IF;
-
-		--RAISE notice 'El id de la competencia prueba es %',v_competencias_pruebas_id;
-
-		-- Con el id de la prueba creada o existente grabamos el resultado.
-		INSERT INTO
-			tb_atletas_resultados
-			(
-			 competencias_pruebas_id,
-			 atletas_codigo,
-			 atletas_resultados_resultado,
-			 atletas_resultados_puesto,
-			 atletas_resultados_puntos,
-			 atletas_resultados_viento,
-			 atletas_resultados_protected,
-			 activo,
-			 usuario)
-		VALUES(
-			 v_competencias_pruebas_id,
-			 p_atletas_codigo,
-			 (case when coalesce(v_prueba_multiple_new,false) = TRUE then  '' else p_atletas_resultados_resultado end),
-			 p_atletas_resultados_puesto,
-			 0,
-			 -- el viento solo si es una prueba que la requiera individualmente y no sea la principal combinada.
-			 (case when coalesce(v_prueba_multiple_new,false) = TRUE
-				THEN NULL
-				ELSE (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end)
-			 END),
-			 p_atletas_resultados_protected,
-			 p_activo,
-			 p_usuario);
-
-
-		-- Durante un add si La prueba es multiple , se agregan los detalles correspondientes.
-		-- y las pruebas de la competencia.
-		IF coalesce(v_prueba_multiple_new,false) = TRUE
-		THEN
-
-			-- Iniciamos el insert de todas las pruebas que componen la mltiple o combinada
-			INSERT INTO
-				tb_atletas_resultados
-				(
-				competencias_pruebas_id,
-				atletas_codigo,
-				atletas_resultados_resultado,
-				atletas_resultados_puesto,
-				atletas_resultados_puntos,
-				atletas_resultados_viento,
-				atletas_resultados_protected,
-				activo,
-				usuario)
-			SELECT
-				cp.competencias_pruebas_id,
-				p_atletas_codigo,
-				0,
-				0,
-				0,
-				NULL,
-				p_atletas_resultados_protected,
-				p_activo,
-				p_usuario
-			FROM tb_competencias_pruebas cp
-			INNER JOIN tb_pruebas_detalle p on p.pruebas_detalle_prueba_codigo  = cp.pruebas_codigo
-			WHERE cp.competencias_pruebas_origen_id = v_competencias_pruebas_id
-			order by pruebas_detalle_orden;
-		END IF;
-
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_pruebas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 245 (class 1255 OID 16421)
--- Name: sp_atletas_resultados_delete_for_atleta(character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_resultados_delete_for_atleta(p_atletas_codigo character varying, p_usuario_mod character varying) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 01-04-2014
-
-Stored procedure que elimina todos los resultados de un atleta previa verificacion que exista.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos .
-
-Historia : Creado 03-04-2014
-*/
-
-BEGIN
-
-	IF EXISTS( select 1 from tb_atletas where atletas_codigo = p_atletas_codigo)
-	THEN
-		DELETE FROM tb_atletas_resultados where atletas_codigo = p_atletas_codigo;
-	ELSE
-		-- La prueba no existe
-		RAISE 'No se puede eliminar los resultados del atleta de codigo % ya que no existe',p_atletas_codigo USING ERRCODE = 'restrict_violation';
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_resultados_delete_for_atleta(p_atletas_codigo character varying, p_usuario_mod character varying) OWNER TO atluser;
-
---
--- TOC entry 246 (class 1255 OID 16422)
--- Name: sp_atletas_resultados_delete_for_competencia(character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_resultados_delete_for_competencia(p_competencias_codigo character varying, p_usuario_mod character varying) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-/**
-Elimina todos los resultados que petenecen a una competencia.
-
-Autor : Carlos arana Reategui
-Fecha : 01-04-2014
-
-Stored procedure que elimina todos los resultados que corresponden a una competencia.
-Historia : Creado 03-04-2014
-*/
-BEGIN
-
-	IF EXISTS( select 1 from tb_competencias where competencias_codigo = p_competencias_codigo)
-	THEN
-		DELETE FROM tb_atletas_resultados where atletas_resultados_id in
-		(
-			select atletas_resultados_id from tb_competencias_pruebas co
-			inner join tb_atletas_resultados ar on ar.competencias_pruebas_id = co.competencias_pruebas_id
-			where competencias_codigo = p_competencias_codigo
-		);
-	ELSE
-		-- La competencia no existe
-		RAISE 'No se puede eliminar los resultados de las pruebas para la competencia % ya que no existe',p_competencias_codigo USING ERRCODE = 'restrict_violation';
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_resultados_delete_for_competencia(p_competencias_codigo character varying, p_usuario_mod character varying) OWNER TO atluser;
-
---
--- TOC entry 247 (class 1255 OID 16423)
--- Name: sp_atletas_resultados_delete_record(integer, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_resultados_delete_record(p_atletas_resultados_id integer, p_include_prueba boolean, p_usuario_mod character varying, p_version_id integer) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 01-04-2014
-
-Stored procedure que elimina un resultado de atleta , si es una prueba combinada elimina
-tambien los resultados de las pruebas asociadas.
-Si el paramtero p_include_prueba es TRUE debemos eliminar tambien la prueba de la competencia , pero si  y solo si
-no tiene otros resultados adjuntos.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos .
-
-Esta procedure function devuelve un entero siempre que el delete
-	se haya realizado y devuelve null si no se realizo el delete. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el delete se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el delete se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el delete usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select :
-
-	select * from ( select sp_atletas_resultados_delete_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el delete funciono , y 0 registros si no se realizo
-	el delete. Esto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-Historia : Creado 03-02-2014
-*/
-DECLARE v_competencias_pruebas_origen_id integer;
-DECLARE v_competencias_pruebas_id integer;
-DECLARE v_atletas_codigo character varying(15);
-
-BEGIN
-
-	-- Busco a que atleta pertenece el resultado.
-	SELECT atletas_codigo INTO
-		v_atletas_codigo
-	FROM tb_atletas_resultados WHERE atletas_resultados_id = p_atletas_resultados_id and xmin=p_version_id;
-
-	-- Verificacion previa que el registro no esgta modificado, con esto basta si v_atletas_codigo es no null
-	-- a que significaria que ha encontrado el registro.
-	--
-	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
-	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
-	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
-	IF  v_atletas_codigo IS NOT NULL THEN
-
-		-- Vemos si esta resultado es parte de una prueba combinada
-		-- o si es el resultado de una prueba combinada.
-		SELECT competencias_pruebas_id,competencias_pruebas_origen_id
-			INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id
-		FROM tb_competencias_pruebas cp
-		WHERE cp.competencias_pruebas_id =  (select competencias_pruebas_id from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id);
-
-		--
-		IF v_competencias_pruebas_origen_id IS NOT NULL
-		THEN
-			-- La prueba no existe
-			RAISE 'Un resultado que es parte de una prueba combinada no puede eliminarse independientemente , borre los resultados de la prueba principal' USING ERRCODE = 'restrict_violation';
-		END IF;
-
-		-- Eliminamosla pricipal y las asociadas en caso de que a prueba sea multiple
-		DELETE FROM
-			tb_atletas_resultados
-		WHERE (atletas_resultados_id = p_atletas_resultados_id
-			OR competencias_pruebas_id in (
-				select competencias_pruebas_id
-					from tb_competencias_pruebas
-				where competencias_pruebas_origen_id=v_competencias_pruebas_id
-				))
-			AND atletas_codigo =v_atletas_codigo;
-
-		IF FOUND THEN
-			-- Si se requiere que se elimine a prueba tambien , entonces se hara si y solo si
-			-- dicha prueba o las adjuntas en caso de combinadas no tienen otros resultados adjuntos.
-			IF p_include_prueba = TRUE
-			THEN
-				IF NOT EXISTS(select 1 from tb_atletas_resultados where competencias_pruebas_id = v_competencias_pruebas_id OR
-						competencias_pruebas_id
-							in(select competencias_pruebas_id from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_id))
-				THEN
-					DELETE FROM
-						tb_competencias_pruebas
-					WHERE competencias_pruebas_id = v_competencias_pruebas_id OR
-						competencias_pruebas_origen_id=v_competencias_pruebas_id;
-				END IF;
-			END IF;
-
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-
-	ELSE
-		RETURN null;
-	END IF;
-
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_resultados_delete_record(p_atletas_resultados_id integer, p_include_prueba boolean, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
-
---
--- TOC entry 248 (class 1255 OID 16426)
--- Name: sp_atletas_resultados_save_record(integer, character varying, integer, character varying, integer, integer, numeric, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_pruebas_id integer, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_viento numeric, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza los registros de los resultados de las pruebas.
-Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
-consistentemente,
-
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-DECLARE v_prueba_multiple boolean= FALSE;
-DECLARE v_categorias_codigo character varying(15);
-DECLARE v_pruebas_sexo_new  character(1);
-DECLARE v_atletas_sexo_new  character(1);
-DECLARE v_atletas_fecha_nacimiento_new DATE;
-DECLARE v_apppruebas_marca_menor_new character varying(12);
-DECLARE v_apppruebas_marca_mayor_new character varying(12);
-DECLARE v_apppruebas_verifica_viento BOOLEAN = FALSE;
-DECLARE v_agnos INT;
-DECLARE v_marca_test integer;
-DECLARE v_unidad_medida_codigo character varying(8);
-DECLARE v_marcaMenorValida integer;
-DECLARE v_marcaMayorValida integer;
-DECLARE v_competencias_pruebas_id integer;
-DECLARE v_competencias_pruebas_origen_id integer;
-DECLARE v_apppruebas_viento_individual boolean;
-DECLARE v_pruebas_codigo character varying(15);
-DECLARE v_competencias_pruebas_fecha date;
-
-BEGIN
-
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
-	-----------------------------------------------------------------------------------------------------------
-	-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
-	-- de lo contrario es imposible hacer un update.
-	-- Solo busca aquellas que no son parte de una combinada.
-	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_pruebas_fecha,
-		categorias_codigo
-	INTO
-		v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_pruebas_fecha,
-		v_categorias_codigo
-	FROM tb_competencias_pruebas cp
-	INNER JOIN tb_competencias c on c.competencias_codigo=cp.competencias_codigo
-	WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
-
-
-	IF v_competencias_pruebas_id IS  NULL
-	THEN
-		-- La prueba no existe
-		RAISE 'La prueba no se ha encontrado en la competencia indicada, los resultados solo pueden agregarse a competencias existentes'  USING ERRCODE = 'restrict_violation';
-	END IF;
-
-
-	-- En las combinadas un atleta solo puede realizar una vez la prueba ya que no existin semifinales y finales sino
-	-- solo se agrupan pero el resultado es consolidado. Solo se verifica al agregar no al actualizar
-	IF v_competencias_pruebas_origen_id IS NOT NULL and p_is_update != '1'
-	THEN
-		IF EXISTS(SELECT 1 FROM tb_competencias_pruebas  cp
-				INNER JOIN tb_atletas_resultados ar on ar.competencias_pruebas_id = cp.competencias_pruebas_id
-				WHERE cp.pruebas_codigo = v_pruebas_codigo AND
-					competencias_pruebas_origen_id = v_competencias_pruebas_origen_id AND
-					atletas_codigo=p_atletas_codigo)
-		THEN
-			RAISE 'El atleta ya registra resultado para dicha prueba, en el caso de las combinadas no puede realizar una prueba mas de una vez'  USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-	-- Buscamos los datos de la prueba que actualmente se quiere grabar para otras validaciones.
-	SELECT pruebas_sexo,apppruebas_marca_menor,
-		apppruebas_marca_mayor,apppruebas_verifica_viento,c.unidad_medida_codigo,
-		apppruebas_viento_individual,apppruebas_multiple
-	INTO
-		v_pruebas_sexo_new,v_apppruebas_marca_menor_new,
-		v_apppruebas_marca_mayor_new,v_apppruebas_verifica_viento,
-		v_unidad_medida_codigo,v_apppruebas_viento_individual,v_prueba_multiple
-	FROM tb_pruebas pr
-	INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
-	INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
-	where pr.pruebas_codigo = v_pruebas_codigo;
-
-	-- Si es el registro de la prueba principal de una combinada , no permitimos
-	-- grabar o actualizar ya que esta es dependiente de las pruebas que la componen y
-	-- depende de los cambios en sus componentes para modificarse.
-	IF coalesce(v_prueba_multiple,false) = TRUE
-	THEN
-		-- La prueba no existe
-		RAISE 'Solo resultados para pruebas dentro de una combinada son permitidos'  USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Busco el sexo del atleta
-	SELECT atletas_sexo,atletas_fecha_nacimiento INTO
-		v_atletas_sexo_new,v_atletas_fecha_nacimiento_new
-	FROM tb_atletas at
-	where at.atletas_codigo = p_atletas_codigo;
-
-	-- Luego si el sexo del atleta y el sexo de la prueba corresponden.
-	IF coalesce(v_atletas_sexo_new,'X') != coalesce(v_pruebas_sexo_new,'Y')
-	THEN
-		RAISE 'El sexo del atleta no corresponde a la de la prueba indicada, ambos deben ser iguales ' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- La mas dificil , si en la fecha de la prueba el atleta pertenecia a la categoria de
-	-- la competencia. Para esto
-	-- a) Que edad tenia el atleta en la fecha de la competencia.
-	-- b) hasta que edad permite la categoria.
-	select date_part( 'year'::text,v_competencias_pruebas_fecha::date)-date_part( 'year'::text,v_atletas_fecha_nacimiento_new::date) INTO
-		v_agnos;
-
-	-- Veamos en la categoria si esta dentro del rango
-	-- Importante , basta que la atleta sea menor para la categoria que compitio , ya que una juvenil o menor
-	-- podrian competir en una prueba de mayores , por ende si se toma como rango no
-	-- funcionaria.
-	IF NOT EXISTS(SELECT 1 from tb_categorias WHERE categorias_codigo = v_categorias_codigo AND
-		 v_agnos <= categorias_edad_final )
-	THEN
-		-- Excepcion el atleta no esta dentro de la categoria
-		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',v_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Si el resultado de la prueba esta dentro de los valores validos
-	------------------------------------------------------------------------------------
-
-	-- Normalizamos a milisegundos , sin importar si es manual o no ya que ambas medidas deben estar en las mismas
-	-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
-	-- normalizados.
-	v_marcaMenorValida := fn_get_marca_normalizada(v_apppruebas_marca_menor_new, v_unidad_medida_codigo, false, 0);
-	v_marcaMayorValida := fn_get_marca_normalizada(v_apppruebas_marca_mayor_new, v_unidad_medida_codigo, false, 0);
-	v_marca_test := fn_get_marca_normalizada(p_atletas_resultados_resultado, v_unidad_medida_codigo, false, 0);
-
-	IF v_marca_test < v_marcaMenorValida OR v_marca_test > v_marcaMayorValida
-	THEN
-		--La marca indicada esta fuera del rango permitido
-		RAISE 'La marca indicada de % esta fuera del rango permitido entre % y % ', p_atletas_resultados_resultado,v_apppruebas_marca_menor_new,v_apppruebas_marca_mayor_new USING ERRCODE = 'restrict_violation';
-	END IF;
-
-
-	-- Si se indica marca , deben indicarse puntos , por aqui solo se graban los componentes de la
-	-- conmbinada o pruebas normales, dado validacion anterior
-	IF v_competencias_pruebas_origen_id IS NOT NULL
-	THEN
-		IF v_marca_test != 0 AND coalesce(p_atletas_resultados_puntos,0) = 0 OR
-			v_marca_test = 0 AND coalesce(p_atletas_resultados_puntos,0) != 0
-		THEN
-			RAISE 'Si la marca o puntos son mayores que cero , ambos deben estar indicados ' USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-	-- OK paso todas las validaciones basicas , ahora veamos si la prueba tiene control de viento
-	-- y ver si el viento esta indicado, hay que recordar que en los resultados de atletas el viento
-	-- solo sera indicado si la prueba requiere viento individual por atleta , digase el saltor largo, triple,etc
-	-- en otros casos no es aplicable.
-	IF v_apppruebas_verifica_viento = TRUE AND v_apppruebas_viento_individual = TRUE
-	THEN
-		IF p_atletas_resultados_viento is null
-		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
-		END IF;
-	ELSE
-		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
-		p_atletas_resultados_viento := NULL;
-	END IF;
-
-
-	IF p_is_update = '1'
-	THEN
-
-		-- El  update
-		UPDATE
-			tb_atletas_resultados
-		SET
-			atletas_codigo =  p_atletas_codigo,
-			competencias_pruebas_id =  p_competencias_pruebas_id,
-			atletas_resultados_resultado =  p_atletas_resultados_resultado,
-			atletas_resultados_viento =  p_atletas_resultados_viento,
-			atletas_resultados_puesto =  p_atletas_resultados_puesto,
-			atletas_resultados_puntos =  p_atletas_resultados_puntos,
-			atletas_resultados_protected =  p_atletas_resultados_protected,
-			activo = p_activo,
-			usuario = p_usuario
-		WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
-
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-		IF NOT FOUND
-		THEN
-			RETURN NULL;
-		END IF;
-
-	ELSE
-		IF v_competencias_pruebas_origen_id IS NOT NULL
-		THEN
-			IF NOT EXISTS(select 1 from tb_atletas_resultados
-					WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo)
-
-			THEN
-				INSERT INTO
-					tb_atletas_resultados
-					(
-					 atletas_codigo,
-					 competencias_pruebas_id,
-					 atletas_resultados_resultado,
-					 atletas_resultados_viento,
-					 atletas_resultados_puesto,
-					 atletas_resultados_puntos,
-					 atletas_resultados_protected,
-					 activo,
-					 usuario)
-				VALUES(
-					 p_atletas_codigo,
-					 v_competencias_pruebas_origen_id,
-					 '',
-					 null,
-					 0,
-					 0,
-					 p_atletas_resultados_protected,
-					 p_activo,
-					 p_usuario);
-
-				IF NOT FOUND
-				THEN
-					RAISE 'Error creando el resultado para la prueba principal, comuniquese con el administrador'  USING ERRCODE = 'restrict_violation';
-				END IF;
-			END IF;
-		END IF;
-
-		INSERT INTO
-			tb_atletas_resultados
-			(
-			 atletas_codigo,
-			 competencias_pruebas_id,
-			 atletas_resultados_resultado,
-			 atletas_resultados_viento,
-			 atletas_resultados_puesto,
-			 atletas_resultados_puntos,
-			 atletas_resultados_protected,
-			 activo,
-			 usuario)
-		VALUES(
-			 p_atletas_codigo,
-			 p_competencias_pruebas_id,
-			 p_atletas_resultados_resultado,
-			 p_atletas_resultados_viento,
-			 p_atletas_resultados_puesto,
-			 p_atletas_resultados_puntos,
-			 p_atletas_resultados_protected,
-			 p_activo,
-			 p_usuario);
-	END IF;
-
-	-- Si es parte de una combinada.
-	-- actualizamos el resultado de la principal con el nuevo acumulado de puntos
-	IF v_competencias_pruebas_origen_id IS NOT NULL
-	THEN
-		UPDATE
-		tb_atletas_resultados
-		SET
-			atletas_resultados_resultado =  (
-				select sum(atletas_resultados_puntos) from tb_atletas_resultados
-					where competencias_pruebas_id in  (
-						select competencias_pruebas_id from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id and atletas_codigo=p_atletas_codigo)
-						)
-		WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo;
-
-		-- Ahora actualizamos los pustos en la principal de acuerdo a los actuales puntajes acumulados
-		UPDATE tb_atletas_resultados ar
-			SET    atletas_resultados_puesto = res.x
-		FROM   (
-			select x,atletas_resultados_id from (
-				select (row_number() OVER (order by (case when atletas_resultados_resultado ='' then '0' else atletas_resultados_resultado end)::INTEGER desc))  as x,
-					atletas_resultados_id  ,atletas_resultados_resultado
-				from tb_atletas_resultados ar
-				where ar.competencias_pruebas_id = v_competencias_pruebas_origen_id
-				order by (case when atletas_resultados_resultado ='' then '0' else atletas_resultados_resultado end::INTEGER) desc)   cc
-			order by x
-			) AS res
-		WHERE  ar.atletas_resultados_id = res.atletas_resultados_id;
-
-	END IF;
-
-	RETURN 1;
-
-
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_pruebas_id integer, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_viento numeric, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 249 (class 1255 OID 16429)
--- Name: sp_atletas_save_record(character varying, character varying, character varying, character varying, character, character varying, character varying, character varying, date, character varying, character varying, character varying, character varying, character varying, character varying, character varying, numeric, character varying, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_atletas_save_record(p_atletas_codigo character varying, p_atletas_ap_paterno character varying, p_atletas_ap_materno character varying, p_atletas_nombres character varying, p_atletas_sexo character, p_atletas_nro_documento character varying, p_atletas_nro_pasaporte character varying, p_paises_codigo character varying, p_atletas_fecha_nacimiento date, p_atletas_telefono_casa character varying, p_atletas_telefono_celular character varying, p_atletas_email character varying, p_atletas_direccion character varying, p_atletas_observaciones character varying, p_atletas_talla_ropa_buzo character varying, p_atletas_talla_ropa_poloshort character varying, p_atletas_talla_zapatillas numeric, p_atletas_norma_zapatillas character varying, p_atletas_url_foto character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 05-02-2014
-
-Stored procedure que agrega o actualiza los registros del atleta.
-Previo a la grabacion forma el nombre completo del atleta.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_atletas_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 05-02-2014
-*/
-DECLARE v_nombre_completo	VARCHAR(300);
-
-BEGIN
-
-	-- Creamos el campo de nombre completo
-	v_nombre_completo := '';
-	IF coalesce(p_atletas_ap_paterno,'') != '' or length(p_atletas_ap_paterno) > 0
-	THEN
-		v_nombre_completo := p_atletas_ap_paterno;
-	END IF;
-	IF coalesce(p_atletas_ap_materno,'') != '' or length(p_atletas_ap_materno) > 0
-	THEN
-		v_nombre_completo := v_nombre_completo || ' ' || p_atletas_ap_materno;
-	END IF;
-	IF coalesce(p_atletas_nombres,'') != '' or length(p_atletas_nombres) > 0
-	THEN
-		v_nombre_completo := v_nombre_completo || ', ' || p_atletas_nombres;
-	END IF;
-
-
-	IF p_is_update = '1'
-	THEN
-		UPDATE
-			tb_atletas
-		SET
-			atletas_codigo=p_atletas_codigo,
-			atletas_ap_paterno=p_atletas_ap_paterno,
-			atletas_ap_materno=p_atletas_ap_materno,
-			atletas_nombres=p_atletas_nombres,
-			atletas_nombre_completo=v_nombre_completo,
-			atletas_sexo =p_atletas_sexo,
-			atletas_nro_documento =p_atletas_nro_documento,
-			atletas_nro_pasaporte =p_atletas_nro_pasaporte,
-			paises_codigo =p_paises_codigo,
-			atletas_fecha_nacimiento =p_atletas_fecha_nacimiento,
-			atletas_telefono_casa =p_atletas_telefono_casa,
-			atletas_telefono_celular =p_atletas_telefono_celular,
-			atletas_email =p_atletas_email,
-			atletas_direccion =p_atletas_direccion,
-			atletas_observaciones =p_atletas_observaciones,
-			atletas_talla_ropa_buzo =p_atletas_talla_ropa_buzo,
-			atletas_talla_ropa_poloshort =p_atletas_talla_ropa_poloshort,
-			atletas_talla_zapatillas=p_atletas_talla_zapatillas,
-			atletas_norma_zapatillas=p_atletas_norma_zapatillas,
-			atletas_url_foto =p_atletas_url_foto,
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE atletas_codigo = p_atletas_codigo and xmin =p_version_id ;
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_atletas
-			(atletas_codigo,atletas_ap_paterno,atletas_ap_materno,atletas_nombres,atletas_nombre_completo,
-			atletas_sexo,atletas_nro_documento ,atletas_nro_pasaporte ,paises_codigo,
-			atletas_fecha_nacimiento,atletas_telefono_casa,atletas_telefono_celular,atletas_email,atletas_direccion,
-			atletas_observaciones,atletas_talla_ropa_buzo,atletas_talla_ropa_poloshort,atletas_talla_zapatillas,
-			atletas_norma_zapatillas,atletas_url_foto,activo,usuario_mod)
-		VALUES (p_atletas_codigo,
-			p_atletas_ap_paterno,
-			p_atletas_ap_materno,
-			p_atletas_nombres,
-			v_nombre_completo,
-			p_atletas_sexo,
-			p_atletas_nro_documento,
-			p_atletas_nro_pasaporte,
-			p_paises_codigo,
-			p_atletas_fecha_nacimiento,
-			p_atletas_telefono_casa,
-			p_atletas_telefono_celular,
-			p_atletas_email,
-			p_atletas_direccion,
-			p_atletas_observaciones,
-			p_atletas_talla_ropa_buzo,
-			p_atletas_talla_ropa_poloshort,
-			p_atletas_talla_zapatillas,
-			p_atletas_norma_zapatillas,
-			p_atletas_url_foto,
-			p_activo,
-			p_usuario);
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_atletas_save_record(p_atletas_codigo character varying, p_atletas_ap_paterno character varying, p_atletas_ap_materno character varying, p_atletas_nombres character varying, p_atletas_sexo character, p_atletas_nro_documento character varying, p_atletas_nro_pasaporte character varying, p_paises_codigo character varying, p_atletas_fecha_nacimiento date, p_atletas_telefono_casa character varying, p_atletas_telefono_celular character varying, p_atletas_email character varying, p_atletas_direccion character varying, p_atletas_observaciones character varying, p_atletas_talla_ropa_buzo character varying, p_atletas_talla_ropa_poloshort character varying, p_atletas_talla_zapatillas numeric, p_atletas_norma_zapatillas character varying, p_atletas_url_foto character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 250 (class 1255 OID 16432)
--- Name: sp_clubesatletas_save_record(integer, character varying, character varying, date, date, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_clubesatletas_save_record(p_clubesatletas_id integer, p_clubes_codigo character varying, p_atletas_codigo character varying, p_clubesatletas_desde date, p_clubesatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 03-02-2014
-
-Stored procedure que agrega un registro de la relacion entre clubes y atletas
-verificando previamente que el atleta no este asignado a otro club y dentro del rango
-de fechas definidos.
-
-Historia : Creado 03-02-2014
-*/
-DECLARE v_club_descripcion VARCHAR(300) = '';
-
-BEGIN
-
-	-- Si se agrega activo verificamos si existe en otra liga.
-	IF p_activo = TRUE
-	THEN
-		-- Verificamos si el atleta esta definido en otro club y las fechas no se overlapan (un atleta no puede haber
-		-- sido entrenado por 2 clubes a la vez
-		IF EXISTS (SELECT 1
-				FROM tb_clubes_atletas ea
-				LEFT JOIN tb_clubes ent on ent.clubes_codigo = ea.clubes_codigo
-			  where  atletas_codigo = p_atletas_codigo
-				and coalesce(p_clubesatletas_id,-1) != coalesce(ea.clubesatletas_id,2)
-				and (p_clubesatletas_desde  between clubesatletas_desde and clubesatletas_hasta or
-				    p_clubesatletas_hasta  between clubesatletas_desde and clubesatletas_hasta or
-				    clubesatletas_desde  between p_clubesatletas_desde and p_clubesatletas_hasta or
-				    clubesatletas_hasta  between p_clubesatletas_desde and p_clubesatletas_hasta ) LIMIT 1)
-		THEN
-			-- Para recuperar el nombre del club (el primero) que ocurre en ese rango
-			SELECT INTO  v_club_descripcion  clubes_descripcion
-				FROM tb_clubes_atletas ea
-				LEFT JOIN tb_clubes ent on ent.clubes_codigo = ea.clubes_codigo
-			  where  atletas_codigo = p_atletas_codigo
-				and (p_clubesatletas_desde  between clubesatletas_desde and clubesatletas_hasta or
-				    p_clubesatletas_hasta  between clubesatletas_desde and clubesatletas_hasta or
-				    clubesatletas_desde  between p_clubesatletas_desde and p_clubesatletas_hasta or
-				    clubesatletas_hasta  between p_clubesatletas_desde and p_clubesatletas_hasta ) LIMIT 1;
-
-			-- Excepcion de pais con ese nombre existe
-			RAISE 'El atleta pertenecia a otro club o al mismo club durante ese rango de fechas, verifique la fecha final definida en el club (%)',v_club_descripcion USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-IF p_is_update = '1'
-	THEN
-		UPDATE
-			tb_clubes_atletas
-		SET
-			clubes_codigo=p_clubes_codigo,
-			atletas_codigo=p_atletas_codigo,
-			clubesatletas_desde=p_clubesatletas_desde,
-			clubesatletas_hasta=coalesce(p_clubesatletas_hasta,'2035-01-01'),
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE clubesatletas_id = p_clubesatletas_id and xmin =p_version_id ;
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_clubes_atletas
-			(clubes_codigo,atletas_codigo,clubesatletas_desde,clubesatletas_hasta,activo,usuario)
-		VALUES(p_clubes_codigo,
-		       p_atletas_codigo,
-		       p_clubesatletas_desde,
-		       coalesce(p_clubesatletas_hasta,'2035-01-01'),
-		       p_activo,
-		       p_usuario);
-
-		RETURN 1;
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_clubesatletas_save_record(p_clubesatletas_id integer, p_clubes_codigo character varying, p_atletas_codigo character varying, p_clubesatletas_desde date, p_clubesatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 251 (class 1255 OID 16433)
--- Name: sp_competencias_pruebas_delete_for_competencia(character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_competencias_pruebas_delete_for_competencia(p_competencias_codigo character varying, p_usuario character varying) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que elimina todas las pruebas asociadas a una competencia.
-Dado que a estas pruebas estan asociados los resultados , tambien se elimina todos los resultados
-asociados a las pruebas.
-Historia : Creado 15-01-2014
-*/
-BEGIN
-
-	-- Verificacion previa que el registro no esgta modificado
-	--
-	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
-	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
-	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
-	IF EXISTS (SELECT 1 FROM tb_competencias WHERE competencias_codigo = p_competencias_codigo) THEN
-
-		-- Eliminamos todos los resultados asociados a una competencia
-		PERFORM sp_atletas_resultados_delete_for_competencia(p_competencias_codigo,p_usuario);
-
-		-- Finalmente eliminamos las pruebas asociadas a la competencia.
-		DELETE FROM
-			tb_competencias_pruebas
-		where competencias_codigo = p_competencias_codigo;
-
-	ELSE
-		RAISE 'No se pueden eliminar las pruebas asociadas a la comptencia % , ya que esta no existe',p_competencias_codigo USING ERRCODE = 'restrict_violation';
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_competencias_pruebas_delete_for_competencia(p_competencias_codigo character varying, p_usuario character varying) OWNER TO atluser;
-
---
--- TOC entry 252 (class 1255 OID 16434)
--- Name: sp_competencias_pruebas_delete_record(integer, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_competencias_pruebas_delete_record(p_competencias_pruebas_id integer, p_usuario character varying, p_version_id integer) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que elimina todas los resultados de todos los atletas
-para una especifica prueba de una competencia.pruebas y sus resultados asociados
-para una competencia.
-
-Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
-consistentemente,
-
-En el caso de las combinadas eliminara los datos de la principal y las que las componen
-osea todos los resultados asociados a la principal y todas sus pruebas adjuntas.
-
-Una vez establecida la prueba para una competencia sera imposible cambiar el codigo de prueba.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-DECLARE v_competencias_pruebas_origen_id integer=0;
-
-BEGIN
-
-	-- Verificacion previa que el registro no esgta modificado
-	--
-	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
-	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
-	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
-	IF EXISTS (SELECT 1 FROM tb_competencias_pruebas WHERE competencias_pruebas_id = p_competencias_pruebas_id and xmin=p_version_id) THEN
-
-		-- Vemos si esta resultado es parte de una prueba combinada
-		-- o si es el resultado de una prueba combinada.
-		SELECT competencias_pruebas_origen_id
-			INTO v_competencias_pruebas_origen_id
-		FROM tb_competencias_pruebas cp
-		WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
-		--
-		IF v_competencias_pruebas_origen_id IS NOT NULL
-		THEN
-			-- La prueba no existe
-			RAISE 'Una prueba que es parte de una prueba combinada no puede eliminarse independientemente , borre la prueba principal' USING ERRCODE = 'restrict_violation';
-		END IF;
-
-		-- Eliminamos primero todos sus resultados asociados.
-		DELETE FROM
-			tb_atletas_resultados
-		WHERE (competencias_pruebas_id = p_competencias_pruebas_id
-			OR competencias_pruebas_id in (
-				select competencias_pruebas_id
-					from tb_competencias_pruebas
-				where competencias_pruebas_origen_id=p_competencias_pruebas_id
-				));
-
-
-		-- Eliminamos la pricipal y las asociadas en caso de que a prueba sea multiple
-		DELETE FROM
-			tb_competencias_pruebas
-		WHERE competencias_pruebas_id = p_competencias_pruebas_id
-			OR competencias_pruebas_origen_id=p_competencias_pruebas_id;
-
-
-		IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-
-	ELSE
-		RETURN null;
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_competencias_pruebas_delete_record(p_competencias_pruebas_id integer, p_usuario character varying, p_version_id integer) OWNER TO atluser;
-
---
--- TOC entry 253 (class 1255 OID 16437)
--- Name: sp_competencias_pruebas_save_record(integer, character varying, character varying, integer, date, numeric, boolean, character varying, integer, boolean, boolean, character varying, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza los registros de las pruebas de una
-competencia.
-
-Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
-consistentemente,
-
-En el caso de las combinadas actualizara la principal y las que las componen o en el caso
-de crear , creara la principal con sus pruebas componentes del mismo.
-
-
-Una vez establecida la prueba para una competencia sera imposible cambiar el codigo de prueba.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-DECLARE v_categorias_codigo_competencia character varying(15);
-DECLARE v_competencias_fecha_inicio date;
-DECLARE v_competencias_fecha_final date;
-
-DECLARE v_unidad_medida_tipo_new character(1);
-DECLARE v_prueba_multiple_new boolean= FALSE;
-DECLARE v_categorias_codigo_orig character varying(15);
-DECLARE v_categorias_codigo_new character varying(15);
-DECLARE v_competencias_pruebas_id integer=0;
-DECLARE v_apppruebas_verifica_viento_new BOOLEAN = FALSE;
-DECLARE v_competencias_pruebas_origen_combinada BOOLEAN = FALSE;
-DECLARE v_apppruebas_viento_individual BOOLEAN;
-
-BEGIN
-
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-
-	-- Busxcamos la categoria de la competencia, los datos de la prueba y del atleta
-	-- basados en los datos actuales a grabar, esto no permitira saber si la relacion
-	-- COmPETencia,PrueBA;ATLETA es correcta , digase si la competencia es de mayores
-	-- la prueba debe ser de mayores y el atleta debe ser mayor, asi mismo si la prueba es para
-	-- el sexo femenino , el atleta debe ser mujer
-	SELECT categorias_codigo,competencias_fecha_inicio,competencias_fecha_final INTO
-		v_categorias_codigo_competencia,v_competencias_fecha_inicio,v_competencias_fecha_final
-	FROM tb_competencias where competencias_codigo=p_competencias_codigo;
-
-	-- Verificamos primero si la fecha enviada esta entre las fechas de la competencia.
-	IF p_competencias_pruebas_fecha < v_competencias_fecha_inicio OR p_competencias_pruebas_fecha > v_competencias_fecha_final
-	THEN
-		-- Excepcion La fecha esta fuera del rango de la competencia
-		RAISE 'LA fecha indicada para la prueba (%) no corresponde al rango de fechas de la competencia % - %',p_competencias_pruebas_fecha,v_competencias_fecha_inicio,v_competencias_fecha_final USING ERRCODE = 'restrict_violation';
-	END If;
-
-	-- Buscamos los datos de la gnerica de prueba que actualmente se quiere grabar para saber si tambien sera multiple.
-	SELECT apppruebas_multiple,pr.categorias_codigo,apppruebas_verifica_viento,unidad_medida_tipo,apppruebas_viento_individual INTO
-		v_prueba_multiple_new,v_categorias_codigo_new,v_apppruebas_verifica_viento_new,
-		v_unidad_medida_tipo_new,v_apppruebas_viento_individual
-	FROM tb_pruebas pr
-		INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
-		INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
-		INNER JOIN tb_unidad_medida um on um.unidad_medida_codigo = c.unidad_medida_codigo
-	WHERE pr.pruebas_codigo = p_pruebas_codigo;
-
-	-- OBTENIDOS LOS DATOS VERIFICAMOS LA RELACION
-	-- Primero si la  categoria de la prueba y competencia son validas.
-	-- SI NO EXISTE LA PRUEBA
-	IF v_categorias_codigo_competencia != v_categorias_codigo_new
-	THEN
-		-- Excepcion no correspondencia de la categorias
-		RAISE 'La categoria de la competencia (%) no corresponde a la de la prueba (%) , ambas deben ser iguales',v_categorias_codigo_competencia,v_categorias_codigo_new USING ERRCODE = 'restrict_violation';
-	END IF;
-
-
-	-----------------------------------------------------------------------------------------------------------
-	-----------------------------------------------------------------------------------------------------------
-	-- OK paso todas las validaciones basicas , ahora veamos si la prueba tiene control de viento y ver si el viento esta indicado.
-	-- SOLO CUANDO SE AGREGA.
-	IF v_apppruebas_verifica_viento_new = TRUE AND v_apppruebas_viento_individual = FALSE
-	THEN
-		IF p_competencias_pruebas_viento is null
-		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
-		END IF;
-	ELSE
-		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
-		p_competencias_pruebas_viento := NULL;
-	END IF;
-
-	-- Si la unidad de medida de la prueba no es tiempo
-	-- se blanquea (false) al campo que indica si la medida manual.
-	IF v_unidad_medida_tipo_new != 'T'
-	THEN
-		p_competencias_pruebas_manual := false;
-	END IF;
-
-
-	-- Si la prueba no requiere verificacion de viento ponemos
-	-- que si tuvo.
-	IF v_apppruebas_verifica_viento_new = FALSE
-	THEN
-		p_competencias_pruebas_anemometro := true;
-	END IF;
-
-
-
-
-	IF p_is_update = '1'
-	THEN
-		-- Buscamos los datos actualmente grabado.
-		IF NOT EXISTS(SELECT 1
-				FROM tb_competencias_pruebas
-				WHERE competencias_pruebas_id = p_competencias_pruebas_id and pruebas_codigo=p_pruebas_codigo)
-		THEN
-			-- No puede cambiarse la prueba
-			RAISE 'Al actualizar no puede cambiarse de prueba !!'  USING ERRCODE = 'restrict_violation';
-		END IF;
-
-
-		-- El  update, si no es prueba multiple los valores completos
-		IF coalesce(v_prueba_multiple_new,false) = FALSE
-		THEN
-			UPDATE
-				tb_competencias_pruebas
-			SET
-				competencias_pruebas_id = p_competencias_pruebas_id,
-				competencias_codigo =  p_competencias_codigo,
-				pruebas_codigo =  p_pruebas_codigo,
-				competencias_pruebas_fecha =  p_competencias_pruebas_fecha,
-				competencias_pruebas_viento =  p_competencias_pruebas_viento,
-				competencias_pruebas_manual =  p_competencias_pruebas_manual,
-				competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie,
-				competencias_pruebas_nro_serie=p_competencias_pruebas_nro_serie,
-				competencias_pruebas_anemometro=p_competencias_pruebas_anemometro,
-				competencias_pruebas_material_reglamentario=p_competencias_pruebas_material_reglamentario,
-				competencias_pruebas_observaciones =  p_competencias_pruebas_observaciones,
-				competencias_pruebas_protected =  p_competencias_pruebas_protected,
-				activo = p_activo,
-				usuario_mod = p_usuario
-			WHERE competencias_pruebas_id = p_competencias_pruebas_id and
-				(case when p_version_id is null then xmin = xmin else xmin=p_version_id end);
-
-
-			RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-			-- Todo ok , si se necesita agregar los detalles lo hacemos
-			IF FOUND THEN
-				RETURN 1;
-			ELSE
-				RETURN null;
-			END IF;
-		ELSE
-			-- Si es prueba multiple , entonces solo actualizamos los campos relevantes
-			UPDATE
-				tb_competencias_pruebas
-			SET
-				competencias_codigo =  p_competencias_codigo,
-				pruebas_codigo =  p_pruebas_codigo,
-				competencias_pruebas_fecha =  p_competencias_pruebas_fecha,
-				competencias_pruebas_observaciones =  p_competencias_pruebas_observaciones,
-				competencias_pruebas_protected =  p_competencias_pruebas_protected,
-				activo = p_activo,
-				usuario_mod = p_usuario
-			WHERE competencias_pruebas_id = p_competencias_pruebas_id and
-				(case when p_version_id is null then xmin = xmin else xmin=p_version_id end);
-
-			RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-			-- Todo ok , si se necesita agregar los detalles lo hacemos
-			IF FOUND THEN
-				-- Dado que es multiple , los campos relevantes los propagamos , por ejemplo
-				-- el codigo de prueba.
-				-- Cuidado la fecha ya bo es modificada ya que cada prueba debera indicarse su fecha.
-				UPDATE
-					tb_competencias_pruebas
-				SET
-					competencias_codigo =  p_competencias_codigo,
-					competencias_pruebas_protected =  p_competencias_pruebas_protected,
-					activo = p_activo,
-					usuario_mod = p_usuario
-				WHERE competencias_pruebas_origen_id = p_competencias_pruebas_id ;
-
-				RETURN 1;
-			ELSE
-				RETURN null;
-			END IF;
-		END IF;
-	ELSE
-
-		-- Por si acaso actualizamos el flag de origen combinada si proviene
-		-- de una , lo cual lo sabemos si existe un origen indicado.
-		IF p_competencias_pruebas_origen_id IS NOT NULL
-		THEN
-			v_competencias_pruebas_origen_combinada:= true;
-		END IF;
-
-		IF coalesce(v_prueba_multiple_new,false) = TRUE
-		THEN
-			p_competencias_pruebas_viento := NULL;
-			p_competencias_pruebas_manual := FALSE;
-			p_competencias_pruebas_tipo_serie := 'FI';
-			p_competencias_pruebas_nro_serie := 1;
-			p_competencias_pruebas_anemometro := TRUE;
-			p_competencias_pruebas_material_reglamentario := TRUE;
-			v_competencias_pruebas_origen_combinada := FALSE;
-			p_competencias_pruebas_origen_id := NULL;
-
-		END IF;
-
-		-- Debemos agregar la prueba a la competencia ya que no existe.
-		INSERT INTO
-			tb_competencias_pruebas
-			(
-			  competencias_codigo,
-			  pruebas_codigo,
-			  competencias_pruebas_origen_combinada,
-			  competencias_pruebas_fecha,
-			  competencias_pruebas_viento,
-			  competencias_pruebas_manual,
-			  competencias_pruebas_tipo_serie,
-			  competencias_pruebas_nro_serie,
-			  competencias_pruebas_anemometro,
-			  competencias_pruebas_material_reglamentario,
-			  competencias_pruebas_observaciones,
-			  competencias_pruebas_protected,
-			  competencias_pruebas_origen_id,
-			  activo,
-			  usuario
-			)
-		VALUES(
-			 p_competencias_codigo,
-			 p_pruebas_codigo,
-			 v_competencias_pruebas_origen_combinada,
-			 p_competencias_pruebas_fecha,
-			 p_competencias_pruebas_viento,
-			 p_competencias_pruebas_manual,
-			 p_competencias_pruebas_tipo_serie,
-			 p_competencias_pruebas_nro_serie,
-			 p_competencias_pruebas_anemometro,
-			 p_competencias_pruebas_material_reglamentario,
-			 p_competencias_pruebas_observaciones,
-			 p_competencias_pruebas_protected,
-			 p_competencias_pruebas_origen_id,
-			 p_activo,
-			 p_usuario);
-
-
-		-- Si la prueba es multiple se agregan las pruebas correpspondientes
-		IF coalesce(v_prueba_multiple_new,false) = TRUE
-		THEN
-
-			SELECT currval(pg_get_serial_sequence('tb_competencias_pruebas', 'competencias_pruebas_id'))
-				INTO v_competencias_pruebas_id;
-
-			-- Iniciamos el insert de todas las pruebas que componen la mltiple o combinada
-			INSERT INTO tb_competencias_pruebas (
-				competencias_codigo,
-				pruebas_codigo,
-				competencias_pruebas_origen_combinada,
-				competencias_pruebas_origen_id,
-				competencias_pruebas_fecha,
-				competencias_pruebas_viento,
-				competencias_pruebas_manual,
-				competencias_pruebas_tipo_serie,
-				competencias_pruebas_nro_serie,
-				competencias_pruebas_anemometro,
-				competencias_pruebas_material_reglamentario,
-				activo,
-				usuario)
-			SELECT
-				p_competencias_codigo,
-				pd.pruebas_detalle_prueba_codigo,
-				true,
-				v_competencias_pruebas_id,
-				p_competencias_pruebas_fecha,
-				0,
-				false,
-				'FI',
-				1,
-				true,
-				true,
-				true,
-				p_usuario
-			FROM tb_pruebas_detalle pd
-			WHERE pd.pruebas_codigo = p_pruebas_codigo
-			ORDER BY pd.pruebas_detalle_orden;
-		END IF;
-
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 254 (class 1255 OID 16440)
--- Name: sp_entrenadores_save_record(character varying, character varying, character varying, character varying, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_entrenadores_save_record(p_entrenadores_codigo character varying, p_entrenadores_ap_paterno character varying, p_entrenadores_ap_materno character varying, p_entrenadores_nombres character varying, p_entrenadores_nivel_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 05-02-2014
-
-Stored procedure que agrega o actualiza los registros de personal.
-Previo a la grabacion forma el nombre completo del personal.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_personal_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 05-02-2014
-*/
-DECLARE v_nombre_completo	VARCHAR(300);
-DECLARE	v_rowcount 		INTEGER;
-
-BEGIN
-
-	-- Creamos el campo de nombre completo
-	v_nombre_completo := '';
-	IF coalesce(p_entrenadores_ap_paterno,'') != '' or length(p_entrenadores_ap_paterno) > 0
-	THEN
-		v_nombre_completo := p_entrenadores_ap_paterno;
-	END IF;
-	IF coalesce(p_entrenadores_ap_materno,'') != '' or length(p_entrenadores_ap_materno) > 0
-	THEN
-		v_nombre_completo := v_nombre_completo || ' ' || p_entrenadores_ap_materno;
-	END IF;
-	IF coalesce(p_entrenadores_nombres,'') != '' or length(p_entrenadores_nombres) > 0
-	THEN
-		v_nombre_completo := v_nombre_completo || ', ' || p_entrenadores_nombres;
-	END IF;
-
-
-	IF p_is_update = '1'
-	THEN
-		UPDATE
-			tb_entrenadores
-		SET
-			entrenadores_codigo=p_entrenadores_codigo,
-			entrenadores_ap_paterno=p_entrenadores_ap_paterno,
-			entrenadores_ap_materno=p_entrenadores_ap_materno,
-			entrenadores_nombres=p_entrenadores_nombres,
-			entrenadores_nombre_completo=v_nombre_completo,
-			entrenadores_nivel_codigo=p_entrenadores_nivel_codigo,
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE entrenadores_codigo = p_entrenadores_codigo and xmin =p_version_id ;
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_entrenadores
-			(entrenadores_codigo,entrenadores_ap_paterno,entrenadores_ap_materno,entrenadores_nombres,entrenadores_nombre_completo,
-				entrenadores_nivel_codigo,activo,usuario_mod)
-		VALUES (p_entrenadores_codigo,
-			p_entrenadores_ap_paterno,
-			p_entrenadores_ap_materno,
-			p_entrenadores_nombres,
-			v_nombre_completo,
-			p_entrenadores_nivel_codigo,
-			p_activo,
-			p_usuario);
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_entrenadores_save_record(p_entrenadores_codigo character varying, p_entrenadores_ap_paterno character varying, p_entrenadores_ap_materno character varying, p_entrenadores_nombres character varying, p_entrenadores_nivel_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 255 (class 1255 OID 16443)
--- Name: sp_entrenadoresatletas_save_record(integer, character varying, character varying, date, date, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_entrenadoresatletas_save_record(p_entrenadoresatletas_id integer, p_entrenadores_codigo character varying, p_atletas_codigo character varying, p_entrenadoresatletas_desde date, p_entrenadoresatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 03-02-2014
-
-Stored procedure que agrega un registro de la relacion entre entrenadores y atletas
-verificando previamente que el atleta no este asignado a otro entrenador ydentro del rango
-de fechas definidos.
-
-Historia : Creado 03-02-2014
-*/
-DECLARE v_entrenador_nombre VARCHAR(300) = '';
-
-BEGIN
-
-	-- Si se agrega activo verificamos si existe en otra liga.
-	IF p_activo = TRUE
-	THEN
-		-- Verificamos si el atleta esta definido en otro entrenador y las fechas no se overlapan (un atleta no puede haber
-		-- sido entrenado por 2 entrenadores a la vez
-		IF EXISTS (SELECT 1
-				FROM tb_entrenadores_atletas ea
-				LEFT JOIN tb_entrenadores ent on ent.entrenadores_codigo = ea.entrenadores_codigo
-			  where  atletas_codigo = p_atletas_codigo
-				and coalesce(p_entrenadoresatletas_id,-1) != coalesce(ea.entrenadoresatletas_id,2)
-				and (p_entrenadoresatletas_desde  between entrenadoresatletas_desde and entrenadoresatletas_hasta or
-				    coalesce(p_entrenadoresatletas_hasta,'2035-01-01')   between entrenadoresatletas_desde and entrenadoresatletas_hasta or
-				    entrenadoresatletas_desde  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01')  or
-				    entrenadoresatletas_hasta  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01')  ) LIMIT 1)
-		THEN
-			-- Para recuperar el nombre del entrenador (el primero) que ocurre en ese rango
-			SELECT entrenadores_nombre_completo   INTO  v_entrenador_nombre
-				FROM tb_entrenadores_atletas ea
-				LEFT JOIN tb_entrenadores ent on ent.entrenadores_codigo = ea.entrenadores_codigo
-			  where  atletas_codigo = p_atletas_codigo
-				and (p_entrenadoresatletas_desde  between entrenadoresatletas_desde and entrenadoresatletas_hasta or
-				    coalesce(p_entrenadoresatletas_hasta,'2035-01-01')  between entrenadoresatletas_desde and entrenadoresatletas_hasta or
-				    entrenadoresatletas_desde  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01') or
-				    entrenadoresatletas_hasta  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01') ) LIMIT 1;
-
-			-- Excepcion de pais con ese nombre existe
-			RAISE 'El atleta pertenecia a otro entrenador o al mismo entrenador durante ese rango de fechas, verifique la fecha final definida en el entrenador (%)',v_entrenador_nombre USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-IF p_is_update = '1'
-	THEN
-		UPDATE
-			tb_entrenadores_atletas
-		SET
-			entrenadores_codigo=p_entrenadores_codigo,
-			atletas_codigo=p_atletas_codigo,
-			entrenadoresatletas_desde=p_entrenadoresatletas_desde,
-			entrenadoresatletas_hasta=coalesce(p_entrenadoresatletas_hasta,'2035-01-01'),
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE entrenadoresatletas_id = p_entrenadoresatletas_id and xmin =p_version_id ;
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_entrenadores_atletas
-			(entrenadores_codigo,atletas_codigo,entrenadoresatletas_desde,entrenadoresatletas_hasta,activo,usuario)
-		VALUES(p_entrenadores_codigo,
-		       p_atletas_codigo,
-		       p_entrenadoresatletas_desde,
-		       coalesce(p_entrenadoresatletas_hasta,'2035-01-01'),
-		       p_activo,
-		       p_usuario);
-
-		RETURN 1;
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_entrenadoresatletas_save_record(p_entrenadoresatletas_id integer, p_entrenadores_codigo character varying, p_atletas_codigo character varying, p_entrenadoresatletas_desde date, p_entrenadoresatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 256 (class 1255 OID 16444)
--- Name: sp_liga_delete_record(character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_liga_delete_record(p_ligas_codigo character varying, p_usuario_mod character varying, p_version_id integer) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 03-02-2014
-
-Stored procedure que elimina una liga eliminando todos las asociaciones a sus clubes,
-NO ELIMINA LOS CLUBES SOLO LAS ASOCIASIONES A LOS MISMO.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos .
-
-Esta procedure function devuelve un entero siempre que el delete
-	se haya realizado y devuelve null si no se realizo el delete. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el delete se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el delete se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el delete usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select :
-
-	select * from ( select sp_liga_delete_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el delete funciono , y 0 registros si no se realizo
-	el delete. Esto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-Historia : Creado 03-02-2014
-*/
-BEGIN
-
-	-- Verificacion previa que el registro no esgta modificado
-	--
-	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
-	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
-	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
-	IF EXISTS (SELECT 1 FROM tb_ligas WHERE ligas_codigo = p_ligas_codigo and xmin=p_version_id) THEN
-		-- Eliminamos
-		DELETE FROM
-			tb_ligas_clubes
-		WHERE ligas_codigo = p_ligas_codigo;
-
-		DELETE FROM
-			tb_ligas
-		WHERE ligas_codigo = p_ligas_codigo and xmin =p_version_id;
-
-		--RAISE NOTICE  'COUNT ID --> %', FOUND;
-		-- SI SE PUDO ELIMINAR SE INDICA 1 DE LO CONTRARIO NULL
-		-- VER DOCUMENTACION DE LA FUNCION
-		IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		RETURN null;
-	END IF;
-
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_liga_delete_record(p_ligas_codigo character varying, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
-
---
--- TOC entry 257 (class 1255 OID 16445)
--- Name: sp_ligasclubes_save_record(integer, character varying, character varying, date, date, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_ligasclubes_save_record(p_ligasclubes_id integer, p_ligas_codigo character varying, p_clubes_codigo character varying, p_ligasclubes_desde date, p_ligasclubes_hasta date, p_activo boolean, p_usuario character varying, p_versionid integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 03-02-2014
-
-Stored procedure que agrega un registro de la relacion entre ligas y clubes
-verificando previamente que el club no este asignado a otra liga y dentro del rango
-de fechas definidos.
-
-Historia : Creado 03-02-2014
-*/
-DECLARE v_liga_descripcion VARCHAR(300) = '';
-
-BEGIN
-
-	-- Si se agrega activo verificamos si existe en otra liga.
-	IF p_activo = TRUE
-	THEN
-		-- Verificamos si el atleta esta definido en otro club y las fechas no se overlapan (un atleta no puede haber
-		-- sido entrenado por 2 clubes a la vez
-		IF EXISTS (SELECT 1
-				FROM tb_ligas_clubes ea
-			  where  clubes_codigo = p_clubes_codigo
-				and coalesce(p_ligasclubes_id,-1) != coalesce(ea.ligasclubes_id,2)
-				and (p_ligasclubes_desde  between ligasclubes_desde and ligasclubes_hasta or
-				    p_ligasclubes_hasta  between ligasclubes_desde and ligasclubes_hasta or
-				    ligasclubes_desde  between p_ligasclubes_desde and p_ligasclubes_hasta or
-				    ligasclubes_hasta  between p_ligasclubes_desde and p_ligasclubes_hasta ) LIMIT 1)
-		THEN
-			-- Para recuperar el nombre del club (el primero) que ocurre en ese rango
-			SELECT INTO  v_liga_descripcion  ligas_descripcion
-				FROM tb_ligas_clubes ea
-				LEFT JOIN tb_ligas ent on ent.ligas_codigo = ea.ligas_codigo
-			  where  clubes_codigo = p_clubes_codigo
-				and (p_ligasclubes_desde  between ligasclubes_desde and ligasclubes_hasta or
-				    p_ligasclubes_hasta  between ligasclubes_desde and ligasclubes_hasta or
-				    ligasclubes_desde  between p_ligasclubes_desde and p_ligasclubes_hasta or
-				    ligasclubes_hasta  between p_ligasclubes_desde and p_ligasclubes_hasta ) LIMIT 1;
-
-			-- Excepcion de pais con ese nombre existe
-			RAISE 'El club pertenecia a otra liga o a la misma liga durante ese rango de fechas, verifique la fecha final definida en la liga (%)',v_liga_descripcion USING ERRCODE = 'restrict_violation';
-		END IF;
-	END IF;
-
-IF p_is_update = '1'
-	THEN
-		-- Update a la relacion liga/club
-		UPDATE tb_ligas_clubes
-			SET ligas_codigo=p_ligas_codigo,
-				clubes_codigo=p_clubes_codigo,
-				ligasclubes_desde=p_ligasclubes_desde,
-				ligasclubes_hasta=coalesce(p_ligasclubes_hasta,'2035-12-31'),
-				usuario_mod=p_usuario,
-				activo=p_activo
-		WHERE p_ligasclubes_id = p_ligasclubes_id and xmin=p_versionid;
-
-
-		RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-		IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-		tb_ligas_clubes
-		(ligas_codigo,clubes_codigo,ligasclubes_desde,ligasclubes_hasta,activo,usuario)
-			VALUES(p_ligas_codigo,
-				p_clubes_codigo,
-				p_ligasclubes_desde,
-				coalesce(p_ligasclubes_hasta,'2035-12-31'),
-				p_activo,
-				p_usuario);
-
-		RETURN 1;
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_ligasclubes_save_record(p_ligasclubes_id integer, p_ligas_codigo character varying, p_clubes_codigo character varying, p_ligasclubes_desde date, p_ligasclubes_hasta date, p_activo boolean, p_usuario character varying, p_versionid integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 258 (class 1255 OID 16446)
--- Name: sp_paises_save_record(character varying, character varying, boolean, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_paises_save_record(p_paises_codigo character varying, p_paises_descripcion character varying, p_paises_entidad boolean, p_regiones_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 08-10-2013
-
-Stored procedure que agrega o actualiza los registros de los paises.
-Previo verifica que no exista un pais con el mismo nombre y desactiva el campo
-paises_entidad si se esta tratando de grabar un registro con ese valor en TRUE
-pero ya existe otro que lo tiene.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update , de la misma forma el parametro id sera ignorado durante un insert.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_paises_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 15-01-2014
-*/
-BEGIN
-	-- Verificamos si alguno con el mismo nombre existe e indicamos el error.
-	IF EXISTS (SELECT 1 FROM tb_paises
-		  where paises_codigo != p_paises_codigo and UPPER(LTRIM(RTRIM(paises_descripcion))) = UPPER(LTRIM(RTRIM(p_paises_descripcion))))
-	THEN
-		-- Excepcion de pais con ese nombre existe
-		RAISE 'Ya existe un pais con ese nombre pero diferente codigo' USING ERRCODE = 'restrict_violation';
-	END IF;
-
-	-- Si un pais ya tiene indicado su entidad y se trata de indicar al registro
-	-- que se agrega o modifca que tendra el indicador de entidad , primero quitamos
-	-- el que existe previo a grabar.
-	IF p_paises_entidad = TRUE
-	THEN
-		UPDATE
-			tb_paises
-		SET paises_entidad=FALSE
-		WHERE paises_entidad=TRUE and paises_codigo != p_paises_codigo;
-	END IF;
-
-	IF p_is_update = '1'
-	THEN
-		UPDATE
-			tb_paises
-		SET
-			paises_descripcion=p_paises_descripcion,
-			paises_entidad=p_paises_entidad,
-			regiones_codigo=p_regiones_codigo,
-			activo=p_activo,
-			usuario_mod=p_usuario
-                WHERE paises_codigo = p_paises_codigo and xmin =p_version_id ;
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RAISE '' USING ERRCODE = 'record modified';
-			RETURN null;
-		END IF;
-	ELSE
-		INSERT INTO
-			tb_paises
-			(paises_codigo,paises_descripcion,paises_entidad,regiones_codigo,activo,usuario)
-		VALUES(p_paises_codigo,
-		       p_paises_descripcion,
-		       p_paises_entidad,
-		       p_regiones_codigo,
-		       p_activo,
-		       p_usuario);
-
-		RETURN 1;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_paises_save_record(p_paises_codigo character varying, p_paises_descripcion character varying, p_paises_entidad boolean, p_regiones_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
-
---
--- TOC entry 285 (class 1255 OID 59168)
--- Name: sp_perfil_delete_record(integer, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_perfil_delete_record(p_perfil_id integer, p_usuario_mod character varying, p_version_id integer) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 01-01-2014
-
-Stored procedure que elimina un perfil de menu eliminando todos los registros de perfil detalle asociados.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos .
-
-Esta procedure function devuelve un entero siempre que el delete
-	se haya realizado y devuelve null si no se realizo el delete. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el delete se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el delete se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el delete usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select :
-
-	select * from ( select sp_perfil_delete_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el delete funciono , y 0 registros si no se realizo
-	el delete. Esto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-Historia : Creado 05-01-2014
-*/
-BEGIN
-
-	-- Verificacion previa que el registro no esgta modificado
-	--
-	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
-	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
-	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
-	IF EXISTS (SELECT 1 FROM tb_sys_perfil WHERE perfil_id = p_perfil_id and xmin=p_version_id) THEN
-		-- Eliminamos
-		DELETE FROM
-			tb_sys_perfil_detalle
-		WHERE perfil_id = p_perfil_id ;
-
-		DELETE FROM
-			tb_sys_perfil
-		WHERE perfil_id = p_perfil_id and xmin =p_version_id;
-
-		--RAISE NOTICE  'COUNT ID --> %', FOUND;
-		-- SI SE PUDO ELIMINAR SE INDICA 1 DE LO CONTRARIO NULL
-		-- VER DOCUMENTACION DE LA FUNCION
-		IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		RETURN null;
-	END IF;
-
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_perfil_delete_record(p_perfil_id integer, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
-
---
--- TOC entry 279 (class 1255 OID 59169)
--- Name: sp_perfil_detalle_save_record(integer, integer, integer, boolean, boolean, boolean, boolean, boolean, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_perfil_detalle_save_record(p_perfdet_id integer, p_perfil_id integer, p_menu_id integer, p_acc_leer boolean, p_acc_agregar boolean, p_acc_actualizar boolean, p_acc_eliminar boolean, p_acc_imprimir boolean, p_activo boolean, p_usuario character varying, p_version_id integer) RETURNS integer
-    LANGUAGE plpgsql
-    AS $$
-/**
-Autor : Carlos arana Reategui
-Fecha : 01-01-2014
-
-Stored procedure que actualiza los registros de un detalle de perfil. Si este registro es un menu o submenu
-aplicara los accesos a toda la ruta desde el nivel de este registro a todos los subniveles de menu
-por debajo de este. Por ahora solo soporta el acceso de leer para el caso de grabacion multiple
-de tal forma que si se indca que se puede leer se dara acceso total a sus hijos y si deniega se retira el acceso
-total a dichos hijos.
-Si el caso es que es una opcion de un menu o submenu aplicara los cambios de acceso solo a ese registro.
-
-El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
-durante un update de registro unico.
-
-IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
-	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
-	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
-	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
-	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
-	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
-	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
-	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
-
-	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
-
-	select * from ( select sp_perfil_detalle_save_record(?,?,etc) as updins) as ans where updins is not null;
-
-	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
-	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
-	EN OTRAS BASES ESTO NO ES NECESARIO.
-
-Historia : Creado 08-10-2013
-*/
-DECLARE v_isRoot BOOLEAN := 'F';
-BEGIN
-	-- Si no hay acceso de lectura los demas son desactivados
-	IF p_acc_leer = 'F'
-	THEN
-	   p_acc_agregar 	= 'F';
-	   p_acc_actualizar 	= 'F';
-	   p_acc_eliminar 	= 'F';
-	   p_acc_imprimir 	= 'F';
-
-	END IF;
-
-	-- Primero vemos si es un menu o submenu (root de arbol)
-	-- PAra esto vemos si algun parent id apunta a este menu , si es asi es un menu
-	-- o submenu.
-	IF EXISTS (SELECT 1 FROM tb_sys_menu WHERE menu_parent_id = p_menu_id)
-	THEN
-	  v_isRoot := 'T';
-	  -- Si es root y acceso de lectura es true a todos true
-	  IF p_acc_leer = 'T'
-	  THEN
-		p_acc_agregar 	= 'T';
-		p_acc_actualizar= 'T';
-		p_acc_eliminar 	= 'T';
-		p_acc_imprimir 	= 'T';
-
-	  END IF;
-	END IF;
-
-	-- Si es root (menu o submenu) se hace unn update a todas las opciones
-	-- debajo del menu o submenu a setear en el perfil.
-	IF v_isRoot = 'T'
-	THEN
-		-- Este metodo es recursivo y existe en otras bases de datos
-		-- revisar documentacion de las mismas.
-		WITH RECURSIVE rootMenus(menu_id,menu_parent_id)
-		AS (
-			  SELECT menu_id,menu_parent_id
-			  FROM tb_sys_menu
-			  WHERE menu_id = p_menu_id
-
-			  UNION ALL
-
-			  SELECT
-			    r.menu_id,r.menu_parent_id
-			  FROM tb_sys_menu r, rootMenus as t
-			  WHERE r.menu_parent_id = t.menu_id
-		)
-
-		-- Update a todo el path a partir de menu o submenu raiz.
-		UPDATE tb_sys_perfil_detalle
-			SET perfdet_accleer=p_acc_leer,perfdet_accagregar=p_acc_agregar,
-				perfdet_accactualizar=p_acc_actualizar,perfdet_accimprimir=p_acc_imprimir,
-				perfdet_acceliminar=p_acc_eliminar,
-				usuario_mod=p_usuario
-		WHERE perfil_id = p_perfil_id-- and xmin=p_version_id
-		and menu_id in (
-			SELECT menu_id FROM rootMenus
-		);
-
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-	ELSE
-		-- UPDATE PARA EL CASO DE UNA OPCION QUE NO ES DE MENU O SUBMENU
-		UPDATE tb_sys_perfil_detalle
-			SET perfdet_accleer=p_acc_leer,perfdet_accagregar=p_acc_agregar,
-				perfdet_accactualizar=p_acc_actualizar,perfdet_accimprimir=p_acc_imprimir,
-				perfdet_acceliminar=p_acc_eliminar,
-				usuario_mod=p_usuario
-		WHERE perfil_id = p_perfil_id
-		and menu_id = p_menu_id and xmin=p_version_id;
-
-                RAISE NOTICE  'COUNT ID --> %', FOUND;
-
-                IF FOUND THEN
-			RETURN 1;
-		ELSE
-			RETURN null;
-		END IF;
-
-	END IF;
-END;
-$$;
-
-
-ALTER FUNCTION public.sp_perfil_detalle_save_record(p_perfdet_id integer, p_perfil_id integer, p_menu_id integer, p_acc_leer boolean, p_acc_agregar boolean, p_acc_actualizar boolean, p_acc_eliminar boolean, p_acc_imprimir boolean, p_activo boolean, p_usuario character varying, p_version_id integer) OWNER TO atluser;
-
---
--- TOC entry 259 (class 1255 OID 16449)
--- Name: sp_pruebas_atletas_resultados_save_record(integer, character varying, character varying, character varying, boolean, date, numeric, character varying, integer, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
---
-
-CREATE FUNCTION sp_pruebas_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_invalida boolean, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+CREATE FUNCTION old_sp_pruebas_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_invalida boolean, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 /**
@@ -5030,10 +2090,3091 @@ END;
 $$;
 
 
-ALTER FUNCTION public.sp_pruebas_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_invalida boolean, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+ALTER FUNCTION public.old_sp_pruebas_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_invalida boolean, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 260 (class 1255 OID 16452)
+-- TOC entry 244 (class 1255 OID 16418)
+-- Name: sp_apppruebas_save_record(character varying, character varying, character varying, character varying, character varying, boolean, boolean, boolean, numeric, numeric, integer, numeric, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_apppruebas_save_record(p_apppruebas_codigo character varying, p_apppruebas_descripcion character varying, p_pruebas_clasificacion_codigo character varying, p_apppruebas_marca_menor character varying, p_apppruebas_marca_mayor character varying, p_apppruebas_multiple boolean, p_apppruebas_verifica_viento boolean, p_apppruebas_viento_individual boolean, p_apppruebas_viento_limite_normal numeric, p_apppruebas_viento_limite_multiple numeric, p_apppruebas_nro_atletas integer, p_apppruebas_factor_manual numeric, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de los pruebas genericas.
+Previo verifica que no se definan limies de viento innecesriamente y asi mismo que la marca menor
+sea siempre menor que la marca mayor.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_apppruebas_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+DECLARE v_apppruebas_multiple BOOLEAN = FALSE;
+DECLARE v_unidad_medida_codigo CHARACTER VARYING(8);
+DECLARE v_marcaMenorValida INTEGER;
+DECLARE v_marcaMayorValida INTEGER;
+
+BEGIN
+	IF p_apppruebas_multiple = TRUE
+	THEN
+		IF p_apppruebas_verifica_viento = true OR
+			p_apppruebas_viento_limite_normal IS NOT NULL OR
+			p_apppruebas_viento_limite_multiple IS NOT NULL
+		THEN
+			RAISE 'Las pruebas multiples no pueden tener control de viento' USING ERRCODE = 'restrict_violation';
+		END IF;
+	ELSE IF p_apppruebas_verifica_viento = true
+		THEN
+			IF  p_apppruebas_viento_limite_normal IS NULL
+			THEN
+				RAISE 'Indique al menos el  limite de viento standard para la prueba' USING ERRCODE = 'restrict_violation';
+			END IF;
+		END IF;
+	END IF;
+
+	-- Verificamos si alguno con el mismo nombre existe e indicamos el error.
+	IF EXISTS (SELECT 1 FROM tb_app_pruebas_values
+		  where apppruebas_codigo != p_apppruebas_codigo and UPPER(LTRIM(RTRIM(apppruebas_descripcion))) = UPPER(LTRIM(RTRIM(p_apppruebas_descripcion))))
+	THEN
+		-- Excepcion de prueba con ese nombre existe
+		RAISE 'Ya existe un prueba con ese nombre pero diferente codigo' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Se verifica que el numero de atletas sea 1 o 4 , en el caso de null el default sera 1
+	IF p_apppruebas_nro_atletas is not null AND p_apppruebas_nro_atletas != 1 and p_apppruebas_nro_atletas != 4
+	THEN
+		-- Excepcion de numero de atletas incorecto.
+		RAISE 'Las pruebas pueden ser de uno o 4 atletas' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+
+	-- Leemos el tipo de prueba para saber la unidad de medida para la prueba
+	SELECT unidad_medida_codigo INTO
+		v_unidad_medida_codigo
+	FROM tb_pruebas_clasificacion c
+	WHERE c.pruebas_clasificacion_codigo = p_pruebas_clasificacion_codigo;
+
+	-- No lo pongo como constraint ya que por ahora es un string y requiere tratamiento especial
+	-- posiblemente estos campos requieran cambios.
+	-- Normalizamos a milisegundos , sin iportar si es manual o no ya que ambas medidas deben estar en las mismas
+	-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
+	-- normalizados.
+	v_marcaMenorValida := fn_get_marca_normalizada(p_apppruebas_marca_menor, v_unidad_medida_codigo, false, 0);
+	v_marcaMayorValida := fn_get_marca_normalizada(p_apppruebas_marca_mayor, v_unidad_medida_codigo, false, 0);
+
+	IF v_marcaMenorValida >= v_marcaMayorValida
+	THEN
+		RAISE 'EL limite de menor para la marca de la prueba no puede ser mayor o igual que el limite mayor' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+
+	IF p_is_update = '1'
+	THEN
+
+		-- Leemos el status actual de la prueba , si es multiple o no
+		SELECT apppruebas_multiple INTO
+			v_apppruebas_multiple
+		FROM tb_app_pruebas_values p
+		WHERE p.apppruebas_codigo = p_apppruebas_codigo;
+
+		-- SI actualmente es una prueba multiple y se desea pasar a prueba simple
+		-- verificamos si alguna prueba en la tabla de pruebas tiene ya definido la subpruebas
+		-- de ser asi no se permitira ,mientras no se elimine la prueba o se retire los detalles.
+		IF v_apppruebas_multiple = TRUE and p_apppruebas_multiple = FALSE
+		THEN
+			IF EXISTS (SELECT 1 FROM tb_pruebas pr
+			INNER JOIN tb_app_pruebas_values pv on pv.apppruebas_codigo = pr.pruebas_generica_codigo
+			INNER JOIN tb_pruebas_detalle pd  on pd.pruebas_codigo = pr.pruebas_codigo
+			WHERE pv.apppruebas_codigo = p_apppruebas_codigo LIMIT 1)
+			THEN
+				RAISE 'Esta prueba generica es actualmente multiple y ya tiene pruebas combinadas especificas con sus respectivas pruebas.<br>Corriga primero las pruebas especificas si es que no es un error de digitacion.' USING ERRCODE = 'restrict_violation';
+			END IF;
+		END IF;
+
+		-- HACEMOS EL UPDATE
+		UPDATE
+			tb_app_pruebas_values
+		SET
+			apppruebas_descripcion=p_apppruebas_descripcion,
+			pruebas_clasificacion_codigo=p_pruebas_clasificacion_codigo,
+			apppruebas_marca_menor=p_apppruebas_marca_menor,
+			apppruebas_marca_mayor=p_apppruebas_marca_mayor,
+			apppruebas_multiple=p_apppruebas_multiple,
+			apppruebas_verifica_viento=p_apppruebas_verifica_viento,
+			apppruebas_viento_individual=p_apppruebas_viento_individual,
+			apppruebas_viento_limite_normal=p_apppruebas_viento_limite_normal,
+			apppruebas_viento_limite_multiple=p_apppruebas_viento_limite_multiple,
+			apppruebas_nro_atletas=p_apppruebas_nro_atletas,
+			apppruebas_factor_manual=p_apppruebas_factor_manual,
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE apppruebas_codigo = p_apppruebas_codigo and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RAISE '' USING ERRCODE = 'record modified';
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_app_pruebas_values
+			(apppruebas_codigo,apppruebas_descripcion,pruebas_clasificacion_codigo,apppruebas_marca_menor,
+			 apppruebas_marca_mayor,apppruebas_multiple,apppruebas_verifica_viento,apppruebas_viento_individual,
+			 apppruebas_viento_limite_normal,
+			 apppruebas_viento_limite_multiple,apppruebas_nro_atletas,apppruebas_factor_manual,activo,usuario)
+		VALUES(p_apppruebas_codigo,
+			p_apppruebas_descripcion,
+			p_pruebas_clasificacion_codigo,
+			p_apppruebas_marca_menor,
+			p_apppruebas_marca_mayor,
+			p_apppruebas_multiple,
+			p_apppruebas_verifica_viento,
+			p_apppruebas_viento_individual,
+			p_apppruebas_viento_limite_normal,
+			p_apppruebas_viento_limite_multiple,
+			p_apppruebas_nro_atletas,
+			p_apppruebas_factor_manual,
+			p_activo,
+			p_usuario);
+
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_apppruebas_save_record(p_apppruebas_codigo character varying, p_apppruebas_descripcion character varying, p_pruebas_clasificacion_codigo character varying, p_apppruebas_marca_menor character varying, p_apppruebas_marca_mayor character varying, p_apppruebas_multiple boolean, p_apppruebas_verifica_viento boolean, p_apppruebas_viento_individual boolean, p_apppruebas_viento_limite_normal numeric, p_apppruebas_viento_limite_multiple numeric, p_apppruebas_nro_atletas integer, p_apppruebas_factor_manual numeric, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 245 (class 1255 OID 16421)
+-- Name: sp_asigperfiles_save_record(integer, integer, integer, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_asigperfiles_save_record(p_asigperfiles_id integer, p_perfil_id integer, p_usuarios_id integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de aisgnacion de perfiles.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_asigperfiles_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 08-10-2013
+*/
+BEGIN
+
+	IF p_is_update = '1'
+	THEN
+		UPDATE
+			tb_sys_asigperfiles
+		SET
+			asigperfiles_id=p_asigperfiles_id,
+			perfil_id=p_perfil_id,
+			usuarios_id=p_usuarios_id,
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE asgper_id = p_asgper_id and xmin =p_version_id ;
+                --RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_sys_asigperfiles
+			(perfil_id,usuarios_id,activo,usuario)
+		VALUES(p_perfil_id,
+		       usuarios_id,
+		       p_activo,
+		       p_usuario);
+
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_asigperfiles_save_record(p_asigperfiles_id integer, p_perfil_id integer, p_usuarios_id integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 246 (class 1255 OID 16422)
+-- Name: sp_atletas_pruebas_resultados_detalle_save_record(integer, integer, character varying, date, numeric, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_atletas_pruebas_resultados_detalle_save_record(p_atletas_resultados_id integer, p_competencias_pruebas_id integer, p_atletas_codigo character varying, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza un resultado de alguna prueba componente de una combinada sea
+heptatlon, decatlon , etc.
+
+Este stored procedure trata los registos de la tb_competencias_pruebas y tb_atletas_resultado a la vez ,
+pero solo permitira agregar o modificar a los rsuultados , a la otra tabla solo podra actualizarla , POR
+LO QUE SE REQUIERE QUE EXISTA EL REGISTRO DE LA PRUEBA SIEMPRE.
+
+
+DADO QUE ALGUNOS DATOS DE LA PRUEBA PUEDEN TAMBIEN SER MODIFICADOS, ESTE SP ES UTIL CUANDO LOS RESULTADOS
+SE AGREGAN DIRECTAMENTE A UN ATLETA, Y NO POR EL LADO DE LAS COMPETENCIAS.
+
+En la tabla tb_competencias_pruebas solo podra modificarse lo que respecta a lasc condiciones de
+la prueba , digase viento,material,puntosfecha , observaciones , nada mas.
+
+El registro de la competencia principal solo sera actualizado en lo que respecta a los puntos acumulados y lo que es viento,material,anemometro.
+
+
+Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
+consistentemente,
+
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+SI EL PARAMETRO p_atletas_resultados_id es null se asumira es un add de lo contrario se asumira un update.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_pruebas_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+DECLARE v_categorias_codigo_competencia character varying(15);
+DECLARE v_pruebas_codigo character varying(15);
+DECLARE v_competencias_codigo character varying(15);
+DECLARE v_pruebas_sexo_new  character(1);
+DECLARE v_atletas_sexo_new  character(1);
+DECLARE v_atletas_fecha_nacimiento_new DATE;
+DECLARE v_apppruebas_marca_menor_new character varying(12);
+DECLARE v_apppruebas_marca_mayor_new character varying(12);
+DECLARE v_apppruebas_verifica_viento boolean;
+DECLARE v_agnos INT;
+DECLARE v_marca_test integer;
+DECLARE v_unidad_medida_codigo character varying(8);
+DECLARE v_marcaMenorValida integer;
+DECLARE v_marcaMayorValida integer;
+DECLARE v_competencias_pruebas_origen_id integer;
+DECLARE v_competencias_pruebas_id integer;
+DECLARE v_prueba_saved integer=0;
+DECLARE v_unidad_medida_tipo character(1);
+DECLARE v_apppruebas_viento_individual boolean;
+
+BEGIN
+
+	-- VERIFICACIONES PARA LA COMPETENCIA / PRUEBA ENVIADA.
+
+	-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
+	-- de lo contrario es imposible hacer un update.
+	-- Solo busca aquellas que no son parte de una combinada.
+	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_codigo
+		INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_codigo
+	FROM tb_competencias_pruebas cp
+	WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
+
+	--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
+	--RAISE NOTICE 'v_competencias_pruebas_origen_id %',v_competencias_pruebas_origen_id;
+
+	IF v_competencias_pruebas_id IS  NULL
+	THEN
+		-- La prueba no existe
+		RAISE 'Para la competencia , la prueba no se ha encontrado , esto es incorrecto durante una actualizacion de resultados'  USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	IF v_competencias_pruebas_origen_id IS NULL
+	THEN
+		-- La prueba no existe
+		RAISE 'Solo resultados para pruebas dentro de una combinada son permitidos'  USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- En las combinadas un atleta solo puede realizar una vez la prueba ya que no existin semifinales y finales sino
+	-- solo se agrupan pero el resultado es consolidado. (solo durante add osea p_atletas_resultados_id IS NULL)
+	IF v_competencias_pruebas_origen_id IS NOT NULL and p_atletas_resultados_id IS NULL
+	THEN
+		IF EXISTS(SELECT 1 FROM tb_competencias_pruebas  cp
+				INNER JOIN tb_atletas_resultados ar on ar.competencias_pruebas_id = cp.competencias_pruebas_id
+				WHERE cp.pruebas_codigo = v_pruebas_codigo AND
+					competencias_pruebas_origen_id = v_competencias_pruebas_origen_id AND
+					atletas_codigo=p_atletas_codigo)
+		THEN
+			RAISE 'El atleta ya registra resultado para dicha prueba, en el caso de las combinadas no puede realizar una prueba mas de una vez'  USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+		-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
+	-- lo cual no es logico.
+	IF EXISTS(SELECT 1
+		FROM tb_competencias_pruebas pr
+		inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
+		where   atletas_resultados_puesto=p_atletas_resultados_puesto and
+			atletas_resultados_resultado != p_atletas_resultados_resultado and
+			pr.competencias_pruebas_id = p_competencias_pruebas_id  and
+			atletas_codigo != p_atletas_codigo)
+	THEN
+		RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+	END IF;
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+
+	-- Busxcamos la categoria de la competencia, los datos de la prueba y del atleta
+	-- basados en los datos actuales a grabar, esto no permitira saber si la relacion
+	-- COmPETencia,PrueBA;ATLETA es correcta , digase si la competencia es de mayores
+	-- la prueba debe ser de mayores y el atleta debe ser mayor, asi mismo si la prueba es para
+	-- el sexo femenino , el atleta debe ser mujer
+	SELECT categorias_codigo,competencias_fecha_inicio,competencias_fecha_final INTO
+		v_categorias_codigo_competencia
+	FROM tb_competencias where competencias_codigo=v_competencias_codigo;
+
+
+	-- Buscamos los datos de la gnerica de prueba que actualmente se quiere grabar para saber si tambien sera multiple.
+	SELECT pruebas_sexo,apppruebas_marca_menor,
+		apppruebas_marca_mayor,c.unidad_medida_codigo,apppruebas_verifica_viento,unidad_medida_tipo,
+		apppruebas_viento_individual
+	INTO
+		v_pruebas_sexo_new,v_apppruebas_marca_menor_new,
+		v_apppruebas_marca_mayor_new,v_unidad_medida_codigo,v_apppruebas_verifica_viento,v_unidad_medida_tipo,
+		v_apppruebas_viento_individual
+	FROM tb_pruebas pr
+	INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
+	INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
+	INNER JOIN tb_unidad_medida um on um.unidad_medida_codigo = c.unidad_medida_codigo
+	where pr.pruebas_codigo = v_pruebas_codigo;
+
+	-- Se busca el sexo del atleta
+	SELECT atletas_sexo,atletas_fecha_nacimiento INTO
+		v_atletas_sexo_new,v_atletas_fecha_nacimiento_new
+	FROM tb_atletas at
+	where at.atletas_codigo = p_atletas_codigo;
+
+		raise notice 'v_atletas_sexo_new: %',v_atletas_sexo_new;
+		raise notice 'v_pruebas_sexo_new: %',v_pruebas_sexo_new;
+
+	-- Luego si el sexo del atleta y el sexo de la prueba corresponden.
+	IF coalesce(v_atletas_sexo_new,'X') != coalesce(v_pruebas_sexo_new,'Y')
+	THEN
+		RAISE 'El sexo del atleta no corresponde a la de la prueba indicada, ambos deben ser iguales ' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- La mas dificil , si en la fecha de la prueba el atleta pertenecia a la categoria de
+	-- la competencia. Para esto
+	-- a) Que edad tenia el atleta en la fecha de la competencia.
+	-- b) hasta que edad permite la categoria.
+	select date_part( 'year'::text,p_competencias_pruebas_fecha::date)-date_part( 'year'::text,v_atletas_fecha_nacimiento_new::date) INTO
+		v_agnos;
+
+	-- Veamos en la categoria si esta dentro del rango
+	IF NOT EXISTS(SELECT 1 from tb_categorias WHERE categorias_codigo = v_categorias_codigo_competencia AND
+		v_agnos >= categorias_edad_inicial AND v_agnos <= categorias_edad_final )
+	THEN
+		-- Excepcion el atleta no esta dentro de la categoria
+		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',p_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo_competencia USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Si el resultado de la prueba esta dentro de los valores validos
+	------------------------------------------------------------------------------------
+
+	-- Normalizamos a milisegundos , sin importar si es manual o no ya que ambas medidas deben estar en las mismas
+	-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
+	-- normalizados.
+	raise notice 'marca menor : %',v_apppruebas_marca_menor_new;
+	raise notice 'marca mayor : %',v_apppruebas_marca_mayor_new;
+	raise notice 'unidad_medida : %',v_unidad_medida_codigo;
+	raise notice 'p_atletas_resultados_resultado : %',p_atletas_resultados_resultado;
+
+	v_marcaMenorValida := fn_get_marca_normalizada(v_apppruebas_marca_menor_new, v_unidad_medida_codigo, false, 0);
+	v_marcaMayorValida := fn_get_marca_normalizada(v_apppruebas_marca_mayor_new, v_unidad_medida_codigo, false, 0);
+	v_marca_test := fn_get_marca_normalizada(p_atletas_resultados_resultado, v_unidad_medida_codigo, false, 0);
+
+	IF v_marca_test < v_marcaMenorValida OR v_marca_test > v_marcaMayorValida
+	THEN
+		--La marca indicada esta fuera del rango permitido
+		RAISE 'La marca indicada de % esta fuera del rango permitido entre % y % ', p_atletas_resultados_resultado,v_apppruebas_marca_menor_new,v_apppruebas_marca_mayor_new USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Si se indica marca , deben indicarse puntos , por aqui solo se graban los componentes de la
+	-- conmbinada o pruebas normales, dado validacion anterior
+	IF v_competencias_pruebas_origen_id IS NOT NULL
+	THEN
+		IF v_marca_test != 0 AND coalesce(p_atletas_resultados_puntos,0) = 0 OR
+			v_marca_test = 0 AND coalesce(p_atletas_resultados_puntos,0) != 0
+		THEN
+			RAISE 'Si la marca o puntos son mayores que cero , ambos deben estar indicados ' USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+
+	IF v_apppruebas_verifica_viento = TRUE --AND v_apppruebas_viento_individual = TRUE
+	THEN
+		IF p_competencias_pruebas_viento is null
+		THEN
+			-- La prueba requiere se indique el viento
+			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+		END IF;
+	ELSE
+		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
+		p_competencias_pruebas_viento := NULL;
+	END IF;
+
+	-- Si la unidad de medida de la prueba no es tiempo
+	-- se blanquea (false) al campo que indica si la medida manual.
+	IF v_unidad_medida_tipo != 'T'
+	THEN
+		p_competencias_pruebas_manual := false;
+	END IF;
+
+	-- Si la prueba no requiere verificacion de viento ponemos
+	-- que si tuvo.
+	IF v_apppruebas_verifica_viento = FALSE
+	THEN
+		p_competencias_pruebas_anemometro := true;
+	END IF;
+
+	---------------------------------------------------------------------
+	-- FIN VALIDACIONES PRIMARIAS - AHORA GRABACION.
+	----------------------------------------------------------------------
+
+	-- Grabamos cambios a la prueba
+	select * from (
+		select sp_competencias_pruebas_save_record(
+			v_competencias_pruebas_id::integer,
+			v_competencias_codigo,
+			v_pruebas_codigo,
+			NULL::integer,
+			p_competencias_pruebas_fecha,
+			p_competencias_pruebas_viento,
+			p_competencias_pruebas_manual,
+			'FI', -- NO ES VARIABLE PARA ESTE CASO
+			1,  -- N ES VARIABLE PARA ESTE CASO
+			p_competencias_pruebas_anemometro,
+			p_competencias_pruebas_material_reglamentario,
+			p_competencias_pruebas_observaciones,
+			p_atletas_resultados_protected,
+			p_activo ,
+			p_usuario,
+			NULL::integer,
+			1::bit) as updins) as ans
+	 into v_prueba_saved
+	 where updins is not null;
+
+	 IF v_prueba_saved != 1
+	 THEN
+		-- La prueba no existe
+		RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
+	 END IF;
+
+	-- Si se conoce la id del resultado se trata de un update.
+	IF p_atletas_resultados_id IS NOT NULL
+	THEN
+		IF NOT EXISTS(SELECT 1 FROM tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id
+			AND atletas_codigo =  p_atletas_codigo)
+		THEN
+			-- La prueba no existe
+			RAISE 'Al actualizar un resultado no puede cambiarse el atleta o el registro fue eliminado, verifique por favor...'  USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		-- Dado que durante un update no se actualiza el codigo del del atleta , y este parametro podria ser null o cualquier valor
+		-- no valido , obtenemos el atleta del registro correspondiente , para uso posterior , en al caso de un add el atleta
+		-- en el parametro debe ser obviamente validoy se tomara del parametroo mismo.
+		select atletas_codigo into p_atletas_codigo from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id;
+
+		-- El  update
+		-- Se hace el update del resultado , en este caso todos son parte de una combinada.
+		UPDATE
+			tb_atletas_resultados
+		SET
+			-- Aqui solo llegan pruebas parte de una combinada
+			atletas_resultados_resultado =  p_atletas_resultados_resultado,
+			atletas_resultados_puntos =  p_atletas_resultados_puntos,
+			atletas_resultados_puesto =  coalesce(p_atletas_resultados_puesto,0),
+			atletas_resultados_protected =  p_atletas_resultados_protected,
+			atletas_resultados_viento = (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end),
+			activo = p_activo,
+			usuario_mod = p_usuario
+		WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
+	ELSE
+		-- Con el id de la prueba creada o existente grabamos el resultado.
+		INSERT INTO
+			tb_atletas_resultados
+			(
+			 competencias_pruebas_id,
+			 atletas_codigo,
+			 atletas_resultados_resultado,
+			 atletas_resultados_puesto,
+			 atletas_resultados_puntos,
+			 atletas_resultados_viento,
+			 atletas_resultados_protected,
+			 activo,
+			 usuario)
+		VALUES(
+			 v_competencias_pruebas_id,
+			 p_atletas_codigo,
+			 p_atletas_resultados_resultado,
+			 coalesce(p_atletas_resultados_puesto,0),
+			 p_atletas_resultados_puntos,
+			 (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end),
+			 p_atletas_resultados_protected,
+			 p_activo,
+			 p_usuario);
+
+		-- esta por gusto nadie la usa
+		--SELECT currval(pg_get_serial_sequence('tb_atletas_resultados', 'atletas_resultados_id'))
+		--	INTO p_atletas_resultados_id;
+
+	END IF;
+
+	-- Todo ok , si es una prueba parte de una combinada actualizamos el total de puntos
+	-- en la principal.
+	IF FOUND THEN
+		-- Vemos si alguna prueba de esta competencia tiene datos que invalidan la prueba , ya sea anemometro , material , o si
+		-- el resultado es manual , para asi actualizar la prueba principal.
+		UPDATE tb_competencias_pruebas t1
+		  SET
+			competencias_pruebas_manual = (case when t2.cpm > 0 then TRUE else FALSE end),
+			competencias_pruebas_anemometro = (case when t2.cpa > 0 then FALSE else TRUE end),
+			competencias_pruebas_material_reglamentario = (case when t2.cpmr > 0 then FALSE else TRUE end)
+		  FROM (
+			select
+			max(competencias_pruebas_origen_id) as competencias_pruebas_origen_id,
+			sum((case when competencias_pruebas_manual = TRUE then 1 else 0 end)) as cpm,
+			sum((case when competencias_pruebas_anemometro = FALSE then 1 else 0 end)) as cpa,
+			sum((case when competencias_pruebas_material_reglamentario = FALSE then 1 else 0 end)) as cpmr
+			 from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id
+		  ) t2
+		  WHERE  t1.competencias_pruebas_id=t2.competencias_pruebas_origen_id;
+
+		-- Aqui todas son parte de una combinada.
+		-- actualizamos el resultado de la principal con el nuevo acumulado de puntos
+		UPDATE
+		tb_atletas_resultados
+		SET
+			atletas_resultados_resultado =  (
+				select sum(atletas_resultados_puntos) from tb_atletas_resultados
+					where competencias_pruebas_id in  (
+						select competencias_pruebas_id from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id and atletas_codigo=p_atletas_codigo)
+						)
+		WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo;
+
+		RETURN 1;
+	ELSE
+		--RAISE '' USING ERRCODE = 'record modified';
+		RETURN null;
+	END IF;
+
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_atletas_pruebas_resultados_detalle_save_record(p_atletas_resultados_id integer, p_competencias_pruebas_id integer, p_atletas_codigo character varying, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer) OWNER TO atluser;
+
+--
+-- TOC entry 287 (class 1255 OID 20999)
+-- Name: sp_atletas_pruebas_resultados_save_record(integer, character varying, character varying, character varying, date, numeric, character varying, integer, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_atletas_pruebas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de los resultados de las pruebas, pero
+ADEMAS agrega las pruebas de no existir, basicamente debe ser usado si se desea agregar o actualizar
+un resultado de un atleta , pero condicionado a que la prueba exista , en otras palabras
+para agregar un resultado este sp asegura que la prueba deba existir.
+
+ALGUNOS DATOS DE LA PRUEBA PUEDEN TAMBIEN SER MODIFICADOS, ESTE SP ES UTIL CUANDO LOS RESULTADOS
+SE AGREGAN DIRECTAMENTE A UN ATLETA, Y NO POR EL LADO DE LAS COMPETENCIAS.
+
+Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
+consistentemente,
+
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_pruebas_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+DECLARE v_prueba_multiple_new boolean= FALSE;
+DECLARE v_categorias_codigo_competencia character varying(15);
+DECLARE v_pruebas_sexo_new  character(1);
+DECLARE v_atletas_sexo_new  character(1);
+DECLARE v_atletas_fecha_nacimiento_new DATE;
+DECLARE v_apppruebas_marca_menor_new character varying(12);
+DECLARE v_apppruebas_marca_mayor_new character varying(12);
+DECLARE v_agnos INT;
+DECLARE v_marca_test integer;
+DECLARE v_unidad_medida_codigo character varying(8);
+DECLARE v_marcaMenorValida integer;
+DECLARE v_marcaMayorValida integer;
+DECLARE v_competencias_pruebas_origen_id integer;
+DECLARE v_competencias_pruebas_id integer;
+DECLARE v_competencias_pruebas_changed_id integer;
+DECLARE v_prueba_saved integer=0;
+DECLARE v_isFromCombinada boolean := false;
+DECLARE v_competencias_pruebas_tipo_serie_old character varying(2);
+DECLARE v_competencias_pruebas_nro_serie_old integer;
+DECLARE v_apppruebas_viento_individual BOOLEAN;
+
+BEGIN
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+
+	-- Busxcamos la categoria de la competencia, los datos de la prueba y del atleta
+	-- basados en los datos actuales a grabar, esto no permitira saber si la relacion
+	-- COmPETencia,PrueBA;ATLETA es correcta , digase si la competencia es de mayores
+	-- la prueba debe ser de mayores y el atleta debe ser mayor, asi mismo si la prueba es para
+	-- el sexo femenino , el atleta debe ser mujer
+	SELECT categorias_codigo,competencias_fecha_inicio,competencias_fecha_final INTO
+		v_categorias_codigo_competencia
+	FROM tb_competencias where competencias_codigo=p_competencias_codigo;
+
+
+	-- Buscamos los datos de la gnerica de prueba que actualmente se quiere grabar para saber si tambien sera multiple.
+	SELECT apppruebas_multiple,pruebas_sexo,apppruebas_marca_menor,
+		apppruebas_marca_mayor,c.unidad_medida_codigo,apppruebas_viento_individual
+	INTO
+		v_prueba_multiple_new,v_pruebas_sexo_new,v_apppruebas_marca_menor_new,
+		v_apppruebas_marca_mayor_new,v_unidad_medida_codigo,v_apppruebas_viento_individual
+	FROM tb_pruebas pr
+	INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
+	INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
+	where pr.pruebas_codigo = p_pruebas_codigo;
+
+	-- Se busca el sexo del atleta
+	SELECT atletas_sexo,atletas_fecha_nacimiento INTO
+		v_atletas_sexo_new,v_atletas_fecha_nacimiento_new
+	FROM tb_atletas at
+	where at.atletas_codigo = p_atletas_codigo;
+
+	--	raise notice 'v_atletas_sexo_new: %',v_atletas_sexo_new;
+	--	raise notice 'v_pruebas_sexo_new: %',v_pruebas_sexo_new;
+
+	-- Luego si el sexo del atleta y el sexo de la prueba corresponden.
+	IF coalesce(v_atletas_sexo_new,'X') != coalesce(v_pruebas_sexo_new,'Y')
+	THEN
+		RAISE 'El sexo del atleta no corresponde a la de la prueba indicada, ambos deben ser iguales ' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- La mas dificil , si en la fecha de la prueba el atleta pertenecia a la categoria de
+	-- la competencia. Para esto
+	-- a) Que edad tenia el atleta en la fecha de la competencia.
+	-- b) hasta que edad permite la categoria.
+	select date_part( 'year'::text,p_competencias_pruebas_fecha::date)-date_part( 'year'::text,v_atletas_fecha_nacimiento_new::date) INTO
+		v_agnos;
+
+	-- Veamos en la categoria si esta dentro del rango
+	-- Importante , basta que la atleta sea menor para la categoria que compitio , ya que una juvenil o menor
+	-- podrian competir en una prueba de mayores , por ende si se toma como rango no
+	-- funcionaria.
+	IF NOT  EXISTS(SELECT 1 from tb_categorias WHERE categorias_codigo = v_categorias_codigo_competencia AND
+		 v_agnos <= categorias_edad_final )
+	THEN
+		-- Excepcion el atleta no esta dentro de la categoria
+		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',p_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo_competencia USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Si el resultado de la prueba esta dentro de los valores validos
+	------------------------------------------------------------------------------------
+	-- Si la prueba a grabar no es multiple , esto ya que las combinadas no conocen el resultado
+	-- hasta que se ingrese su detalle y es alli donde se valida, es por esto que este campo de resultado es
+	-- actualizado durante la insercionse de los detalles.
+	IF v_prueba_multiple_new != TRUE -- OR (v_prueba_multiple_new = TRUE and p_is_update = '1')
+	THEN
+		-- Normalizamos a milisegundos , sin importar si es manual o no ya que ambas medidas deben estar en las mismas
+		-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
+		-- normalizados.
+		--raise notice 'marca menor : %',v_apppruebas_marca_menor_new;
+		--raise notice 'marca mayor : %',v_apppruebas_marca_mayor_new;
+		--raise notice 'unidad_medida : %',v_unidad_medida_codigo;
+		--raise notice 'p_atletas_resultados_resultado : %',p_atletas_resultados_resultado;
+
+		v_marcaMenorValida := fn_get_marca_normalizada(v_apppruebas_marca_menor_new, v_unidad_medida_codigo, false, 0);
+		v_marcaMayorValida := fn_get_marca_normalizada(v_apppruebas_marca_mayor_new, v_unidad_medida_codigo, false, 0);
+		v_marca_test := fn_get_marca_normalizada(p_atletas_resultados_resultado, v_unidad_medida_codigo, false, 0);
+
+		IF v_marca_test < v_marcaMenorValida OR v_marca_test > v_marcaMayorValida
+		THEN
+			--La marca indicada esta fuera del rango permitido
+			RAISE 'La marca indicada de % esta fuera del rango permitido entre % y % ', p_atletas_resultados_resultado,v_apppruebas_marca_menor_new,v_apppruebas_marca_mayor_new USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+
+
+	IF p_is_update = '1'
+	THEN
+		-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
+		-- de lo contrario es imposible hacer un update.
+		-- Solo busca aquellas que no son parte de una combinada.
+		SELECT competencias_pruebas_id,competencias_pruebas_origen_id,competencias_pruebas_tipo_serie,competencias_pruebas_nro_serie
+			INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,
+				v_competencias_pruebas_tipo_serie_old,v_competencias_pruebas_nro_serie_old
+		FROM tb_competencias_pruebas cp
+		WHERE cp.competencias_pruebas_id =  (select competencias_pruebas_id from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id);
+
+
+		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
+		--RAISE NOTICE 'v_competencias_pruebas_origen_id %',v_competencias_pruebas_origen_id;
+
+		IF v_competencias_pruebas_id IS  NULL
+		THEN
+			-- La prueba no existe
+			RAISE 'Para la competencia , la prueba no se ha encontrado , esto es incorrecto durante una actualizacion de resultados'  USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		IF v_competencias_pruebas_origen_id IS NOT NULL
+		THEN
+			-- es parte de una combinada
+			v_isFromCombinada := true;
+		END IF;
+
+		--Si es null el numero de serie le ponemos 1
+		p_competencias_pruebas_nro_serie := coalesce(p_competencias_pruebas_nro_serie,1);
+		--RAISE NOTICE 'v_competencias_pruebas_tipo_serie_old = %',v_competencias_pruebas_tipo_serie_old;
+		--RAISE NOTICE 'p_competencias_pruebas_tipo_serie = %',p_competencias_pruebas_tipo_serie;
+		--RAISE NOTICE 'v_competencias_pruebas_nro_serie_old = %',v_competencias_pruebas_nro_serie_old;
+		--RAISE NOTICE 'p_competencias_pruebas_nro_serie = %',p_competencias_pruebas_nro_serie;
+
+		-- en este caso necesitamos agregar la prueba o hacerle update si ya existe.
+		-- Debemos recordar que el tipo y nro de serie hacen unica una prueba por ende si estos valores han cmbiado
+		-- en realidad estamos cambiando de prueba al resultado, por ende haremos 2 cosas.
+		-- 1 Tratar de agregar la prueba (se creara si no existe).
+		-- Trataremos de eliminar la anterior prueba siempre que no tenga resultados adjuntos.
+		IF v_competencias_pruebas_tipo_serie_old != p_competencias_pruebas_tipo_serie OR v_competencias_pruebas_nro_serie_old != p_competencias_pruebas_nro_serie
+		THEN
+			--RAISE NOTICE 'ESTA MODIFICADO';
+			-- Buscamos si esta posible nueva prueba ya existe
+			SELECT competencias_pruebas_id INTO v_competencias_pruebas_changed_id
+			FROM tb_competencias_pruebas cp
+			WHERE cp.competencias_codigo =  p_competencias_codigo AND
+				cp.pruebas_codigo =  p_pruebas_codigo AND
+				cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
+				cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie; --AND
+				--cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
+
+			--Si existe un id , ya existe y actualizamos de lo contrario agregamos.
+			IF v_competencias_pruebas_changed_id IS NOT NULL
+			THEN
+
+				-- Debemos actualizar la prueba
+				-- Ejecutamos sin interesarnos el retorno ya que no chequearemos
+				-- si fue cambiada por exo xemin (versionId) es null.
+				PERFORM  sp_competencias_pruebas_save_record(
+					v_competencias_pruebas_changed_id::integer,
+					p_competencias_codigo,
+					p_pruebas_codigo,
+					NULL::integer,
+					p_competencias_pruebas_fecha,
+					p_competencias_pruebas_viento,
+					p_competencias_pruebas_manual,
+					p_competencias_pruebas_tipo_serie,
+					p_competencias_pruebas_nro_serie,
+					p_competencias_pruebas_anemometro,
+					p_competencias_pruebas_material_reglamentario,
+					p_competencias_pruebas_observaciones,
+					p_atletas_resultados_protected,
+					p_activo ,
+					p_usuario,
+					NULL::integer,
+					1::bit);
+
+				v_competencias_pruebas_id := v_competencias_pruebas_changed_id;
+			ELSE
+				-- Debemos agregar la prueba a la competencia ya que no existe.
+				PERFORM  sp_competencias_pruebas_save_record(
+					NULL::integer,
+					p_competencias_codigo,
+					p_pruebas_codigo,
+					NULL::integer,
+					p_competencias_pruebas_fecha,
+					p_competencias_pruebas_viento,
+					p_competencias_pruebas_manual,
+					p_competencias_pruebas_tipo_serie,
+					p_competencias_pruebas_nro_serie,
+					p_competencias_pruebas_anemometro,
+					p_competencias_pruebas_material_reglamentario,
+					p_competencias_pruebas_observaciones,
+					p_atletas_resultados_protected,
+					p_activo ,
+					p_usuario,
+					NULL::integer,
+					0::bit);
+
+				-- Si se ha grabado obtenemos el id.
+				SELECT competencias_pruebas_id INTO v_competencias_pruebas_id
+				FROM tb_competencias_pruebas cp
+				WHERE cp.competencias_codigo =  p_competencias_codigo AND
+				      cp.pruebas_codigo =  p_pruebas_codigo AND
+				      cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
+				      cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie; --AND
+				      --cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
+
+
+			END IF;
+
+		ELSE
+			--RAISE NOTICE 'NOOOOOOO ESTA MODIFICADO';
+			-- Grabamos cambios a la prueba
+			select * from (
+				select sp_competencias_pruebas_save_record(
+					v_competencias_pruebas_id::integer,
+					p_competencias_codigo,
+					p_pruebas_codigo,
+					NULL::integer,
+					p_competencias_pruebas_fecha,
+					p_competencias_pruebas_viento,
+					p_competencias_pruebas_manual,
+					p_competencias_pruebas_tipo_serie,
+					p_competencias_pruebas_nro_serie,
+					p_competencias_pruebas_anemometro,
+					p_competencias_pruebas_material_reglamentario,
+					p_competencias_pruebas_observaciones,
+					p_atletas_resultados_protected,
+					p_activo ,
+					p_usuario,
+					NULL::integer,
+					1::bit) as updins) as ans
+			 into v_prueba_saved
+			 where updins is not null;
+
+			RAISE NOTICE 'GRABO LA COMPETENCIA';
+
+			 IF v_prueba_saved != 1
+			 THEN
+				-- La prueba no existe
+				RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
+			 END IF;
+		END IF;
+
+		-- El  update
+		-- Se hace el update del resultado , de ser un resultado de una prueba que es parte de una prueba
+		-- combinada o multiple se hace el update de la principal con la nueva suma total de puntos acumulados.
+		UPDATE
+			tb_atletas_resultados
+		SET
+			atletas_resultados_id = p_atletas_resultados_id,
+			competencias_pruebas_id = v_competencias_pruebas_id,
+			atletas_codigo =  p_atletas_codigo,
+			-- Si la prueba es multiple el update no modifica el valor del resultado ya que este es actualizado
+			-- cada vez que se inserta o modifica un detalle , de lo contrario si se actualiza de acuerdo al parametro
+			atletas_resultados_resultado =  (case when v_prueba_multiple_new = true then atletas_resultados_resultado else p_atletas_resultados_resultado end),
+			atletas_resultados_puntos =  (case when v_prueba_multiple_new = false and v_isFromCombinada = true then p_atletas_resultados_puntos else atletas_resultados_puntos end),
+			atletas_resultados_puesto =  p_atletas_resultados_puesto,
+			-- el viento solo si es una prueba que la requiera individualmente y no sea la principal combinada.
+			atletas_resultados_viento = (case when coalesce(v_prueba_multiple_new,false) = TRUE
+				THEN NULL
+				ELSE (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end)
+			END),
+			atletas_resultados_protected =  p_atletas_resultados_protected,
+			activo = p_activo,
+			usuario_mod = p_usuario
+		WHERE atletas_resultados_id = p_atletas_resultados_id  and xmin =p_version_id ;
+
+		RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+		-- Todo ok , si es una prueba parte de una combinada actualizamos el total de puntos
+		-- en la principal.
+		IF FOUND THEN
+			--RAISE NOTICE  'ACTUALIZA EL RESULTADO';
+
+			-- Vemos si alguna prueba de esta competencia tiene datos que invalidan la prueba , ya sea anemometro , material , o si
+			-- el resultado es manual , para asi actualizar la prueba principal.
+			UPDATE tb_competencias_pruebas t1
+			  SET
+				competencias_pruebas_manual = (case when t2.cpm > 0 then TRUE else FALSE end),
+				competencias_pruebas_anemometro = (case when t2.cpa > 0 then FALSE else TRUE end),
+				competencias_pruebas_material_reglamentario = (case when t2.cpmr > 0 then FALSE else TRUE end)
+			  FROM (
+				select
+				max(competencias_pruebas_origen_id) as competencias_pruebas_origen_id,
+				sum((case when competencias_pruebas_manual = TRUE then 1 else 0 end)) as cpm,
+				sum((case when competencias_pruebas_anemometro = FALSE then 1 else 0 end)) as cpa,
+				sum((case when competencias_pruebas_material_reglamentario = FALSE then 1 else 0 end)) as cpmr
+				 from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id
+
+			  ) t2
+			  WHERE  t1.competencias_pruebas_id=t2.competencias_pruebas_origen_id;
+
+			-- Si es parte de una combinada actualizo el resultado de la principal.
+			IF v_isFromCombinada = TRUE
+			THEN
+				UPDATE
+				tb_atletas_resultados
+				SET
+					atletas_resultados_resultado =  (
+						select sum(atletas_resultados_puntos) from tb_atletas_resultados
+							where competencias_pruebas_id in  (
+								select distinct competencias_pruebas_id from tb_competencias_pruebas
+									where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id))
+				WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id AND atletas_codigo = p_atletas_codigo;
+			END IF;
+
+			RETURN 1;
+		ELSE
+			--RAISE '' USING ERRCODE = 'record modified';
+			RETURN null;
+		END IF;
+
+	ELSE
+		-- En el caso de agregar un resultado , verificamos si ya existe la prueba , de existir usamo el id
+		-- de lo ocntrario creamos la prueba, en la competencia reqquerida.
+		-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
+		-- de lo contrario es imposible hacer un update.
+		-- Asi mismo no puede ser parte de una combinada (cp.competencias_pruebas_origen_combinada = FALSE)
+		--RAISE NOTICE 'El origen combinada a chequear es %',p_competencias_pruebas_origen_combinada;
+		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
+
+		SELECT competencias_pruebas_id ,competencias_pruebas_origen_id
+		INTO v_competencias_pruebas_id ,v_competencias_pruebas_origen_id
+		FROM tb_competencias_pruebas cp
+		WHERE cp.competencias_codigo =  p_competencias_codigo AND
+		      cp.pruebas_codigo =  p_pruebas_codigo AND
+		      cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
+		      cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie; --AND
+		      --cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
+
+
+		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
+
+		-- Si  la prueba es parte de una combinada ya sea porque tiene un origen o la misma prueba sea parte de una combinada
+		-- verificado a traves de si esta en algun detalle de combinada (tb_pruebas_detalle)
+		-- No se permite ingresar por este lado.
+		IF v_competencias_pruebas_origen_id IS NOT NULL OR EXISTS(select 1 from tb_pruebas_detalle where pruebas_detalle_prueba_codigo = p_pruebas_codigo)
+		THEN
+			-- La prueba requiere se indique el viento
+			RAISE 'Los resultados para las pruebas que componen una combinada no pueden agregarse  individualmente, agregue la prueba combinada'  USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		-- Si la prueba no existe la creamos
+		IF v_competencias_pruebas_id IS NULL
+		THEN
+			-- La prueba multiple usara siempre estos defaults, para grabarse
+			IF coalesce(v_prueba_multiple_new,false) = TRUE
+			THEN
+				p_competencias_pruebas_tipo_serie := 'FI';
+				p_competencias_pruebas_nro_serie := 1;
+
+			END IF;
+
+			-- Si es null el numero de serie le ponemos 1
+			p_competencias_pruebas_nro_serie := coalesce(p_competencias_pruebas_nro_serie,1);
+
+			-- Debemos agregar la prueba a la competencia ya que no existe.
+			PERFORM  sp_competencias_pruebas_save_record(
+				NULL::integer,
+				p_competencias_codigo,
+				p_pruebas_codigo,
+				NULL::integer,
+				p_competencias_pruebas_fecha,
+				p_competencias_pruebas_viento,
+				p_competencias_pruebas_manual,
+				p_competencias_pruebas_tipo_serie,
+				p_competencias_pruebas_nro_serie,
+				p_competencias_pruebas_anemometro,
+				p_competencias_pruebas_material_reglamentario,
+				p_competencias_pruebas_observaciones,
+				p_atletas_resultados_protected,
+				p_activo ,
+				p_usuario,
+				NULL::integer,
+				0::bit);
+
+			-- La prueba multiple usara siempre estos defaults.
+			IF coalesce(v_prueba_multiple_new,false) = TRUE
+			THEN
+				p_competencias_pruebas_viento := NULL;
+				p_competencias_pruebas_manual := FALSE;
+				p_competencias_pruebas_anemometro := TRUE;
+				p_competencias_pruebas_material_reglamentario := TRUE;
+
+			END IF;
+
+			-- Si se ha grabado obtenemos el id.
+			SELECT competencias_pruebas_id INTO v_competencias_pruebas_id
+			FROM tb_competencias_pruebas cp
+			WHERE cp.competencias_codigo =  p_competencias_codigo AND
+			      cp.pruebas_codigo =  p_pruebas_codigo AND
+			      cp.competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie AND
+			      cp.competencias_pruebas_nro_serie = p_competencias_pruebas_nro_serie; --AND
+			     -- cp.competencias_pruebas_origen_combinada = p_competencias_pruebas_origen_combinada;
+--
+-- 			RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
+-- 			RAISE NOTICE 'p_competencias_codigo %',p_competencias_codigo;
+-- 			RAISE NOTICE 'p_pruebas_codigo %',p_pruebas_codigo;
+-- 			RAISE NOTICE 'p_competencias_pruebas_tipo_serie %',p_competencias_pruebas_tipo_serie;
+-- 			RAISE NOTICE 'p_competencias_pruebas_nro_serie %',p_competencias_pruebas_nro_serie;
+-- 			RAISE NOTICE 'p_competencias_pruebas_origen_combinada %',p_competencias_pruebas_origen_combinada;
+
+
+		END IF;
+
+		--RAISE notice 'El id de la competencia prueba es %',v_competencias_pruebas_id;
+
+		-- Con el id de la prueba creada o existente grabamos el resultado.
+		INSERT INTO
+			tb_atletas_resultados
+			(
+			 competencias_pruebas_id,
+			 atletas_codigo,
+			 atletas_resultados_resultado,
+			 atletas_resultados_puesto,
+			 atletas_resultados_puntos,
+			 atletas_resultados_viento,
+			 atletas_resultados_protected,
+			 activo,
+			 usuario)
+		VALUES(
+			 v_competencias_pruebas_id,
+			 p_atletas_codigo,
+			 (case when coalesce(v_prueba_multiple_new,false) = TRUE then  '' else p_atletas_resultados_resultado end),
+			 p_atletas_resultados_puesto,
+			 0,
+			 -- el viento solo si es una prueba que la requiera individualmente y no sea la principal combinada.
+			 (case when coalesce(v_prueba_multiple_new,false) = TRUE
+				THEN NULL
+				ELSE (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end)
+			 END),
+			 p_atletas_resultados_protected,
+			 p_activo,
+			 p_usuario);
+
+
+		-- Durante un add si La prueba es multiple , se agregan los detalles correspondientes.
+		-- y las pruebas de la competencia.
+		IF coalesce(v_prueba_multiple_new,false) = TRUE
+		THEN
+
+			-- Iniciamos el insert de todas las pruebas que componen la mltiple o combinada
+			INSERT INTO
+				tb_atletas_resultados
+				(
+				competencias_pruebas_id,
+				atletas_codigo,
+				atletas_resultados_resultado,
+				atletas_resultados_puesto,
+				atletas_resultados_puntos,
+				atletas_resultados_viento,
+				atletas_resultados_protected,
+				activo,
+				usuario)
+			SELECT
+				cp.competencias_pruebas_id,
+				p_atletas_codigo,
+				0,
+				0,
+				0,
+				NULL,
+				p_atletas_resultados_protected,
+				p_activo,
+				p_usuario
+			FROM tb_competencias_pruebas cp
+			INNER JOIN tb_pruebas_detalle p on p.pruebas_detalle_prueba_codigo  = cp.pruebas_codigo
+			WHERE cp.competencias_pruebas_origen_id = v_competencias_pruebas_id
+			order by pruebas_detalle_orden;
+		END IF;
+
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_atletas_pruebas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 251 (class 1255 OID 16430)
+-- Name: sp_atletas_resultados_delete_record(integer, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_atletas_resultados_delete_record(p_atletas_resultados_id integer, p_include_prueba boolean, p_usuario_mod character varying, p_version_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 01-04-2014
+
+Stored procedure que elimina un resultado de atleta , si es una prueba combinada elimina
+tambien los resultados de las pruebas asociadas.
+Si el paramtero p_include_prueba es TRUE debemos eliminar tambien la prueba de la competencia , pero si  y solo si
+no tiene otros resultados adjuntos.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos .
+
+Esta procedure function devuelve un entero siempre que el delete
+	se haya realizado y devuelve null si no se realizo el delete. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el delete se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el delete se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el delete usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select :
+
+	select * from ( select sp_atletas_resultados_delete_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el delete funciono , y 0 registros si no se realizo
+	el delete. Esto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+Historia : Creado 03-02-2014
+*/
+DECLARE v_competencias_pruebas_origen_id integer;
+DECLARE v_competencias_pruebas_id integer;
+DECLARE v_atletas_codigo character varying(15);
+
+BEGIN
+
+	-- Busco a que atleta pertenece el resultado.
+	SELECT atletas_codigo INTO
+		v_atletas_codigo
+	FROM tb_atletas_resultados WHERE atletas_resultados_id = p_atletas_resultados_id and xmin=p_version_id;
+
+	-- Verificacion previa que el registro no esgta modificado, con esto basta si v_atletas_codigo es no null
+	-- a que significaria que ha encontrado el registro.
+	--
+	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
+	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
+	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
+	IF  v_atletas_codigo IS NOT NULL THEN
+
+		-- Vemos si esta resultado es parte de una prueba combinada
+		-- o si es el resultado de una prueba combinada.
+		SELECT competencias_pruebas_id,competencias_pruebas_origen_id
+			INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id
+		FROM tb_competencias_pruebas cp
+		WHERE cp.competencias_pruebas_id =  (select competencias_pruebas_id from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id);
+
+		--
+		IF v_competencias_pruebas_origen_id IS NOT NULL
+		THEN
+			-- La prueba no existe
+			RAISE 'Un resultado que es parte de una prueba combinada no puede eliminarse independientemente , borre los resultados de la prueba principal' USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		-- Eliminamosla pricipal y las asociadas en caso de que a prueba sea multiple
+		DELETE FROM
+			tb_atletas_resultados
+		WHERE (atletas_resultados_id = p_atletas_resultados_id
+			OR competencias_pruebas_id in (
+				select competencias_pruebas_id
+					from tb_competencias_pruebas
+				where competencias_pruebas_origen_id=v_competencias_pruebas_id
+				))
+			AND atletas_codigo =v_atletas_codigo;
+
+		IF FOUND THEN
+			-- Si se requiere que se elimine a prueba tambien , entonces se hara si y solo si
+			-- dicha prueba o las adjuntas en caso de combinadas no tienen otros resultados adjuntos.
+			IF p_include_prueba = TRUE
+			THEN
+				IF NOT EXISTS(select 1 from tb_atletas_resultados where competencias_pruebas_id = v_competencias_pruebas_id OR
+						competencias_pruebas_id
+							in(select competencias_pruebas_id from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_id))
+				THEN
+					DELETE FROM
+						tb_competencias_pruebas
+					WHERE competencias_pruebas_id = v_competencias_pruebas_id OR
+						competencias_pruebas_origen_id=v_competencias_pruebas_id;
+				END IF;
+			END IF;
+
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+
+	ELSE
+		RETURN null;
+	END IF;
+
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_atletas_resultados_delete_record(p_atletas_resultados_id integer, p_include_prueba boolean, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
+
+--
+-- TOC entry 247 (class 1255 OID 16433)
+-- Name: sp_atletas_resultados_save_record(integer, character varying, integer, character varying, integer, integer, numeric, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_pruebas_id integer, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_viento numeric, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de los resultados de las pruebas.
+Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
+consistentemente,
+
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+DECLARE v_prueba_multiple boolean= FALSE;
+DECLARE v_categorias_codigo character varying(15);
+DECLARE v_pruebas_sexo_new  character(1);
+DECLARE v_atletas_sexo_new  character(1);
+DECLARE v_atletas_fecha_nacimiento_new DATE;
+DECLARE v_apppruebas_marca_menor_new character varying(12);
+DECLARE v_apppruebas_marca_mayor_new character varying(12);
+DECLARE v_apppruebas_verifica_viento BOOLEAN = FALSE;
+DECLARE v_agnos INT;
+DECLARE v_marca_test integer;
+DECLARE v_unidad_medida_codigo character varying(8);
+DECLARE v_marcaMenorValida integer;
+DECLARE v_marcaMayorValida integer;
+DECLARE v_competencias_pruebas_id integer;
+DECLARE v_competencias_pruebas_origen_id integer;
+DECLARE v_apppruebas_viento_individual boolean;
+DECLARE v_pruebas_codigo character varying(15);
+DECLARE v_competencias_pruebas_fecha date;
+
+BEGIN
+
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
+	-----------------------------------------------------------------------------------------------------------
+	-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
+	-- de lo contrario es imposible hacer un update.
+	-- Solo busca aquellas que no son parte de una combinada.
+	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_pruebas_fecha,
+		categorias_codigo
+	INTO
+		v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_pruebas_fecha,
+		v_categorias_codigo
+	FROM tb_competencias_pruebas cp
+	INNER JOIN tb_competencias c on c.competencias_codigo=cp.competencias_codigo
+	WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
+
+
+	IF v_competencias_pruebas_id IS  NULL
+	THEN
+		-- La prueba no existe
+		RAISE 'La prueba no se ha encontrado en la competencia indicada, los resultados solo pueden agregarse a competencias existentes'  USING ERRCODE = 'restrict_violation';
+	END IF;
+
+
+	-- En las combinadas un atleta solo puede realizar una vez la prueba ya que no existin semifinales y finales sino
+	-- solo se agrupan pero el resultado es consolidado. Solo se verifica al agregar no al actualizar
+	IF v_competencias_pruebas_origen_id IS NOT NULL and p_is_update != '1'
+	THEN
+		IF EXISTS(SELECT 1 FROM tb_competencias_pruebas  cp
+				INNER JOIN tb_atletas_resultados ar on ar.competencias_pruebas_id = cp.competencias_pruebas_id
+				WHERE cp.pruebas_codigo = v_pruebas_codigo AND
+					competencias_pruebas_origen_id = v_competencias_pruebas_origen_id AND
+					atletas_codigo=p_atletas_codigo)
+		THEN
+			RAISE 'El atleta ya registra resultado para dicha prueba, en el caso de las combinadas no puede realizar una prueba mas de una vez'  USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+	-- Buscamos los datos de la prueba que actualmente se quiere grabar para otras validaciones.
+	SELECT pruebas_sexo,apppruebas_marca_menor,
+		apppruebas_marca_mayor,apppruebas_verifica_viento,c.unidad_medida_codigo,
+		apppruebas_viento_individual,apppruebas_multiple
+	INTO
+		v_pruebas_sexo_new,v_apppruebas_marca_menor_new,
+		v_apppruebas_marca_mayor_new,v_apppruebas_verifica_viento,
+		v_unidad_medida_codigo,v_apppruebas_viento_individual,v_prueba_multiple
+	FROM tb_pruebas pr
+	INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
+	INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
+	where pr.pruebas_codigo = v_pruebas_codigo;
+
+	-- Si es el registro de la prueba principal de una combinada , no permitimos
+	-- grabar o actualizar ya que esta es dependiente de las pruebas que la componen y
+	-- depende de los cambios en sus componentes para modificarse.
+	IF coalesce(v_prueba_multiple,false) = TRUE
+	THEN
+		-- La prueba no existe
+		RAISE 'Solo resultados para pruebas dentro de una combinada son permitidos'  USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Busco el sexo del atleta
+	SELECT atletas_sexo,atletas_fecha_nacimiento INTO
+		v_atletas_sexo_new,v_atletas_fecha_nacimiento_new
+	FROM tb_atletas at
+	where at.atletas_codigo = p_atletas_codigo;
+
+	-- Luego si el sexo del atleta y el sexo de la prueba corresponden.
+	IF coalesce(v_atletas_sexo_new,'X') != coalesce(v_pruebas_sexo_new,'Y')
+	THEN
+		RAISE 'El sexo del atleta no corresponde a la de la prueba indicada, ambos deben ser iguales ' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- La mas dificil , si en la fecha de la prueba el atleta pertenecia a la categoria de
+	-- la competencia. Para esto
+	-- a) Que edad tenia el atleta en la fecha de la competencia.
+	-- b) hasta que edad permite la categoria.
+	select date_part( 'year'::text,v_competencias_pruebas_fecha::date)-date_part( 'year'::text,v_atletas_fecha_nacimiento_new::date) INTO
+		v_agnos;
+
+	-- Veamos en la categoria si esta dentro del rango
+	-- Importante , basta que la atleta sea menor para la categoria que compitio , ya que una juvenil o menor
+	-- podrian competir en una prueba de mayores , por ende si se toma como rango no
+	-- funcionaria.
+	IF NOT EXISTS(SELECT 1 from tb_categorias WHERE categorias_codigo = v_categorias_codigo AND
+		 v_agnos <= categorias_edad_final )
+	THEN
+		-- Excepcion el atleta no esta dentro de la categoria
+		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',v_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Si el resultado de la prueba esta dentro de los valores validos
+	------------------------------------------------------------------------------------
+
+	-- Normalizamos a milisegundos , sin importar si es manual o no ya que ambas medidas deben estar en las mismas
+	-- tipo de unidad o ambas son manuales o ambas electronicas. Los otros tipos de puntaje a centimetros o puntos
+	-- normalizados.
+	v_marcaMenorValida := fn_get_marca_normalizada(v_apppruebas_marca_menor_new, v_unidad_medida_codigo, false, 0);
+	v_marcaMayorValida := fn_get_marca_normalizada(v_apppruebas_marca_mayor_new, v_unidad_medida_codigo, false, 0);
+	v_marca_test := fn_get_marca_normalizada(p_atletas_resultados_resultado, v_unidad_medida_codigo, false, 0);
+
+	IF v_marca_test < v_marcaMenorValida OR v_marca_test > v_marcaMayorValida
+	THEN
+		--La marca indicada esta fuera del rango permitido
+		RAISE 'La marca indicada de % esta fuera del rango permitido entre % y % ', p_atletas_resultados_resultado,v_apppruebas_marca_menor_new,v_apppruebas_marca_mayor_new USING ERRCODE = 'restrict_violation';
+	END IF;
+
+
+	-- Si se indica marca , deben indicarse puntos , por aqui solo se graban los componentes de la
+	-- conmbinada o pruebas normales, dado validacion anterior
+	IF v_competencias_pruebas_origen_id IS NOT NULL
+	THEN
+		IF v_marca_test != 0 AND coalesce(p_atletas_resultados_puntos,0) = 0 OR
+			v_marca_test = 0 AND coalesce(p_atletas_resultados_puntos,0) != 0
+		THEN
+			RAISE 'Si la marca o puntos son mayores que cero , ambos deben estar indicados ' USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	-- OK paso todas las validaciones basicas , ahora veamos si la prueba tiene control de viento
+	-- y ver si el viento esta indicado, hay que recordar que en los resultados de atletas el viento
+	-- solo sera indicado si la prueba requiere viento individual por atleta , digase el saltor largo, triple,etc
+	-- en otros casos no es aplicable.
+	IF v_apppruebas_verifica_viento = TRUE AND v_apppruebas_viento_individual = TRUE
+	THEN
+		IF p_atletas_resultados_viento is null
+		THEN
+			-- La prueba requiere se indique el viento
+			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+		END IF;
+	ELSE
+		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
+		p_atletas_resultados_viento := NULL;
+	END IF;
+
+	-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
+	-- lo cual no es logico.
+	IF EXISTS(SELECT 1
+		FROM tb_competencias_pruebas pr
+		inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
+		where   atletas_resultados_puesto=p_atletas_resultados_puesto and
+			atletas_resultados_resultado != p_atletas_resultados_resultado and
+			pr.competencias_pruebas_id = p_competencias_pruebas_id  and
+			atletas_codigo != p_atletas_codigo)
+	THEN
+		RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+	END IF;
+
+
+	IF p_is_update = '1'
+	THEN
+
+		-- El  update
+		UPDATE
+			tb_atletas_resultados
+		SET
+			atletas_codigo =  p_atletas_codigo,
+			competencias_pruebas_id =  p_competencias_pruebas_id,
+			atletas_resultados_resultado =  p_atletas_resultados_resultado,
+			atletas_resultados_viento =  p_atletas_resultados_viento,
+			atletas_resultados_puesto =  p_atletas_resultados_puesto,
+			atletas_resultados_puntos =  p_atletas_resultados_puntos,
+			atletas_resultados_protected =  p_atletas_resultados_protected,
+			activo = p_activo,
+			usuario = p_usuario
+		WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
+
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+		IF NOT FOUND
+		THEN
+			RETURN NULL;
+		END IF;
+
+	ELSE
+		IF v_competencias_pruebas_origen_id IS NOT NULL
+		THEN
+			IF NOT EXISTS(select 1 from tb_atletas_resultados
+					WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo)
+
+			THEN
+				INSERT INTO
+					tb_atletas_resultados
+					(
+					 atletas_codigo,
+					 competencias_pruebas_id,
+					 atletas_resultados_resultado,
+					 atletas_resultados_viento,
+					 atletas_resultados_puesto,
+					 atletas_resultados_puntos,
+					 atletas_resultados_protected,
+					 activo,
+					 usuario)
+				VALUES(
+					 p_atletas_codigo,
+					 v_competencias_pruebas_origen_id,
+					 '',
+					 null,
+					 0,
+					 0,
+					 p_atletas_resultados_protected,
+					 p_activo,
+					 p_usuario);
+
+				IF NOT FOUND
+				THEN
+					RAISE 'Error creando el resultado para la prueba principal, comuniquese con el administrador'  USING ERRCODE = 'restrict_violation';
+				END IF;
+			END IF;
+		END IF;
+
+		INSERT INTO
+			tb_atletas_resultados
+			(
+			 atletas_codigo,
+			 competencias_pruebas_id,
+			 atletas_resultados_resultado,
+			 atletas_resultados_viento,
+			 atletas_resultados_puesto,
+			 atletas_resultados_puntos,
+			 atletas_resultados_protected,
+			 activo,
+			 usuario)
+		VALUES(
+			 p_atletas_codigo,
+			 p_competencias_pruebas_id,
+			 p_atletas_resultados_resultado,
+			 p_atletas_resultados_viento,
+			 p_atletas_resultados_puesto,
+			 p_atletas_resultados_puntos,
+			 p_atletas_resultados_protected,
+			 p_activo,
+			 p_usuario);
+	END IF;
+
+	-- Si es parte de una combinada.
+	-- actualizamos el resultado de la principal con el nuevo acumulado de puntos
+	IF v_competencias_pruebas_origen_id IS NOT NULL
+	THEN
+		UPDATE
+		tb_atletas_resultados
+		SET
+			atletas_resultados_resultado =  (
+				select sum(atletas_resultados_puntos) from tb_atletas_resultados
+					where competencias_pruebas_id in  (
+						select competencias_pruebas_id from tb_competencias_pruebas where competencias_pruebas_origen_id=v_competencias_pruebas_origen_id and atletas_codigo=p_atletas_codigo)
+						)
+		WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo;
+
+		-- Ahora actualizamos los pustos en la principal de acuerdo a los actuales puntajes acumulados
+		UPDATE tb_atletas_resultados ar
+			SET    atletas_resultados_puesto = res.x
+		FROM   (
+			select x,atletas_resultados_id from (
+				select (row_number() OVER (order by (case when atletas_resultados_resultado ='' then '0' else atletas_resultados_resultado end)::INTEGER desc))  as x,
+					atletas_resultados_id  ,atletas_resultados_resultado
+				from tb_atletas_resultados ar
+				where ar.competencias_pruebas_id = v_competencias_pruebas_origen_id
+				order by (case when atletas_resultados_resultado ='' then '0' else atletas_resultados_resultado end::INTEGER) desc)   cc
+			order by x
+			) AS res
+		WHERE  ar.atletas_resultados_id = res.atletas_resultados_id;
+
+	END IF;
+
+	RETURN 1;
+
+
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_pruebas_id integer, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_viento numeric, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 248 (class 1255 OID 16436)
+-- Name: sp_atletas_save_record(character varying, character varying, character varying, character varying, character, character varying, character varying, character varying, date, character varying, character varying, character varying, character varying, character varying, character varying, character varying, numeric, character varying, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_atletas_save_record(p_atletas_codigo character varying, p_atletas_ap_paterno character varying, p_atletas_ap_materno character varying, p_atletas_nombres character varying, p_atletas_sexo character, p_atletas_nro_documento character varying, p_atletas_nro_pasaporte character varying, p_paises_codigo character varying, p_atletas_fecha_nacimiento date, p_atletas_telefono_casa character varying, p_atletas_telefono_celular character varying, p_atletas_email character varying, p_atletas_direccion character varying, p_atletas_observaciones character varying, p_atletas_talla_ropa_buzo character varying, p_atletas_talla_ropa_poloshort character varying, p_atletas_talla_zapatillas numeric, p_atletas_norma_zapatillas character varying, p_atletas_url_foto character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 05-02-2014
+
+Stored procedure que agrega o actualiza los registros del atleta.
+Previo a la grabacion forma el nombre completo del atleta.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_atletas_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 05-02-2014
+*/
+DECLARE v_nombre_completo	VARCHAR(300);
+
+BEGIN
+
+	-- Creamos el campo de nombre completo
+	v_nombre_completo := '';
+	IF coalesce(p_atletas_ap_paterno,'') != '' or length(p_atletas_ap_paterno) > 0
+	THEN
+		v_nombre_completo := p_atletas_ap_paterno;
+	END IF;
+	IF coalesce(p_atletas_ap_materno,'') != '' or length(p_atletas_ap_materno) > 0
+	THEN
+		v_nombre_completo := v_nombre_completo || ' ' || p_atletas_ap_materno;
+	END IF;
+	IF coalesce(p_atletas_nombres,'') != '' or length(p_atletas_nombres) > 0
+	THEN
+		v_nombre_completo := v_nombre_completo || ', ' || p_atletas_nombres;
+	END IF;
+
+
+	IF p_is_update = '1'
+	THEN
+		UPDATE
+			tb_atletas
+		SET
+			atletas_codigo=p_atletas_codigo,
+			atletas_ap_paterno=p_atletas_ap_paterno,
+			atletas_ap_materno=p_atletas_ap_materno,
+			atletas_nombres=p_atletas_nombres,
+			atletas_nombre_completo=v_nombre_completo,
+			atletas_sexo =p_atletas_sexo,
+			atletas_nro_documento =p_atletas_nro_documento,
+			atletas_nro_pasaporte =p_atletas_nro_pasaporte,
+			paises_codigo =p_paises_codigo,
+			atletas_fecha_nacimiento =p_atletas_fecha_nacimiento,
+			atletas_telefono_casa =p_atletas_telefono_casa,
+			atletas_telefono_celular =p_atletas_telefono_celular,
+			atletas_email =p_atletas_email,
+			atletas_direccion =p_atletas_direccion,
+			atletas_observaciones =p_atletas_observaciones,
+			atletas_talla_ropa_buzo =p_atletas_talla_ropa_buzo,
+			atletas_talla_ropa_poloshort =p_atletas_talla_ropa_poloshort,
+			atletas_talla_zapatillas=p_atletas_talla_zapatillas,
+			atletas_norma_zapatillas=p_atletas_norma_zapatillas,
+			atletas_url_foto =p_atletas_url_foto,
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE atletas_codigo = p_atletas_codigo and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_atletas
+			(atletas_codigo,atletas_ap_paterno,atletas_ap_materno,atletas_nombres,atletas_nombre_completo,
+			atletas_sexo,atletas_nro_documento ,atletas_nro_pasaporte ,paises_codigo,
+			atletas_fecha_nacimiento,atletas_telefono_casa,atletas_telefono_celular,atletas_email,atletas_direccion,
+			atletas_observaciones,atletas_talla_ropa_buzo,atletas_talla_ropa_poloshort,atletas_talla_zapatillas,
+			atletas_norma_zapatillas,atletas_url_foto,activo,usuario_mod)
+		VALUES (p_atletas_codigo,
+			p_atletas_ap_paterno,
+			p_atletas_ap_materno,
+			p_atletas_nombres,
+			v_nombre_completo,
+			p_atletas_sexo,
+			p_atletas_nro_documento,
+			p_atletas_nro_pasaporte,
+			p_paises_codigo,
+			p_atletas_fecha_nacimiento,
+			p_atletas_telefono_casa,
+			p_atletas_telefono_celular,
+			p_atletas_email,
+			p_atletas_direccion,
+			p_atletas_observaciones,
+			p_atletas_talla_ropa_buzo,
+			p_atletas_talla_ropa_poloshort,
+			p_atletas_talla_zapatillas,
+			p_atletas_norma_zapatillas,
+			p_atletas_url_foto,
+			p_activo,
+			p_usuario);
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_atletas_save_record(p_atletas_codigo character varying, p_atletas_ap_paterno character varying, p_atletas_ap_materno character varying, p_atletas_nombres character varying, p_atletas_sexo character, p_atletas_nro_documento character varying, p_atletas_nro_pasaporte character varying, p_paises_codigo character varying, p_atletas_fecha_nacimiento date, p_atletas_telefono_casa character varying, p_atletas_telefono_celular character varying, p_atletas_email character varying, p_atletas_direccion character varying, p_atletas_observaciones character varying, p_atletas_talla_ropa_buzo character varying, p_atletas_talla_ropa_poloshort character varying, p_atletas_talla_zapatillas numeric, p_atletas_norma_zapatillas character varying, p_atletas_url_foto character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 253 (class 1255 OID 16439)
+-- Name: sp_clubesatletas_save_record(integer, character varying, character varying, date, date, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_clubesatletas_save_record(p_clubesatletas_id integer, p_clubes_codigo character varying, p_atletas_codigo character varying, p_clubesatletas_desde date, p_clubesatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 03-02-2014
+
+Stored procedure que agrega un registro de la relacion entre clubes y atletas
+verificando previamente que el atleta no este asignado a otro club y dentro del rango
+de fechas definidos.
+
+Historia : Creado 03-02-2014
+*/
+DECLARE v_club_descripcion VARCHAR(300) = '';
+
+BEGIN
+
+	-- Si se agrega activo verificamos si existe en otra liga.
+	IF p_activo = TRUE
+	THEN
+		-- Verificamos si el atleta esta definido en otro club y las fechas no se overlapan (un atleta no puede haber
+		-- sido entrenado por 2 clubes a la vez
+		IF EXISTS (SELECT 1
+				FROM tb_clubes_atletas ea
+				LEFT JOIN tb_clubes ent on ent.clubes_codigo = ea.clubes_codigo
+			  where  atletas_codigo = p_atletas_codigo
+				and coalesce(p_clubesatletas_id,-1) != coalesce(ea.clubesatletas_id,2)
+				and (p_clubesatletas_desde  between clubesatletas_desde and clubesatletas_hasta or
+				    p_clubesatletas_hasta  between clubesatletas_desde and clubesatletas_hasta or
+				    clubesatletas_desde  between p_clubesatletas_desde and p_clubesatletas_hasta or
+				    clubesatletas_hasta  between p_clubesatletas_desde and p_clubesatletas_hasta ) LIMIT 1)
+		THEN
+			-- Para recuperar el nombre del club (el primero) que ocurre en ese rango
+			SELECT INTO  v_club_descripcion  clubes_descripcion
+				FROM tb_clubes_atletas ea
+				LEFT JOIN tb_clubes ent on ent.clubes_codigo = ea.clubes_codigo
+			  where  atletas_codigo = p_atletas_codigo
+				and (p_clubesatletas_desde  between clubesatletas_desde and clubesatletas_hasta or
+				    p_clubesatletas_hasta  between clubesatletas_desde and clubesatletas_hasta or
+				    clubesatletas_desde  between p_clubesatletas_desde and p_clubesatletas_hasta or
+				    clubesatletas_hasta  between p_clubesatletas_desde and p_clubesatletas_hasta ) LIMIT 1;
+
+			-- Excepcion de pais con ese nombre existe
+			RAISE 'El atleta pertenecia a otro club o al mismo club durante ese rango de fechas, verifique la fecha final definida en el club (%)',v_club_descripcion USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+IF p_is_update = '1'
+	THEN
+		UPDATE
+			tb_clubes_atletas
+		SET
+			clubes_codigo=p_clubes_codigo,
+			atletas_codigo=p_atletas_codigo,
+			clubesatletas_desde=p_clubesatletas_desde,
+			clubesatletas_hasta=coalesce(p_clubesatletas_hasta,'2035-01-01'),
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE clubesatletas_id = p_clubesatletas_id and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_clubes_atletas
+			(clubes_codigo,atletas_codigo,clubesatletas_desde,clubesatletas_hasta,activo,usuario)
+		VALUES(p_clubes_codigo,
+		       p_atletas_codigo,
+		       p_clubesatletas_desde,
+		       coalesce(p_clubesatletas_hasta,'2035-01-01'),
+		       p_activo,
+		       p_usuario);
+
+		RETURN 1;
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_clubesatletas_save_record(p_clubesatletas_id integer, p_clubes_codigo character varying, p_atletas_codigo character varying, p_clubesatletas_desde date, p_clubesatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 254 (class 1255 OID 16440)
+-- Name: sp_competencias_pruebas_delete_for_competencia(character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_competencias_pruebas_delete_for_competencia(p_competencias_codigo character varying, p_usuario character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que elimina todas las pruebas asociadas a una competencia.
+Dado que a estas pruebas estan asociados los resultados , tambien se elimina todos los resultados
+asociados a las pruebas.
+Historia : Creado 15-01-2014
+*/
+BEGIN
+
+	-- Verificacion previa que el registro no esgta modificado
+	--
+	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
+	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
+	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
+	IF EXISTS (SELECT 1 FROM tb_competencias WHERE competencias_codigo = p_competencias_codigo) THEN
+
+		-- Eliminamos todos los resultados asociados a una competencia
+		PERFORM sp_atletas_resultados_delete_for_competencia(p_competencias_codigo,p_usuario);
+
+		-- Finalmente eliminamos las pruebas asociadas a la competencia.
+		DELETE FROM
+			tb_competencias_pruebas
+		where competencias_codigo = p_competencias_codigo;
+
+	ELSE
+		RAISE 'No se pueden eliminar las pruebas asociadas a la comptencia % , ya que esta no existe',p_competencias_codigo USING ERRCODE = 'restrict_violation';
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_competencias_pruebas_delete_for_competencia(p_competencias_codigo character varying, p_usuario character varying) OWNER TO atluser;
+
+--
+-- TOC entry 255 (class 1255 OID 16441)
+-- Name: sp_competencias_pruebas_delete_record(integer, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_competencias_pruebas_delete_record(p_competencias_pruebas_id integer, p_usuario character varying, p_version_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que elimina todas los resultados de todos los atletas
+para una especifica prueba de una competencia.pruebas y sus resultados asociados
+para una competencia.
+
+Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
+consistentemente,
+
+En el caso de las combinadas eliminara los datos de la principal y las que las componen
+osea todos los resultados asociados a la principal y todas sus pruebas adjuntas.
+
+Una vez establecida la prueba para una competencia sera imposible cambiar el codigo de prueba.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+DECLARE v_competencias_pruebas_origen_id integer=0;
+
+BEGIN
+
+	-- Verificacion previa que el registro no esgta modificado
+	--
+	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
+	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
+	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
+	IF EXISTS (SELECT 1 FROM tb_competencias_pruebas WHERE competencias_pruebas_id = p_competencias_pruebas_id and xmin=p_version_id) THEN
+
+		-- Vemos si esta resultado es parte de una prueba combinada
+		-- o si es el resultado de una prueba combinada.
+		SELECT competencias_pruebas_origen_id
+			INTO v_competencias_pruebas_origen_id
+		FROM tb_competencias_pruebas cp
+		WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
+		--
+		IF v_competencias_pruebas_origen_id IS NOT NULL
+		THEN
+			-- La prueba no existe
+			RAISE 'Una prueba que es parte de una prueba combinada no puede eliminarse independientemente , borre la prueba principal' USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		-- Eliminamos primero todos sus resultados asociados.
+		DELETE FROM
+			tb_atletas_resultados
+		WHERE (competencias_pruebas_id = p_competencias_pruebas_id
+			OR competencias_pruebas_id in (
+				select competencias_pruebas_id
+					from tb_competencias_pruebas
+				where competencias_pruebas_origen_id=p_competencias_pruebas_id
+				));
+
+
+		-- Eliminamos la pricipal y las asociadas en caso de que a prueba sea multiple
+		DELETE FROM
+			tb_competencias_pruebas
+		WHERE competencias_pruebas_id = p_competencias_pruebas_id
+			OR competencias_pruebas_origen_id=p_competencias_pruebas_id;
+
+
+		IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+
+	ELSE
+		RETURN null;
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_competencias_pruebas_delete_record(p_competencias_pruebas_id integer, p_usuario character varying, p_version_id integer) OWNER TO atluser;
+
+--
+-- TOC entry 252 (class 1255 OID 16444)
+-- Name: sp_competencias_pruebas_save_record(integer, character varying, character varying, integer, date, numeric, boolean, character varying, integer, boolean, boolean, character varying, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de las pruebas de una
+competencia.
+
+Previamente hace todas las validaciones necesarias para garantizar que los datos sean grabados
+consistentemente,
+
+En el caso de las combinadas actualizara la principal y las que las componen o en el caso
+de crear , creara la principal con sus pruebas componentes del mismo.
+
+
+Una vez establecida la prueba para una competencia sera imposible cambiar el codigo de prueba.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_atletas_resultados_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+DECLARE v_categorias_codigo_competencia character varying(15);
+DECLARE v_competencias_fecha_inicio date;
+DECLARE v_competencias_fecha_final date;
+
+DECLARE v_unidad_medida_tipo_new character(1);
+DECLARE v_prueba_multiple_new boolean= FALSE;
+DECLARE v_categorias_codigo_orig character varying(15);
+DECLARE v_categorias_codigo_new character varying(15);
+DECLARE v_competencias_pruebas_id integer=0;
+DECLARE v_apppruebas_verifica_viento_new BOOLEAN = FALSE;
+DECLARE v_competencias_pruebas_origen_combinada BOOLEAN = FALSE;
+DECLARE v_apppruebas_viento_individual BOOLEAN;
+
+BEGIN
+
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+
+	-- Buscamos si la prueba es parte de una combinada , de serlo informamos ya que
+	-- no es posible agregar un resultado individual , debe agregarse a prueba principal
+	IF (p_is_update = '0')
+	THEN
+		IF EXISTS(select 1 from  tb_pruebas_detalle pd
+			WHERE pd.pruebas_detalle_prueba_codigo = p_pruebas_codigo)
+		THEN
+			-- No puede cambiarse la prueba
+			RAISE 'La prueba es parte de una combinada , no puede ingresarse individualmente , por favor agregue primero la prueba principal.'  USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+	-- Busxcamos la categoria de la competencia, los datos de la prueba y del atleta
+	-- basados en los datos actuales a grabar, esto no permitira saber si la relacion
+	-- COmPETencia,PrueBA;ATLETA es correcta , digase si la competencia es de mayores
+	-- la prueba debe ser de mayores y el atleta debe ser mayor, asi mismo si la prueba es para
+	-- el sexo femenino , el atleta debe ser mujer
+	SELECT categorias_codigo,competencias_fecha_inicio,competencias_fecha_final INTO
+		v_categorias_codigo_competencia,v_competencias_fecha_inicio,v_competencias_fecha_final
+	FROM tb_competencias where competencias_codigo=p_competencias_codigo;
+
+	-- Verificamos primero si la fecha enviada esta entre las fechas de la competencia.
+	IF p_competencias_pruebas_fecha < v_competencias_fecha_inicio OR p_competencias_pruebas_fecha > v_competencias_fecha_final
+	THEN
+		-- Excepcion La fecha esta fuera del rango de la competencia
+		RAISE  'La fecha indicada para la prueba (%) no corresponde al rango de fechas de la competencia % - %',p_competencias_pruebas_fecha,v_competencias_fecha_inicio,v_competencias_fecha_final USING ERRCODE = 'restrict_violation';
+	END If;
+
+	-- Buscamos los datos de la gnerica de prueba que actualmente se quiere grabar para saber si tambien sera multiple.
+	SELECT apppruebas_multiple,pr.categorias_codigo,apppruebas_verifica_viento,unidad_medida_tipo,apppruebas_viento_individual INTO
+		v_prueba_multiple_new,v_categorias_codigo_new,v_apppruebas_verifica_viento_new,
+		v_unidad_medida_tipo_new,v_apppruebas_viento_individual
+	FROM tb_pruebas pr
+		INNER JOIN tb_app_pruebas_values p ON p.apppruebas_codigo = pr.pruebas_generica_codigo
+		INNER JOIN tb_pruebas_clasificacion c ON c.pruebas_clasificacion_codigo = p.pruebas_clasificacion_codigo
+		INNER JOIN tb_unidad_medida um on um.unidad_medida_codigo = c.unidad_medida_codigo
+	WHERE pr.pruebas_codigo = p_pruebas_codigo;
+
+	-- OBTENIDOS LOS DATOS VERIFICAMOS LA RELACION
+	-- Primero si la  categoria de la prueba y competencia son validas.
+	-- SI NO EXISTE LA PRUEBA
+	IF v_categorias_codigo_competencia != v_categorias_codigo_new
+	THEN
+		-- Excepcion no correspondencia de la categorias
+		RAISE 'La categoria de la competencia (%) no corresponde a la de la prueba (%) , ambas deben ser iguales',v_categorias_codigo_competencia,v_categorias_codigo_new USING ERRCODE = 'restrict_violation';
+	END IF;
+
+
+	-----------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------
+	-- OK paso todas las validaciones basicas , ahora veamos si la prueba tiene control de viento y ver si el viento esta indicado.
+	-- SOLO CUANDO SE AGREGA.
+	IF v_apppruebas_verifica_viento_new = TRUE AND v_apppruebas_viento_individual = FALSE
+	THEN
+		IF p_competencias_pruebas_viento is null
+		THEN
+			-- La prueba requiere se indique el viento
+			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+		END IF;
+	ELSE
+		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
+		p_competencias_pruebas_viento := NULL;
+	END IF;
+
+	-- Si la unidad de medida de la prueba no es tiempo
+	-- se blanquea (false) al campo que indica si la medida manual.
+	IF v_unidad_medida_tipo_new != 'T'
+	THEN
+		p_competencias_pruebas_manual := false;
+	END IF;
+
+
+	-- Si la prueba no requiere verificacion de viento ponemos
+	-- que si tuvo.
+	IF v_apppruebas_verifica_viento_new = FALSE
+	THEN
+		p_competencias_pruebas_anemometro := true;
+	END IF;
+
+
+
+
+	IF p_is_update = '1'
+	THEN
+		-- Buscamos los datos actualmente grabado.
+		IF NOT EXISTS(SELECT 1
+				FROM tb_competencias_pruebas
+				WHERE competencias_pruebas_id = p_competencias_pruebas_id and pruebas_codigo=p_pruebas_codigo)
+		THEN
+			-- No puede cambiarse la prueba
+			RAISE 'Al actualizar no puede cambiarse de prueba !!'  USING ERRCODE = 'restrict_violation';
+		END IF;
+
+
+		-- El  update, si no es prueba multiple los valores completos
+		IF coalesce(v_prueba_multiple_new,false) = FALSE
+		THEN
+			UPDATE
+				tb_competencias_pruebas
+			SET
+				competencias_pruebas_id = p_competencias_pruebas_id,
+				competencias_codigo =  p_competencias_codigo,
+				pruebas_codigo =  p_pruebas_codigo,
+				competencias_pruebas_fecha =  p_competencias_pruebas_fecha,
+				competencias_pruebas_viento =  p_competencias_pruebas_viento,
+				competencias_pruebas_manual =  p_competencias_pruebas_manual,
+				competencias_pruebas_tipo_serie = p_competencias_pruebas_tipo_serie,
+				competencias_pruebas_nro_serie=p_competencias_pruebas_nro_serie,
+				competencias_pruebas_anemometro=p_competencias_pruebas_anemometro,
+				competencias_pruebas_material_reglamentario=p_competencias_pruebas_material_reglamentario,
+				competencias_pruebas_observaciones =  p_competencias_pruebas_observaciones,
+				competencias_pruebas_protected =  p_competencias_pruebas_protected,
+				activo = p_activo,
+				usuario_mod = p_usuario
+			WHERE competencias_pruebas_id = p_competencias_pruebas_id and
+				(case when p_version_id is null then xmin = xmin else xmin=p_version_id end);
+
+
+			RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+			-- Todo ok , si se necesita agregar los detalles lo hacemos
+			IF FOUND THEN
+				RETURN 1;
+			ELSE
+				RETURN null;
+			END IF;
+		ELSE
+			-- Si es prueba multiple , entonces solo actualizamos los campos relevantes
+			UPDATE
+				tb_competencias_pruebas
+			SET
+				competencias_codigo =  p_competencias_codigo,
+				pruebas_codigo =  p_pruebas_codigo,
+				competencias_pruebas_fecha =  p_competencias_pruebas_fecha,
+				competencias_pruebas_observaciones =  p_competencias_pruebas_observaciones,
+				competencias_pruebas_protected =  p_competencias_pruebas_protected,
+				activo = p_activo,
+				usuario_mod = p_usuario
+			WHERE competencias_pruebas_id = p_competencias_pruebas_id and
+				(case when p_version_id is null then xmin = xmin else xmin=p_version_id end);
+
+			RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+			-- Todo ok , si se necesita agregar los detalles lo hacemos
+			IF FOUND THEN
+				-- Dado que es multiple , los campos relevantes los propagamos , por ejemplo
+				-- el codigo de prueba.
+				-- Cuidado la fecha ya bo es modificada ya que cada prueba debera indicarse su fecha.
+				UPDATE
+					tb_competencias_pruebas
+				SET
+					competencias_codigo =  p_competencias_codigo,
+					competencias_pruebas_protected =  p_competencias_pruebas_protected,
+					activo = p_activo,
+					usuario_mod = p_usuario
+				WHERE competencias_pruebas_origen_id = p_competencias_pruebas_id ;
+
+				RETURN 1;
+			ELSE
+				RETURN null;
+			END IF;
+		END IF;
+	ELSE
+
+		-- Por si acaso actualizamos el flag de origen combinada si proviene
+		-- de una , lo cual lo sabemos si existe un origen indicado.
+		IF p_competencias_pruebas_origen_id IS NOT NULL
+		THEN
+			v_competencias_pruebas_origen_combinada:= true;
+		END IF;
+
+		IF coalesce(v_prueba_multiple_new,false) = TRUE
+		THEN
+			p_competencias_pruebas_viento := NULL;
+			p_competencias_pruebas_manual := FALSE;
+			p_competencias_pruebas_tipo_serie := 'FI';
+			p_competencias_pruebas_nro_serie := 1;
+			p_competencias_pruebas_anemometro := TRUE;
+			p_competencias_pruebas_material_reglamentario := TRUE;
+			v_competencias_pruebas_origen_combinada := FALSE;
+			p_competencias_pruebas_origen_id := NULL;
+
+		END IF;
+
+		-- Debemos agregar la prueba a la competencia ya que no existe.
+		INSERT INTO
+			tb_competencias_pruebas
+			(
+			  competencias_codigo,
+			  pruebas_codigo,
+			  competencias_pruebas_origen_combinada,
+			  competencias_pruebas_fecha,
+			  competencias_pruebas_viento,
+			  competencias_pruebas_manual,
+			  competencias_pruebas_tipo_serie,
+			  competencias_pruebas_nro_serie,
+			  competencias_pruebas_anemometro,
+			  competencias_pruebas_material_reglamentario,
+			  competencias_pruebas_observaciones,
+			  competencias_pruebas_protected,
+			  competencias_pruebas_origen_id,
+			  activo,
+			  usuario
+			)
+		VALUES(
+			 p_competencias_codigo,
+			 p_pruebas_codigo,
+			 v_competencias_pruebas_origen_combinada,
+			 p_competencias_pruebas_fecha,
+			 p_competencias_pruebas_viento,
+			 p_competencias_pruebas_manual,
+			 p_competencias_pruebas_tipo_serie,
+			 p_competencias_pruebas_nro_serie,
+			 p_competencias_pruebas_anemometro,
+			 p_competencias_pruebas_material_reglamentario,
+			 p_competencias_pruebas_observaciones,
+			 p_competencias_pruebas_protected,
+			 p_competencias_pruebas_origen_id,
+			 p_activo,
+			 p_usuario);
+
+
+		-- Si la prueba es multiple se agregan las pruebas correpspondientes
+		IF coalesce(v_prueba_multiple_new,false) = TRUE
+		THEN
+
+			SELECT currval(pg_get_serial_sequence('tb_competencias_pruebas', 'competencias_pruebas_id'))
+				INTO v_competencias_pruebas_id;
+
+			-- Iniciamos el insert de todas las pruebas que componen la mltiple o combinada
+			INSERT INTO tb_competencias_pruebas (
+				competencias_codigo,
+				pruebas_codigo,
+				competencias_pruebas_origen_combinada,
+				competencias_pruebas_origen_id,
+				competencias_pruebas_fecha,
+				competencias_pruebas_viento,
+				competencias_pruebas_manual,
+				competencias_pruebas_tipo_serie,
+				competencias_pruebas_nro_serie,
+				competencias_pruebas_anemometro,
+				competencias_pruebas_material_reglamentario,
+				activo,
+				usuario)
+			SELECT
+				p_competencias_codigo,
+				pd.pruebas_detalle_prueba_codigo,
+				true,
+				v_competencias_pruebas_id,
+				p_competencias_pruebas_fecha,
+				0,
+				false,
+				'FI',
+				1,
+				true,
+				true,
+				true,
+				p_usuario
+			FROM tb_pruebas_detalle pd
+			WHERE pd.pruebas_codigo = p_pruebas_codigo
+			ORDER BY pd.pruebas_detalle_orden;
+		END IF;
+
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 282 (class 1255 OID 37410)
+-- Name: sp_competencias_save_record(character varying, character varying, character varying, character varying, character varying, character varying, date, date, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_competencias_save_record(p_competencias_codigo character varying, p_competencias_descripcion character varying, p_competencia_tipo_codigo character varying, p_categorias_codigo character varying, p_paises_codigo character varying, p_ciudades_codigo character varying, p_competencias_fecha_inicio date, p_competencias_fecha_final date, p_competencias_clasificacion character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de lAS COMPETENCIAS.
+Previo verifica que durante un update si dicha competenia ya tiene resultados fuera
+del las fechas de competencia indicadas no podra modificarse el registro.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_competencias_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 25-02-2016
+*/
+BEGIN
+
+
+
+	IF p_is_update = '1'
+	THEN
+		-- Verificamos si alguno con el mismo nombre existe e indicamos el error.
+		IF EXISTS (select 1 from tb_competencias_pruebas cp
+				where competencias_codigo = p_competencias_codigo and
+					cp.competencias_pruebas_fecha not between p_competencias_fecha_inicio and p_competencias_fecha_final)
+		THEN
+			-- Excepcion de pais con ese nombre existe
+			RAISE 'No puede modificar las fechas de la competencia ya que existen pruebas asociadas que quedarian fuera del nuevo rango de fechas' USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		-- Si todo ok , efectuamos el update
+		UPDATE
+			tb_competencias
+		SET
+			competencias_codigo=p_competencias_codigo,
+			competencias_descripcion=p_competencias_descripcion,
+			competencia_tipo_codigo=p_competencia_tipo_codigo,
+			categorias_codigo=p_categorias_codigo,
+			paises_codigo=p_paises_codigo,
+			ciudades_codigo=p_ciudades_codigo,
+			competencias_fecha_inicio=p_competencias_fecha_inicio,
+			competencias_fecha_final=p_competencias_fecha_final,
+			competencias_clasificacion=p_competencias_clasificacion,
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE competencias_codigo = p_competencias_codigo and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RAISE '' USING ERRCODE = 'record modified';
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_competencias
+			(competencias_codigo,competencias_descripcion,competencia_tipo_codigo,categorias_codigo,
+				paises_codigo,ciudades_codigo,competencias_fecha_inicio,competencias_fecha_final,competencias_clasificacion,activo,usuario)
+		VALUES(p_competencias_codigo,
+		       p_competencias_descripcion,
+		       p_competencia_tipo_codigo,
+		       p_categorias_codigo,
+		       p_paises_codigo,
+		       p_ciudades_codigo,
+		       p_competencias_fecha_inicio,
+		       p_competencias_fecha_final,
+		       p_competencias_clasificacion,
+		       p_activo,
+		       p_usuario);
+
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_competencias_save_record(p_competencias_codigo character varying, p_competencias_descripcion character varying, p_competencia_tipo_codigo character varying, p_categorias_codigo character varying, p_paises_codigo character varying, p_ciudades_codigo character varying, p_competencias_fecha_inicio date, p_competencias_fecha_final date, p_competencias_clasificacion character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 256 (class 1255 OID 16447)
+-- Name: sp_entrenadores_save_record(character varying, character varying, character varying, character varying, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_entrenadores_save_record(p_entrenadores_codigo character varying, p_entrenadores_ap_paterno character varying, p_entrenadores_ap_materno character varying, p_entrenadores_nombres character varying, p_entrenadores_nivel_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 05-02-2014
+
+Stored procedure que agrega o actualiza los registros de personal.
+Previo a la grabacion forma el nombre completo del personal.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_personal_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 05-02-2014
+*/
+DECLARE v_nombre_completo	VARCHAR(300);
+DECLARE	v_rowcount 		INTEGER;
+
+BEGIN
+
+	-- Creamos el campo de nombre completo
+	v_nombre_completo := '';
+	IF coalesce(p_entrenadores_ap_paterno,'') != '' or length(p_entrenadores_ap_paterno) > 0
+	THEN
+		v_nombre_completo := p_entrenadores_ap_paterno;
+	END IF;
+	IF coalesce(p_entrenadores_ap_materno,'') != '' or length(p_entrenadores_ap_materno) > 0
+	THEN
+		v_nombre_completo := v_nombre_completo || ' ' || p_entrenadores_ap_materno;
+	END IF;
+	IF coalesce(p_entrenadores_nombres,'') != '' or length(p_entrenadores_nombres) > 0
+	THEN
+		v_nombre_completo := v_nombre_completo || ', ' || p_entrenadores_nombres;
+	END IF;
+
+
+	IF p_is_update = '1'
+	THEN
+		UPDATE
+			tb_entrenadores
+		SET
+			entrenadores_codigo=p_entrenadores_codigo,
+			entrenadores_ap_paterno=p_entrenadores_ap_paterno,
+			entrenadores_ap_materno=p_entrenadores_ap_materno,
+			entrenadores_nombres=p_entrenadores_nombres,
+			entrenadores_nombre_completo=v_nombre_completo,
+			entrenadores_nivel_codigo=p_entrenadores_nivel_codigo,
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE entrenadores_codigo = p_entrenadores_codigo and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_entrenadores
+			(entrenadores_codigo,entrenadores_ap_paterno,entrenadores_ap_materno,entrenadores_nombres,entrenadores_nombre_completo,
+				entrenadores_nivel_codigo,activo,usuario_mod)
+		VALUES (p_entrenadores_codigo,
+			p_entrenadores_ap_paterno,
+			p_entrenadores_ap_materno,
+			p_entrenadores_nombres,
+			v_nombre_completo,
+			p_entrenadores_nivel_codigo,
+			p_activo,
+			p_usuario);
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_entrenadores_save_record(p_entrenadores_codigo character varying, p_entrenadores_ap_paterno character varying, p_entrenadores_ap_materno character varying, p_entrenadores_nombres character varying, p_entrenadores_nivel_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 257 (class 1255 OID 16450)
+-- Name: sp_entrenadoresatletas_save_record(integer, character varying, character varying, date, date, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_entrenadoresatletas_save_record(p_entrenadoresatletas_id integer, p_entrenadores_codigo character varying, p_atletas_codigo character varying, p_entrenadoresatletas_desde date, p_entrenadoresatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 03-02-2014
+
+Stored procedure que agrega un registro de la relacion entre entrenadores y atletas
+verificando previamente que el atleta no este asignado a otro entrenador ydentro del rango
+de fechas definidos.
+
+Historia : Creado 03-02-2014
+*/
+DECLARE v_entrenador_nombre VARCHAR(300) = '';
+
+BEGIN
+
+	-- Si se agrega activo verificamos si existe en otra liga.
+	IF p_activo = TRUE
+	THEN
+		-- Verificamos si el atleta esta definido en otro entrenador y las fechas no se overlapan (un atleta no puede haber
+		-- sido entrenado por 2 entrenadores a la vez
+		IF EXISTS (SELECT 1
+				FROM tb_entrenadores_atletas ea
+				LEFT JOIN tb_entrenadores ent on ent.entrenadores_codigo = ea.entrenadores_codigo
+			  where  atletas_codigo = p_atletas_codigo
+				and coalesce(p_entrenadoresatletas_id,-1) != coalesce(ea.entrenadoresatletas_id,2)
+				and (p_entrenadoresatletas_desde  between entrenadoresatletas_desde and entrenadoresatletas_hasta or
+				    coalesce(p_entrenadoresatletas_hasta,'2035-01-01')   between entrenadoresatletas_desde and entrenadoresatletas_hasta or
+				    entrenadoresatletas_desde  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01')  or
+				    entrenadoresatletas_hasta  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01')  ) LIMIT 1)
+		THEN
+			-- Para recuperar el nombre del entrenador (el primero) que ocurre en ese rango
+			SELECT entrenadores_nombre_completo   INTO  v_entrenador_nombre
+				FROM tb_entrenadores_atletas ea
+				LEFT JOIN tb_entrenadores ent on ent.entrenadores_codigo = ea.entrenadores_codigo
+			  where  atletas_codigo = p_atletas_codigo
+				and (p_entrenadoresatletas_desde  between entrenadoresatletas_desde and entrenadoresatletas_hasta or
+				    coalesce(p_entrenadoresatletas_hasta,'2035-01-01')  between entrenadoresatletas_desde and entrenadoresatletas_hasta or
+				    entrenadoresatletas_desde  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01') or
+				    entrenadoresatletas_hasta  between p_entrenadoresatletas_desde and coalesce(p_entrenadoresatletas_hasta,'2035-01-01') ) LIMIT 1;
+
+			-- Excepcion de pais con ese nombre existe
+			RAISE 'El atleta pertenecia a otro entrenador o al mismo entrenador durante ese rango de fechas, verifique la fecha final definida en el entrenador (%)',v_entrenador_nombre USING ERRCODE = 'restrict_violation';
+		END IF;
+	END IF;
+
+IF p_is_update = '1'
+	THEN
+		UPDATE
+			tb_entrenadores_atletas
+		SET
+			entrenadores_codigo=p_entrenadores_codigo,
+			atletas_codigo=p_atletas_codigo,
+			entrenadoresatletas_desde=p_entrenadoresatletas_desde,
+			entrenadoresatletas_hasta=coalesce(p_entrenadoresatletas_hasta,'2035-01-01'),
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE entrenadoresatletas_id = p_entrenadoresatletas_id and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_entrenadores_atletas
+			(entrenadores_codigo,atletas_codigo,entrenadoresatletas_desde,entrenadoresatletas_hasta,activo,usuario)
+		VALUES(p_entrenadores_codigo,
+		       p_atletas_codigo,
+		       p_entrenadoresatletas_desde,
+		       coalesce(p_entrenadoresatletas_hasta,'2035-01-01'),
+		       p_activo,
+		       p_usuario);
+
+		RETURN 1;
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_entrenadoresatletas_save_record(p_entrenadoresatletas_id integer, p_entrenadores_codigo character varying, p_atletas_codigo character varying, p_entrenadoresatletas_desde date, p_entrenadoresatletas_hasta date, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 258 (class 1255 OID 16451)
+-- Name: sp_liga_delete_record(character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_liga_delete_record(p_ligas_codigo character varying, p_usuario_mod character varying, p_version_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 03-02-2014
+
+Stored procedure que elimina una liga eliminando todos las asociaciones a sus clubes,
+NO ELIMINA LOS CLUBES SOLO LAS ASOCIASIONES A LOS MISMO.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos .
+
+Esta procedure function devuelve un entero siempre que el delete
+	se haya realizado y devuelve null si no se realizo el delete. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el delete se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el delete se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el delete usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select :
+
+	select * from ( select sp_liga_delete_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el delete funciono , y 0 registros si no se realizo
+	el delete. Esto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+Historia : Creado 03-02-2014
+*/
+BEGIN
+
+	-- Verificacion previa que el registro no esgta modificado
+	--
+	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
+	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
+	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
+	IF EXISTS (SELECT 1 FROM tb_ligas WHERE ligas_codigo = p_ligas_codigo and xmin=p_version_id) THEN
+		-- Eliminamos
+		DELETE FROM
+			tb_ligas_clubes
+		WHERE ligas_codigo = p_ligas_codigo;
+
+		DELETE FROM
+			tb_ligas
+		WHERE ligas_codigo = p_ligas_codigo and xmin =p_version_id;
+
+		--RAISE NOTICE  'COUNT ID --> %', FOUND;
+		-- SI SE PUDO ELIMINAR SE INDICA 1 DE LO CONTRARIO NULL
+		-- VER DOCUMENTACION DE LA FUNCION
+		IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		RETURN null;
+	END IF;
+
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_liga_delete_record(p_ligas_codigo character varying, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
+
+--
+-- TOC entry 262 (class 1255 OID 16452)
+-- Name: sp_ligasclubes_save_record(integer, character varying, character varying, date, date, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_ligasclubes_save_record(p_ligasclubes_id integer, p_ligas_codigo character varying, p_clubes_codigo character varying, p_ligasclubes_desde date, p_ligasclubes_hasta date, p_activo boolean, p_usuario character varying, p_versionid integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 03-02-2014
+
+Stored procedure que agrega un registro de la relacion entre ligas y clubes
+verificando previamente que el club no este asignado a otra liga y dentro del rango
+de fechas definidos.
+
+Historia : Creado 03-02-2014
+*/
+DECLARE v_liga_descripcion VARCHAR(300) = '';
+
+BEGIN
+
+	-- Si se agrega activo verificamos si existe en otra liga.
+--	IF p_activo = TRUE
+--	THEN
+		-- Verificamos si el atleta esta definido en otro club y las fechas no se overlapan (un atleta no puede haber
+		-- sido entrenado por 2 clubes a la vez
+		IF EXISTS (SELECT 1
+				FROM tb_ligas_clubes ea
+			  where  clubes_codigo = p_clubes_codigo
+				and coalesce(p_ligasclubes_id,-1) != coalesce(ea.ligasclubes_id,2)
+				and (p_ligasclubes_desde  between ligasclubes_desde and ligasclubes_hasta or
+				    p_ligasclubes_hasta  between ligasclubes_desde and ligasclubes_hasta or
+				    ligasclubes_desde  between p_ligasclubes_desde and p_ligasclubes_hasta or
+				    ligasclubes_hasta  between p_ligasclubes_desde and p_ligasclubes_hasta ) LIMIT 1)
+		THEN
+			-- Para recuperar el nombre del club (el primero) que ocurre en ese rango
+			SELECT INTO  v_liga_descripcion  ligas_descripcion
+				FROM tb_ligas_clubes ea
+				LEFT JOIN tb_ligas ent on ent.ligas_codigo = ea.ligas_codigo
+			  where  clubes_codigo = p_clubes_codigo
+				and (p_ligasclubes_desde  between ligasclubes_desde and ligasclubes_hasta or
+				    p_ligasclubes_hasta  between ligasclubes_desde and ligasclubes_hasta or
+				    ligasclubes_desde  between p_ligasclubes_desde and p_ligasclubes_hasta or
+				    ligasclubes_hasta  between p_ligasclubes_desde and p_ligasclubes_hasta ) LIMIT 1;
+
+			-- Excepcion de pais con ese nombre existe
+			RAISE 'El club pertenecia a otra liga o a la misma liga durante ese rango de fechas, verifique la fecha final definida en la liga (%)',v_liga_descripcion USING ERRCODE = 'restrict_violation';
+		END IF;
+--	END IF;
+
+IF p_is_update = '1'
+	THEN
+		-- Update a la relacion liga/club
+		UPDATE tb_ligas_clubes
+			SET ligas_codigo=p_ligas_codigo,
+				clubes_codigo=p_clubes_codigo,
+				ligasclubes_desde=p_ligasclubes_desde,
+				ligasclubes_hasta=coalesce(p_ligasclubes_hasta,'2035-12-31'),
+				usuario_mod=p_usuario,
+				activo=p_activo
+		WHERE p_ligasclubes_id = p_ligasclubes_id and xmin=p_versionid;
+
+
+		RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+		IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+		tb_ligas_clubes
+		(ligas_codigo,clubes_codigo,ligasclubes_desde,ligasclubes_hasta,activo,usuario)
+			VALUES(p_ligas_codigo,
+				p_clubes_codigo,
+				p_ligasclubes_desde,
+				coalesce(p_ligasclubes_hasta,'2035-12-31'),
+				p_activo,
+				p_usuario);
+
+		RETURN 1;
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_ligasclubes_save_record(p_ligasclubes_id integer, p_ligas_codigo character varying, p_clubes_codigo character varying, p_ligasclubes_desde date, p_ligasclubes_hasta date, p_activo boolean, p_usuario character varying, p_versionid integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 260 (class 1255 OID 16453)
+-- Name: sp_paises_save_record(character varying, character varying, boolean, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_paises_save_record(p_paises_codigo character varying, p_paises_descripcion character varying, p_paises_entidad boolean, p_regiones_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que agrega o actualiza los registros de los paises.
+Previo verifica que no exista un pais con el mismo nombre y desactiva el campo
+paises_entidad si se esta tratando de grabar un registro con ese valor en TRUE
+pero ya existe otro que lo tiene.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update , de la misma forma el parametro id sera ignorado durante un insert.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_paises_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 15-01-2014
+*/
+BEGIN
+	-- Verificamos si alguno con el mismo nombre existe e indicamos el error.
+	IF EXISTS (SELECT 1 FROM tb_paises
+		  where paises_codigo != p_paises_codigo and UPPER(LTRIM(RTRIM(paises_descripcion))) = UPPER(LTRIM(RTRIM(p_paises_descripcion))))
+	THEN
+		-- Excepcion de pais con ese nombre existe
+		RAISE 'Ya existe un pais con ese nombre pero diferente codigo' USING ERRCODE = 'restrict_violation';
+	END IF;
+
+	-- Si un pais ya tiene indicado su entidad y se trata de indicar al registro
+	-- que se agrega o modifca que tendra el indicador de entidad , primero quitamos
+	-- el que existe previo a grabar.
+	IF p_paises_entidad = TRUE
+	THEN
+		UPDATE
+			tb_paises
+		SET paises_entidad=FALSE
+		WHERE paises_entidad=TRUE and paises_codigo != p_paises_codigo;
+	END IF;
+
+	IF p_is_update = '1'
+	THEN
+		UPDATE
+			tb_paises
+		SET
+			paises_descripcion=p_paises_descripcion,
+			paises_entidad=p_paises_entidad,
+			regiones_codigo=p_regiones_codigo,
+			activo=p_activo,
+			usuario_mod=p_usuario
+                WHERE paises_codigo = p_paises_codigo and xmin =p_version_id ;
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RAISE '' USING ERRCODE = 'record modified';
+			RETURN null;
+		END IF;
+	ELSE
+		INSERT INTO
+			tb_paises
+			(paises_codigo,paises_descripcion,paises_entidad,regiones_codigo,activo,usuario)
+		VALUES(p_paises_codigo,
+		       p_paises_descripcion,
+		       p_paises_entidad,
+		       p_regiones_codigo,
+		       p_activo,
+		       p_usuario);
+
+		RETURN 1;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_paises_save_record(p_paises_codigo character varying, p_paises_descripcion character varying, p_paises_entidad boolean, p_regiones_codigo character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+
+--
+-- TOC entry 261 (class 1255 OID 16456)
+-- Name: sp_perfil_delete_record(integer, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_perfil_delete_record(p_perfil_id integer, p_usuario_mod character varying, p_version_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 01-01-2014
+
+Stored procedure que elimina un perfil de menu eliminando todos los registros de perfil detalle asociados.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos .
+
+Esta procedure function devuelve un entero siempre que el delete
+	se haya realizado y devuelve null si no se realizo el delete. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el delete se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el delete se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el delete usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select :
+
+	select * from ( select sp_perfil_delete_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el delete funciono , y 0 registros si no se realizo
+	el delete. Esto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+Historia : Creado 05-01-2014
+*/
+BEGIN
+
+	-- Verificacion previa que el registro no esgta modificado
+	--
+	-- Existe una pequeñisima oportunidad que el registro sea alterado entre el exist y el delete
+	-- pero dado que es intranscendente no es importante crear una sub transaccion para solo
+	-- verificar eso , por ende es mas que suficiente solo esta previa verificacion por exist.
+	IF EXISTS (SELECT 1 FROM tb_sys_perfil WHERE perfil_id = p_perfil_id and xmin=p_version_id) THEN
+		-- Eliminamos
+		DELETE FROM
+			tb_sys_perfil_detalle
+		WHERE perfil_id = p_perfil_id ;
+
+		DELETE FROM
+			tb_sys_perfil
+		WHERE perfil_id = p_perfil_id and xmin =p_version_id;
+
+		--RAISE NOTICE  'COUNT ID --> %', FOUND;
+		-- SI SE PUDO ELIMINAR SE INDICA 1 DE LO CONTRARIO NULL
+		-- VER DOCUMENTACION DE LA FUNCION
+		IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		RETURN null;
+	END IF;
+
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_perfil_delete_record(p_perfil_id integer, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
+
+--
+-- TOC entry 259 (class 1255 OID 16457)
+-- Name: sp_perfil_detalle_save_record(integer, integer, integer, boolean, boolean, boolean, boolean, boolean, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_perfil_detalle_save_record(p_perfdet_id integer, p_perfil_id integer, p_menu_id integer, p_acc_leer boolean, p_acc_agregar boolean, p_acc_actualizar boolean, p_acc_eliminar boolean, p_acc_imprimir boolean, p_activo boolean, p_usuario character varying, p_version_id integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 01-01-2014
+
+Stored procedure que actualiza los registros de un detalle de perfil. Si este registro es un menu o submenu
+aplicara los accesos a toda la ruta desde el nivel de este registro a todos los subniveles de menu
+por debajo de este. Por ahora solo soporta el acceso de leer para el caso de grabacion multiple
+de tal forma que si se indca que se puede leer se dara acceso total a sus hijos y si deniega se retira el acceso
+total a dichos hijos.
+Si el caso es que es una opcion de un menu o submenu aplicara los cambios de acceso solo a ese registro.
+
+El parametro p_version_id indica el campo xmin de control para cambios externos y solo se usara
+durante un update de registro unico.
+
+IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o el insert
+	se hayan realizado y devuelve null si no se realizo el update. Esta extraña forma
+	se debe a que en pgsql las funciones se ejecutan con select funct_name() , esto quiere
+	decir que al margen si el update se realizo o no siempre devolvera un registro afectado.
+	En realidad lo que esta diciendo es que el select de la funcion se ha ejecutado , pero no
+	es eso lo que deseamos si no saber si el update se realizo o no , para poder simular el
+	comportamiento standard de otras bases de datos he realizado un truco , determinando si existio
+	o no el update usando la variable postgres FOUND y retornando 1 si lo hzo y null si no lo hizo.
+
+	Esta forma permite realizar el siguiente select cuando se trata de un UPDATE :
+
+	select * from ( select sp_perfil_detalle_save_record(?,?,etc) as updins) as ans where updins is not null;
+
+	de tal forma que retornara un registro si el update funciono o el insert , y 0 registros si no se realizo
+	el uodate. sto es conveniente cuando se usa por ejemplo el affected_rows de algunos drivers.
+	EN OTRAS BASES ESTO NO ES NECESARIO.
+
+Historia : Creado 08-10-2013
+*/
+DECLARE v_isRoot BOOLEAN := 'F';
+BEGIN
+	-- Si no hay acceso de lectura los demas son desactivados
+	IF p_acc_leer = 'F'
+	THEN
+	   p_acc_agregar 	= 'F';
+	   p_acc_actualizar 	= 'F';
+	   p_acc_eliminar 	= 'F';
+	   p_acc_imprimir 	= 'F';
+
+	END IF;
+
+	-- Primero vemos si es un menu o submenu (root de arbol)
+	-- PAra esto vemos si algun parent id apunta a este menu , si es asi es un menu
+	-- o submenu.
+	IF EXISTS (SELECT 1 FROM tb_sys_menu WHERE menu_parent_id = p_menu_id)
+	THEN
+	  v_isRoot := 'T';
+	  -- Si es root y acceso de lectura es true a todos true
+	  IF p_acc_leer = 'T'
+	  THEN
+		p_acc_agregar 	= 'T';
+		p_acc_actualizar= 'T';
+		p_acc_eliminar 	= 'T';
+		p_acc_imprimir 	= 'T';
+
+	  END IF;
+	END IF;
+
+	-- Si es root (menu o submenu) se hace unn update a todas las opciones
+	-- debajo del menu o submenu a setear en el perfil.
+	IF v_isRoot = 'T'
+	THEN
+		-- Este metodo es recursivo y existe en otras bases de datos
+		-- revisar documentacion de las mismas.
+		WITH RECURSIVE rootMenus(menu_id,menu_parent_id)
+		AS (
+			  SELECT menu_id,menu_parent_id
+			  FROM tb_sys_menu
+			  WHERE menu_id = p_menu_id
+
+			  UNION ALL
+
+			  SELECT
+			    r.menu_id,r.menu_parent_id
+			  FROM tb_sys_menu r, rootMenus as t
+			  WHERE r.menu_parent_id = t.menu_id
+		)
+
+		-- Update a todo el path a partir de menu o submenu raiz.
+		UPDATE tb_sys_perfil_detalle
+			SET perfdet_accleer=p_acc_leer,perfdet_accagregar=p_acc_agregar,
+				perfdet_accactualizar=p_acc_actualizar,perfdet_accimprimir=p_acc_imprimir,
+				perfdet_acceliminar=p_acc_eliminar,
+				usuario_mod=p_usuario
+		WHERE perfil_id = p_perfil_id-- and xmin=p_version_id
+		and menu_id in (
+			SELECT menu_id FROM rootMenus
+		);
+
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+	ELSE
+		-- UPDATE PARA EL CASO DE UNA OPCION QUE NO ES DE MENU O SUBMENU
+		UPDATE tb_sys_perfil_detalle
+			SET perfdet_accleer=p_acc_leer,perfdet_accagregar=p_acc_agregar,
+				perfdet_accactualizar=p_acc_actualizar,perfdet_accimprimir=p_acc_imprimir,
+				perfdet_acceliminar=p_acc_eliminar,
+				usuario_mod=p_usuario
+		WHERE perfil_id = p_perfil_id
+		and menu_id = p_menu_id and xmin=p_version_id;
+
+                RAISE NOTICE  'COUNT ID --> %', FOUND;
+
+                IF FOUND THEN
+			RETURN 1;
+		ELSE
+			RETURN null;
+		END IF;
+
+	END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_perfil_detalle_save_record(p_perfdet_id integer, p_perfil_id integer, p_menu_id integer, p_acc_leer boolean, p_acc_agregar boolean, p_acc_actualizar boolean, p_acc_eliminar boolean, p_acc_imprimir boolean, p_activo boolean, p_usuario character varying, p_version_id integer) OWNER TO atluser;
+
+--
+-- TOC entry 263 (class 1255 OID 16463)
 -- Name: sp_pruebas_delete_record(character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5110,7 +5251,7 @@ $$;
 ALTER FUNCTION public.sp_pruebas_delete_record(p_pruebas_codigo character varying, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
 
 --
--- TOC entry 261 (class 1255 OID 16455)
+-- TOC entry 265 (class 1255 OID 16466)
 -- Name: sp_pruebas_save_record(character varying, character varying, character varying, character varying, character, character varying, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5203,7 +5344,9 @@ BEGIN
 		IF  v_pruebas_generica_codigo_old != p_pruebas_generica_codigo OR v_categorias_codigo_old != p_categorias_codigo OR
 			v_sexo_old != p_pruebas_sexo
 		THEN
-			IF EXISTS (SELECT 1 FROM tb_atletas_resultados where pruebas_codigo = p_pruebas_codigo LIMIT 1)
+			IF EXISTS (SELECT 1 FROM tb_atletas_resultados al
+					INNER JOIN tb_competencias_pruebas cp on cp.competencias_pruebas_id = al.competencias_pruebas_id
+				    WHERE cp.pruebas_codigo = p_pruebas_codigo  LIMIT 1)
 			THEN
 				RAISE 'Ya no es posible cambiar la prueba generica % ya que esta prueba ya registra resultados vigentes, asi mismo ni el sexo o categoria de la misma',v_pruebas_generica_descripcion_old USING ERRCODE = 'restrict_violation';
 			END IF;
@@ -5271,7 +5414,7 @@ $$;
 ALTER FUNCTION public.sp_pruebas_save_record(p_pruebas_codigo character varying, p_pruebas_descripcion character varying, p_pruebas_generica_codigo character varying, p_categorias_codigo character varying, p_pruebas_sexo character, p_pruebas_record_hasta character varying, p_pruebas_anotaciones character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 262 (class 1255 OID 16458)
+-- TOC entry 266 (class 1255 OID 16469)
 -- Name: sp_pruebasdetalle_save_record(integer, character varying, character varying, integer, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5399,6 +5542,15 @@ BEGIN
 		RAISE 'La prueba "%" no es de la misma categoria que la que se intenta agregar.',v_prueba_nombre USING ERRCODE = 'restrict_violation';
 	END IF;
 
+	-- Verificamos que la prueba no tenga resultados individuales
+	IF EXISTS (SELECT 1 FROM tb_atletas_resultados  ar
+		INNER JOIN tb_competencias_pruebas cp on cp.competencias_pruebas_id=ar.competencias_pruebas_id
+		WHERE cp.pruebas_codigo = p_pruebas_detalle_prueba_codigo and cp.competencias_pruebas_origen_combinada = FALSE)
+		THEN
+			-- Ya existe resultados individuales para la prueba
+			RAISE 'Dicha prueba ya tiene resultados como prueba individual , por ende no puede pertenecer a una combinada ' USING ERRCODE = 'restrict_violation';
+		END IF;
+
 	IF p_is_update = '1'
 	THEN
 		UPDATE
@@ -5436,7 +5588,7 @@ $$;
 ALTER FUNCTION public.sp_pruebasdetalle_save_record(p_pruebas_detalle_id integer, p_pruebas_codigo character varying, p_pruebas_detalle_prueba_codigo character varying, p_pruebas_detalle_orden integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 263 (class 1255 OID 16461)
+-- TOC entry 264 (class 1255 OID 16472)
 -- Name: sp_records_delete(integer, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5487,7 +5639,7 @@ $$;
 ALTER FUNCTION public.sp_records_delete(p_records_id integer, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
 
 --
--- TOC entry 264 (class 1255 OID 16462)
+-- TOC entry 268 (class 1255 OID 16473)
 -- Name: sp_records_save_record(integer, character varying, integer, character varying, integer, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5622,7 +5774,7 @@ BEGIN
 		 v_agnos <= categorias_edad_final )
 	THEN
 		-- Excepcion el atleta no esta dentro de la categoria
-		RAISE 'Para la fecha % en que se realizo la prueba el atleta nacido el % , tendria % años no podria haber competido dentro de la categoria %',p_competencias_pruebas_fecha,v_atletas_fecha_nacimiento_new,v_agnos,v_categorias_codigo_competencia USING ERRCODE = 'restrict_violation';
+		RAISE 'Para la fecha % en que se realizo la prueba el atleta  no podria haber competido dentro de la categoria %',v_competencias_pruebas_fecha,p_categorias_codigo USING ERRCODE = 'restrict_violation';
 	END IF;
 
 
@@ -5706,7 +5858,7 @@ $$;
 ALTER FUNCTION public.sp_records_save_record(p_records_id integer, p_records_tipo_codigo character varying, p_atletas_resultados_id integer, p_categorias_codigo character varying, p_records_id_origen integer, p_records_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 265 (class 1255 OID 16465)
+-- TOC entry 269 (class 1255 OID 16476)
 -- Name: sp_records_tipo_save_record(character varying, character varying, character varying, character, character, integer, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5800,7 +5952,7 @@ $$;
 ALTER FUNCTION public.sp_records_tipo_save_record(p_records_tipo_codigo character varying, p_records_tipo_descripcion character varying, p_records_tipo_abreviatura character varying, p_records_tipo_tipo character, p_records_tipo_clasificacion character, p_records_tipo_peso integer, p_records_tipo_protected boolean, p_activo boolean, p_usuario character varying, p_versionid integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 266 (class 1255 OID 16466)
+-- TOC entry 270 (class 1255 OID 16477)
 -- Name: sp_regiones_save_record(character varying, character varying, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5882,7 +6034,7 @@ $$;
 ALTER FUNCTION public.sp_regiones_save_record(p_regiones_codigo character varying, p_regiones_descripcion character varying, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 278 (class 1255 OID 59142)
+-- TOC entry 271 (class 1255 OID 16480)
 -- Name: sp_sysperfil_add_record(character varying, character varying, character varying, integer, boolean, character varying); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -5971,7 +6123,7 @@ $$;
 ALTER FUNCTION public.sp_sysperfil_add_record(p_sys_systemcode character varying, p_perfil_codigo character varying, p_perfil_descripcion character varying, p_copyfrom integer, p_activo boolean, p_usuario character varying) OWNER TO atluser;
 
 --
--- TOC entry 267 (class 1255 OID 16469)
+-- TOC entry 272 (class 1255 OID 16483)
 -- Name: sp_view_prueba_resultados_detalle(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6031,7 +6183,7 @@ $$;
 ALTER FUNCTION public.sp_view_prueba_resultados_detalle(p_atletas_resultados_id integer) OWNER TO postgres;
 
 --
--- TOC entry 268 (class 1255 OID 16470)
+-- TOC entry 273 (class 1255 OID 16484)
 -- Name: sp_view_records_categorias(character varying, character, character varying, date, date, character varying, boolean, boolean, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6124,7 +6276,7 @@ $$;
 ALTER FUNCTION public.sp_view_records_categorias(p_apppruebas_codigo character varying, p_atletas_sexo character, p_records_tipo_codigo character varying, p_fecha_desde date, p_fecha_hasta date, p_categorias_codigo character varying, p_include_manuales boolean, p_include_altura boolean, p_max_results integer) OWNER TO atluser;
 
 --
--- TOC entry 281 (class 1255 OID 25260)
+-- TOC entry 274 (class 1255 OID 16487)
 -- Name: sp_view_records_fulldata(character varying, character, character varying, date, date, character varying, boolean, boolean, character varying, integer, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6248,7 +6400,7 @@ $$;
 ALTER FUNCTION public.sp_view_records_fulldata(p_apppruebas_codigo character varying, p_atletas_sexo character, p_records_tipo_codigo character varying, p_fecha_desde date, p_fecha_hasta date, p_categorias_codigo character varying, p_include_manuales boolean, p_include_altura boolean, p_pruebas_tipo_codigo character varying, p_topn integer, p_max_results integer) OWNER TO atluser;
 
 --
--- TOC entry 277 (class 1255 OID 19310)
+-- TOC entry 275 (class 1255 OID 16490)
 -- Name: sp_view_records_fulldata_old(character varying, character, character varying, date, date, character varying, boolean, boolean, character varying, integer, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6365,7 +6517,7 @@ $$;
 ALTER FUNCTION public.sp_view_records_fulldata_old(p_apppruebas_codigo character varying, p_atletas_sexo character, p_records_tipo_codigo character varying, p_fecha_desde date, p_fecha_hasta date, p_categorias_codigo character varying, p_include_manuales boolean, p_include_altura boolean, p_pruebas_tipo_codigo character varying, p_topn integer, p_max_results integer) OWNER TO atluser;
 
 --
--- TOC entry 270 (class 1255 OID 16473)
+-- TOC entry 276 (class 1255 OID 16493)
 -- Name: sp_view_resultados_atleta(character varying, character varying, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6453,7 +6605,7 @@ $$;
 ALTER FUNCTION public.sp_view_resultados_atleta(v_atletas_codigo character varying, v_pruebas_codigo_generico character varying, v_offset integer, v_limit integer) OWNER TO postgres;
 
 --
--- TOC entry 282 (class 1255 OID 25433)
+-- TOC entry 277 (class 1255 OID 16495)
 -- Name: sp_view_resultados_atleta_fulldata(character varying, character varying, character varying, integer, integer, boolean); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6584,7 +6736,8 @@ BEGIN
 		inner join tb_competencias co on co.competencias_codigo = res.competencias_codigo
 		inner join tb_ciudades ciu on ciu.ciudades_codigo = co.ciudades_codigo
 		inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo
-		inner join tb_app_categorias_values cv on cv.appcat_codigo = co.categorias_codigo
+		inner join tb_categorias ca on ca.categorias_codigo = co.categorias_codigo
+		inner join tb_app_categorias_values cv on cv.appcat_codigo = ca.categorias_validacion
 		--ORDER BY cv.appcat_peso
 	) final
 		ORDER BY appcat_peso,pruebas_descripcion,case v_order_by_date = TRUE when TRUE then final.fecha_int else final.norm_resultado end;END;
@@ -6594,7 +6747,7 @@ $$;
 ALTER FUNCTION public.sp_view_resultados_atleta_fulldata(v_atletas_codigo character varying, v_pruebas_codigo_generico character varying, v_categorias_codigo character varying, v_ano_inicial integer, v_ano_final integer, v_order_by_date boolean) OWNER TO atluser;
 
 --
--- TOC entry 269 (class 1255 OID 16475)
+-- TOC entry 278 (class 1255 OID 16498)
 -- Name: sp_view_resultados_competencia_especifica(character varying, character varying, character, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6679,7 +6832,7 @@ $$;
 ALTER FUNCTION public.sp_view_resultados_competencia_especifica(v_competencias_codigo character varying, v_pruebas_codigo character varying, v_pruebas_sexo character, v_offset integer, v_limit integer) OWNER TO postgres;
 
 --
--- TOC entry 271 (class 1255 OID 16476)
+-- TOC entry 280 (class 1255 OID 16499)
 -- Name: sp_view_resultados_competencia_por_generica(character varying, character varying, character, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6759,7 +6912,7 @@ $$;
 ALTER FUNCTION public.sp_view_resultados_competencia_por_generica(v_competencias_codigo character varying, v_pruebas_codigo_generico character varying, v_pruebas_sexo character, v_offset integer, v_limit integer) OWNER TO postgres;
 
 --
--- TOC entry 276 (class 1255 OID 16477)
+-- TOC entry 281 (class 1255 OID 16500)
 -- Name: sp_view_resumen_records_por_prueba_categorias(character varying, character, character varying, date, date, character varying, boolean, boolean, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6843,7 +6996,7 @@ $$;
 ALTER FUNCTION public.sp_view_resumen_records_por_prueba_categorias(p_apppruebas_codigo character varying, p_atletas_sexo character, p_records_tipo_codigo character varying, p_fecha_desde date, p_fecha_hasta date, p_categorias_codigo character varying, p_include_manuales boolean, p_include_altura boolean, p_max_results integer) OWNER TO atluser;
 
 --
--- TOC entry 272 (class 1255 OID 16480)
+-- TOC entry 283 (class 1255 OID 16503)
 -- Name: sp_view_resumen_resultados_por_prueba_atletas(character varying, character varying[], character, date, date, character varying, character varying, boolean, boolean, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6860,7 +7013,6 @@ comparacion , indicando resultados si son manuales u observados, puediendose fil
 mismos.
 
 Basicamente para uso de reportes.
-
 Historia : 13-06-2014
 */
 DECLARE v_peso_desde INTEGER;
@@ -6870,8 +7022,8 @@ BEGIN
 	p_fecha_hasta := coalesce(p_fecha_hasta,'2099-01-01');
 	p_include_manuales := coalesce(p_include_manuales,FALSE);
 
-	select appcat_peso into v_peso_desde from tb_app_categorias_values  where appcat_codigo  = coalesce(p_desde_categoria,'INF');
-	select appcat_peso into v_peso_hasta from tb_app_categorias_values  where appcat_codigo  = coalesce(p_hasta_categoria,'MAY');
+	select appcat_peso into v_peso_desde from tb_app_categorias_values  where appcat_codigo  = coalesce((select categorias_validacion from tb_categorias c where c.categorias_codigo=p_desde_categoria),'INF');
+	select appcat_peso into v_peso_hasta from tb_app_categorias_values  where appcat_codigo  = coalesce((select categorias_validacion from tb_categorias c where c.categorias_codigo=p_hasta_categoria),'MAY');
 
 	return QUERY
 	select * from (
@@ -6890,6 +7042,7 @@ BEGIN
 				 end)
 				 || (case when competencias_pruebas_material_reglamentario = FALSE then ' / M-' else '' end)
 				 || (case when cp.competencias_pruebas_manual = TRUE then ' / Manual' else '' end)
+				 || (case when ciudades_altura = TRUE THEN ' (A)' ELSE '' END)
 				 || ' )'
 			)::character varying as comentario,
 			cp.competencias_pruebas_manual::boolean,
@@ -6902,6 +7055,7 @@ BEGIN
 			(case when (case when apppruebas_viento_individual = TRUE then coalesce(atletas_resultados_viento,0) else coalesce(competencias_pruebas_viento,0) end) > apppruebas_viento_limite_normal
 				OR (pv.apppruebas_verifica_viento = TRUE and cp.competencias_pruebas_anemometro = FALSE)
 				OR (competencias_pruebas_material_reglamentario = FALSE)
+				OR (ciudades_altura = TRUE)
 			      then '*'
 			      else ''
 			end)::character as vflag,
@@ -6914,13 +7068,14 @@ BEGIN
 		inner join tb_ciudades ciu on ciu.ciudades_codigo = co.ciudades_codigo
 		inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo
 		inner join tb_pruebas pr on pr.pruebas_codigo =cp.pruebas_codigo
-		inner join tb_app_categorias_values cv on cv.appcat_codigo = co.categorias_codigo
+		inner join tb_categorias ca on ca.categorias_codigo = co.categorias_codigo
+		inner join tb_app_categorias_values cv on cv.appcat_codigo = ca.categorias_validacion
 		inner join tb_app_pruebas_values pv on pv.apppruebas_codigo = pr.pruebas_generica_codigo
 		inner join tb_pruebas_clasificacion cl on cl.pruebas_clasificacion_codigo = pv.pruebas_clasificacion_codigo
 		inner join tb_unidad_medida um on um.unidad_medida_codigo = cl.unidad_medida_codigo
 		where
 			(case when p_atletas_codigo is not null then eatl.atletas_codigo = ANY(p_atletas_codigo) else true end) and
-			apppruebas_codigo = p_apppruebas_codigo and
+			pr.pruebas_generica_codigo = p_apppruebas_codigo and
 			(eatl.atletas_resultados_resultado != '0' AND eatl.atletas_resultados_resultado != '0.00' AND eatl.atletas_resultados_resultado != '') and
 			atl.atletas_sexo = p_atletas_sexo and
 			cp.competencias_pruebas_fecha between p_fecha_desde and p_fecha_hasta and
@@ -6937,7 +7092,7 @@ $$;
 ALTER FUNCTION public.sp_view_resumen_resultados_por_prueba_atletas(p_apppruebas_codigo character varying, p_atletas_codigo character varying[], p_atletas_sexo character, p_fecha_desde date, p_fecha_hasta date, p_desde_categoria character varying, p_hasta_categoria character varying, p_include_manuales boolean, p_include_observados boolean, p_max_results integer) OWNER TO atluser;
 
 --
--- TOC entry 273 (class 1255 OID 16483)
+-- TOC entry 284 (class 1255 OID 16506)
 -- Name: sp_view_resumen_topn_resultados_por_prueba_atletas(character varying, character varying[], character, date, date, character varying, character varying, boolean, boolean, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -6965,8 +7120,8 @@ BEGIN
 	p_fecha_hasta := coalesce(p_fecha_hasta,'2099-01-01');
 	p_include_manuales := coalesce(p_include_manuales,FALSE);
 
-	select appcat_peso into v_peso_desde from tb_app_categorias_values  where appcat_codigo  = coalesce(p_desde_categoria,'INF');
-	select appcat_peso into v_peso_hasta from tb_app_categorias_values  where appcat_codigo  = coalesce(p_hasta_categoria,'MAY');
+	select appcat_peso into v_peso_desde from tb_app_categorias_values  where appcat_codigo  = coalesce((select categorias_validacion from tb_categorias c where c.categorias_codigo=p_desde_categoria),'INF');
+	select appcat_peso into v_peso_hasta from tb_app_categorias_values  where appcat_codigo  = coalesce((select categorias_validacion from tb_categorias c where c.categorias_codigo=p_hasta_categoria),'MAY');
 
 	return QUERY
 	select * from (
@@ -7034,13 +7189,14 @@ BEGIN
 				inner join tb_ciudades ciu on ciu.ciudades_codigo = co.ciudades_codigo
 				inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo
 				inner join tb_pruebas pr on pr.pruebas_codigo =cp.pruebas_codigo
-				inner join tb_app_categorias_values cv on cv.appcat_codigo = co.categorias_codigo
+				inner join tb_categorias ca on ca.categorias_codigo = co.categorias_codigo
+				inner join tb_app_categorias_values cv on cv.appcat_codigo = ca.categorias_validacion
 				inner join tb_app_pruebas_values pv on pv.apppruebas_codigo = pr.pruebas_generica_codigo
 				inner join tb_pruebas_clasificacion cl on cl.pruebas_clasificacion_codigo = pv.pruebas_clasificacion_codigo
 				inner join tb_unidad_medida um on um.unidad_medida_codigo = cl.unidad_medida_codigo
 				where
 					(case when p_atletas_codigo is not null then eatl.atletas_codigo = ANY(p_atletas_codigo) else true end) and
-					apppruebas_codigo = p_apppruebas_codigo and
+					pr.pruebas_generica_codigo = p_apppruebas_codigo and
 					(eatl.atletas_resultados_resultado != '0' AND eatl.atletas_resultados_resultado != '0.00' AND eatl.atletas_resultados_resultado != '') and
 					atl.atletas_sexo = p_atletas_sexo and
 					cp.competencias_pruebas_fecha between p_fecha_desde and p_fecha_hasta and
@@ -7059,7 +7215,7 @@ $$;
 ALTER FUNCTION public.sp_view_resumen_topn_resultados_por_prueba_atletas(p_apppruebas_codigo character varying, p_atletas_codigo character varying[], p_atletas_sexo character, p_fecha_desde date, p_fecha_hasta date, p_desde_categoria character varying, p_hasta_categoria character varying, p_include_manuales boolean, p_include_observados boolean, p_topn integer) OWNER TO atluser;
 
 --
--- TOC entry 274 (class 1255 OID 16486)
+-- TOC entry 279 (class 1255 OID 16509)
 -- Name: sptrg_records_save(); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -7125,7 +7281,7 @@ $$;
 ALTER FUNCTION public.sptrg_records_save() OWNER TO atluser;
 
 --
--- TOC entry 275 (class 1255 OID 16487)
+-- TOC entry 285 (class 1255 OID 16510)
 -- Name: sptrg_update_log_fields(); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -7175,7 +7331,7 @@ $$;
 ALTER FUNCTION public.sptrg_update_log_fields() OWNER TO atluser;
 
 --
--- TOC entry 284 (class 1255 OID 59105)
+-- TOC entry 286 (class 1255 OID 16511)
 -- Name: sptrg_verify_usuario_code_change(); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -7230,6 +7386,7 @@ BEGIN
 				-- mas rapida lo ejecuto solo buscando el campo usuario
 				EXECUTE v_queryfield;
 				GET DIAGNOSTICS v_found = ROW_COUNT;
+
 				IF v_found > 0 THEN
 				-- Verifico si en la tabla actual del loop esta usado ya sea en el campo usuario o el campo usuario_mod
 					v_queryfield := 'SELECT 1 FROM ' || v_TABLENAME_ROW.table_name || ' WHERE usuario=' || quote_literal(OLD.usuarios_code)
@@ -7237,6 +7394,7 @@ BEGIN
 
 					EXECUTE v_queryfield;
 					GET DIAGNOSTICS v_found = ROW_COUNT;
+					--raise notice 'nueva %',v_found;
 					IF v_found > 0 THEN
 						RAISE 'No puede modificarse o eliminarse el codigo ya que el usuario tiene transacciones' USING ERRCODE = 'restrict_violation';
 					END IF;
@@ -7249,9 +7407,11 @@ BEGIN
 	-- Colocamos en mayuscula siempre el codigo de usuario si no ha habido problemas
 	IF (TG_OP = 'UPDATE' OR TG_OP = 'INSERT') THEN
 		NEW.usuarios_code := UPPER(NEW.usuarios_code);
+		RETURN NEW;
+	ELSE
+		RETURN OLD; -- Para delete siempre se retorna old
 	END IF;
 
-	RETURN NEW;
 END;
 $$;
 
@@ -7263,7 +7423,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 170 (class 1259 OID 16488)
+-- TOC entry 170 (class 1259 OID 16512)
 -- Name: tb_app_categorias_values; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7281,7 +7441,7 @@ CREATE TABLE tb_app_categorias_values (
 ALTER TABLE public.tb_app_categorias_values OWNER TO atluser;
 
 --
--- TOC entry 2627 (class 0 OID 0)
+-- TOC entry 2628 (class 0 OID 0)
 -- Dependencies: 170
 -- Name: TABLE tb_app_categorias_values; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7290,7 +7450,7 @@ COMMENT ON TABLE tb_app_categorias_values IS 'Contiene los valores validos para 
 
 
 --
--- TOC entry 2628 (class 0 OID 0)
+-- TOC entry 2629 (class 0 OID 0)
 -- Dependencies: 170
 -- Name: COLUMN tb_app_categorias_values.appcat_peso; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7299,7 +7459,7 @@ COMMENT ON COLUMN tb_app_categorias_values.appcat_peso IS 'Indicara que categori
 
 
 --
--- TOC entry 171 (class 1259 OID 16492)
+-- TOC entry 171 (class 1259 OID 16516)
 -- Name: tb_app_pruebas_values; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7328,7 +7488,7 @@ CREATE TABLE tb_app_pruebas_values (
 ALTER TABLE public.tb_app_pruebas_values OWNER TO atluser;
 
 --
--- TOC entry 2629 (class 0 OID 0)
+-- TOC entry 2630 (class 0 OID 0)
 -- Dependencies: 171
 -- Name: TABLE tb_app_pruebas_values; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7337,7 +7497,7 @@ COMMENT ON TABLE tb_app_pruebas_values IS 'Contiene los valores que identifican 
 
 
 --
--- TOC entry 172 (class 1259 OID 16502)
+-- TOC entry 172 (class 1259 OID 16526)
 -- Name: tb_atletas; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7377,7 +7537,7 @@ CREATE TABLE tb_atletas (
 ALTER TABLE public.tb_atletas OWNER TO atluser;
 
 --
--- TOC entry 173 (class 1259 OID 16513)
+-- TOC entry 173 (class 1259 OID 16537)
 -- Name: tb_atletas_carnets; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7398,7 +7558,7 @@ CREATE TABLE tb_atletas_carnets (
 ALTER TABLE public.tb_atletas_carnets OWNER TO atluser;
 
 --
--- TOC entry 174 (class 1259 OID 16518)
+-- TOC entry 174 (class 1259 OID 16542)
 -- Name: tb_atletas_carnets_atletas_carnets_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7413,7 +7573,7 @@ CREATE SEQUENCE tb_atletas_carnets_atletas_carnets_id_seq
 ALTER TABLE public.tb_atletas_carnets_atletas_carnets_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2630 (class 0 OID 0)
+-- TOC entry 2631 (class 0 OID 0)
 -- Dependencies: 174
 -- Name: tb_atletas_carnets_atletas_carnets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7422,7 +7582,7 @@ ALTER SEQUENCE tb_atletas_carnets_atletas_carnets_id_seq OWNED BY tb_atletas_car
 
 
 --
--- TOC entry 175 (class 1259 OID 16520)
+-- TOC entry 175 (class 1259 OID 16544)
 -- Name: tb_atletas_resultados; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7446,7 +7606,7 @@ CREATE TABLE tb_atletas_resultados (
 ALTER TABLE public.tb_atletas_resultados OWNER TO atluser;
 
 --
--- TOC entry 176 (class 1259 OID 16529)
+-- TOC entry 176 (class 1259 OID 16553)
 -- Name: tb_atletas_resultados_atletas_resultados_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7461,7 +7621,7 @@ CREATE SEQUENCE tb_atletas_resultados_atletas_resultados_id_seq
 ALTER TABLE public.tb_atletas_resultados_atletas_resultados_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2631 (class 0 OID 0)
+-- TOC entry 2632 (class 0 OID 0)
 -- Dependencies: 176
 -- Name: tb_atletas_resultados_atletas_resultados_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7470,7 +7630,7 @@ ALTER SEQUENCE tb_atletas_resultados_atletas_resultados_id_seq OWNED BY tb_atlet
 
 
 --
--- TOC entry 177 (class 1259 OID 16531)
+-- TOC entry 177 (class 1259 OID 16555)
 -- Name: tb_atletas_resultados_detalle; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7493,7 +7653,7 @@ CREATE TABLE tb_atletas_resultados_detalle (
 ALTER TABLE public.tb_atletas_resultados_detalle OWNER TO atluser;
 
 --
--- TOC entry 178 (class 1259 OID 16536)
+-- TOC entry 178 (class 1259 OID 16560)
 -- Name: tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7508,7 +7668,7 @@ CREATE SEQUENCE tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq
 ALTER TABLE public.tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2632 (class 0 OID 0)
+-- TOC entry 2633 (class 0 OID 0)
 -- Dependencies: 178
 -- Name: tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7517,7 +7677,7 @@ ALTER SEQUENCE tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq O
 
 
 --
--- TOC entry 179 (class 1259 OID 16538)
+-- TOC entry 179 (class 1259 OID 16562)
 -- Name: tb_atletas_resultados_old; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7549,7 +7709,7 @@ CREATE TABLE tb_atletas_resultados_old (
 ALTER TABLE public.tb_atletas_resultados_old OWNER TO atluser;
 
 --
--- TOC entry 180 (class 1259 OID 16551)
+-- TOC entry 180 (class 1259 OID 16575)
 -- Name: tb_categorias; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7573,7 +7733,7 @@ CREATE TABLE tb_categorias (
 ALTER TABLE public.tb_categorias OWNER TO atluser;
 
 --
--- TOC entry 181 (class 1259 OID 16557)
+-- TOC entry 181 (class 1259 OID 16581)
 -- Name: tb_ciudades; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7593,7 +7753,7 @@ CREATE TABLE tb_ciudades (
 ALTER TABLE public.tb_ciudades OWNER TO atluser;
 
 --
--- TOC entry 182 (class 1259 OID 16562)
+-- TOC entry 182 (class 1259 OID 16586)
 -- Name: tb_clubes; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7617,7 +7777,7 @@ CREATE TABLE tb_clubes (
 ALTER TABLE public.tb_clubes OWNER TO atluser;
 
 --
--- TOC entry 183 (class 1259 OID 16569)
+-- TOC entry 183 (class 1259 OID 16593)
 -- Name: tb_clubes_atletas; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7638,7 +7798,7 @@ CREATE TABLE tb_clubes_atletas (
 ALTER TABLE public.tb_clubes_atletas OWNER TO atluser;
 
 --
--- TOC entry 184 (class 1259 OID 16573)
+-- TOC entry 184 (class 1259 OID 16597)
 -- Name: tb_clubes_atletas_clubesatletas_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7653,7 +7813,7 @@ CREATE SEQUENCE tb_clubes_atletas_clubesatletas_id_seq
 ALTER TABLE public.tb_clubes_atletas_clubesatletas_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2633 (class 0 OID 0)
+-- TOC entry 2634 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: tb_clubes_atletas_clubesatletas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7662,7 +7822,7 @@ ALTER SEQUENCE tb_clubes_atletas_clubesatletas_id_seq OWNED BY tb_clubes_atletas
 
 
 --
--- TOC entry 185 (class 1259 OID 16575)
+-- TOC entry 185 (class 1259 OID 16599)
 -- Name: tb_competencia_tipo; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7680,7 +7840,7 @@ CREATE TABLE tb_competencia_tipo (
 ALTER TABLE public.tb_competencia_tipo OWNER TO atluser;
 
 --
--- TOC entry 186 (class 1259 OID 16579)
+-- TOC entry 186 (class 1259 OID 16603)
 -- Name: tb_competencias; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7707,7 +7867,7 @@ CREATE TABLE tb_competencias (
 ALTER TABLE public.tb_competencias OWNER TO atluser;
 
 --
--- TOC entry 2634 (class 0 OID 0)
+-- TOC entry 2635 (class 0 OID 0)
 -- Dependencies: 186
 -- Name: COLUMN tb_competencias.competencias_clasificacion; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7716,7 +7876,7 @@ COMMENT ON COLUMN tb_competencias.competencias_clasificacion IS 'Indica si es in
 
 
 --
--- TOC entry 2635 (class 0 OID 0)
+-- TOC entry 2636 (class 0 OID 0)
 -- Dependencies: 186
 -- Name: CONSTRAINT chk_competencias_clasificacion ON tb_competencias; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7725,7 +7885,7 @@ COMMENT ON CONSTRAINT chk_competencias_clasificacion ON tb_competencias IS 'Cheq
 
 
 --
--- TOC entry 187 (class 1259 OID 16586)
+-- TOC entry 187 (class 1259 OID 16610)
 -- Name: tb_competencias_pruebas; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7756,7 +7916,7 @@ CREATE TABLE tb_competencias_pruebas (
 ALTER TABLE public.tb_competencias_pruebas OWNER TO atluser;
 
 --
--- TOC entry 188 (class 1259 OID 16595)
+-- TOC entry 188 (class 1259 OID 16619)
 -- Name: tb_competencias_pruebas_competencias_pruebas_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7771,7 +7931,7 @@ CREATE SEQUENCE tb_competencias_pruebas_competencias_pruebas_id_seq
 ALTER TABLE public.tb_competencias_pruebas_competencias_pruebas_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2636 (class 0 OID 0)
+-- TOC entry 2637 (class 0 OID 0)
 -- Dependencies: 188
 -- Name: tb_competencias_pruebas_competencias_pruebas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7780,7 +7940,7 @@ ALTER SEQUENCE tb_competencias_pruebas_competencias_pruebas_id_seq OWNED BY tb_c
 
 
 --
--- TOC entry 189 (class 1259 OID 16597)
+-- TOC entry 189 (class 1259 OID 16621)
 -- Name: tb_entidad; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7807,7 +7967,7 @@ CREATE TABLE tb_entidad (
 ALTER TABLE public.tb_entidad OWNER TO atluser;
 
 --
--- TOC entry 2637 (class 0 OID 0)
+-- TOC entry 2638 (class 0 OID 0)
 -- Dependencies: 189
 -- Name: TABLE tb_entidad; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7816,7 +7976,7 @@ COMMENT ON TABLE tb_entidad IS 'Datos generales de la entidad que usa el sistema
 
 
 --
--- TOC entry 190 (class 1259 OID 16604)
+-- TOC entry 190 (class 1259 OID 16628)
 -- Name: tb_entidad_entidad_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7831,7 +7991,7 @@ CREATE SEQUENCE tb_entidad_entidad_id_seq
 ALTER TABLE public.tb_entidad_entidad_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2638 (class 0 OID 0)
+-- TOC entry 2639 (class 0 OID 0)
 -- Dependencies: 190
 -- Name: tb_entidad_entidad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7840,7 +8000,7 @@ ALTER SEQUENCE tb_entidad_entidad_id_seq OWNED BY tb_entidad.entidad_id;
 
 
 --
--- TOC entry 191 (class 1259 OID 16606)
+-- TOC entry 191 (class 1259 OID 16630)
 -- Name: tb_entrenadores; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7862,7 +8022,7 @@ CREATE TABLE tb_entrenadores (
 ALTER TABLE public.tb_entrenadores OWNER TO atluser;
 
 --
--- TOC entry 192 (class 1259 OID 16613)
+-- TOC entry 192 (class 1259 OID 16637)
 -- Name: tb_entrenadores_atletas; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7883,7 +8043,7 @@ CREATE TABLE tb_entrenadores_atletas (
 ALTER TABLE public.tb_entrenadores_atletas OWNER TO atluser;
 
 --
--- TOC entry 193 (class 1259 OID 16617)
+-- TOC entry 193 (class 1259 OID 16641)
 -- Name: tb_entrenadores_atletas_entrenadoresatletas_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7898,7 +8058,7 @@ CREATE SEQUENCE tb_entrenadores_atletas_entrenadoresatletas_id_seq
 ALTER TABLE public.tb_entrenadores_atletas_entrenadoresatletas_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2639 (class 0 OID 0)
+-- TOC entry 2640 (class 0 OID 0)
 -- Dependencies: 193
 -- Name: tb_entrenadores_atletas_entrenadoresatletas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7907,7 +8067,7 @@ ALTER SEQUENCE tb_entrenadores_atletas_entrenadoresatletas_id_seq OWNED BY tb_en
 
 
 --
--- TOC entry 194 (class 1259 OID 16619)
+-- TOC entry 194 (class 1259 OID 16643)
 -- Name: tb_entrenadores_nivel; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7926,7 +8086,7 @@ CREATE TABLE tb_entrenadores_nivel (
 ALTER TABLE public.tb_entrenadores_nivel OWNER TO atluser;
 
 --
--- TOC entry 195 (class 1259 OID 16624)
+-- TOC entry 195 (class 1259 OID 16648)
 -- Name: tb_ligas; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7950,7 +8110,7 @@ CREATE TABLE tb_ligas (
 ALTER TABLE public.tb_ligas OWNER TO atluser;
 
 --
--- TOC entry 196 (class 1259 OID 16631)
+-- TOC entry 196 (class 1259 OID 16655)
 -- Name: tb_ligas_clubes; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -7971,7 +8131,7 @@ CREATE TABLE tb_ligas_clubes (
 ALTER TABLE public.tb_ligas_clubes OWNER TO atluser;
 
 --
--- TOC entry 197 (class 1259 OID 16635)
+-- TOC entry 197 (class 1259 OID 16659)
 -- Name: tb_ligas_clubes_ligasclubes_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -7986,7 +8146,7 @@ CREATE SEQUENCE tb_ligas_clubes_ligasclubes_id_seq
 ALTER TABLE public.tb_ligas_clubes_ligasclubes_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2640 (class 0 OID 0)
+-- TOC entry 2641 (class 0 OID 0)
 -- Dependencies: 197
 -- Name: tb_ligas_clubes_ligasclubes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7995,7 +8155,7 @@ ALTER SEQUENCE tb_ligas_clubes_ligasclubes_id_seq OWNED BY tb_ligas_clubes.ligas
 
 
 --
--- TOC entry 198 (class 1259 OID 16637)
+-- TOC entry 198 (class 1259 OID 16661)
 -- Name: tb_paises; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8015,7 +8175,7 @@ CREATE TABLE tb_paises (
 ALTER TABLE public.tb_paises OWNER TO atluser;
 
 --
--- TOC entry 199 (class 1259 OID 16643)
+-- TOC entry 199 (class 1259 OID 16667)
 -- Name: tb_pruebas; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -8040,7 +8200,7 @@ CREATE TABLE tb_pruebas (
 ALTER TABLE public.tb_pruebas OWNER TO postgres;
 
 --
--- TOC entry 200 (class 1259 OID 16649)
+-- TOC entry 200 (class 1259 OID 16673)
 -- Name: tb_pruebas_clasificacion; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8060,7 +8220,7 @@ CREATE TABLE tb_pruebas_clasificacion (
 ALTER TABLE public.tb_pruebas_clasificacion OWNER TO atluser;
 
 --
--- TOC entry 201 (class 1259 OID 16653)
+-- TOC entry 201 (class 1259 OID 16677)
 -- Name: tb_pruebas_detalle; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -8081,7 +8241,7 @@ CREATE TABLE tb_pruebas_detalle (
 ALTER TABLE public.tb_pruebas_detalle OWNER TO postgres;
 
 --
--- TOC entry 202 (class 1259 OID 16658)
+-- TOC entry 202 (class 1259 OID 16682)
 -- Name: tb_pruebas_detalle_pruebas_detalle_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -8096,7 +8256,7 @@ CREATE SEQUENCE tb_pruebas_detalle_pruebas_detalle_id_seq
 ALTER TABLE public.tb_pruebas_detalle_pruebas_detalle_id_seq OWNER TO postgres;
 
 --
--- TOC entry 2641 (class 0 OID 0)
+-- TOC entry 2642 (class 0 OID 0)
 -- Dependencies: 202
 -- Name: tb_pruebas_detalle_pruebas_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8105,7 +8265,7 @@ ALTER SEQUENCE tb_pruebas_detalle_pruebas_detalle_id_seq OWNED BY tb_pruebas_det
 
 
 --
--- TOC entry 203 (class 1259 OID 16660)
+-- TOC entry 203 (class 1259 OID 16684)
 -- Name: tb_pruebas_tipo; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8123,7 +8283,7 @@ CREATE TABLE tb_pruebas_tipo (
 ALTER TABLE public.tb_pruebas_tipo OWNER TO atluser;
 
 --
--- TOC entry 214 (class 1259 OID 25306)
+-- TOC entry 204 (class 1259 OID 16688)
 -- Name: tb_records; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8145,7 +8305,7 @@ CREATE TABLE tb_records (
 ALTER TABLE public.tb_records OWNER TO atluser;
 
 --
--- TOC entry 210 (class 1259 OID 25284)
+-- TOC entry 205 (class 1259 OID 16693)
 -- Name: tb_records_pase; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -8167,7 +8327,7 @@ CREATE TABLE tb_records_pase (
 ALTER TABLE public.tb_records_pase OWNER TO postgres;
 
 --
--- TOC entry 213 (class 1259 OID 25304)
+-- TOC entry 206 (class 1259 OID 16696)
 -- Name: tb_records_records_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -8182,8 +8342,8 @@ CREATE SEQUENCE tb_records_records_id_seq
 ALTER TABLE public.tb_records_records_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2642 (class 0 OID 0)
--- Dependencies: 213
+-- TOC entry 2643 (class 0 OID 0)
+-- Dependencies: 206
 -- Name: tb_records_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
@@ -8191,7 +8351,7 @@ ALTER SEQUENCE tb_records_records_id_seq OWNED BY tb_records.records_id;
 
 
 --
--- TOC entry 212 (class 1259 OID 25290)
+-- TOC entry 207 (class 1259 OID 16698)
 -- Name: tb_records_tipo; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8216,8 +8376,8 @@ CREATE TABLE tb_records_tipo (
 ALTER TABLE public.tb_records_tipo OWNER TO atluser;
 
 --
--- TOC entry 2643 (class 0 OID 0)
--- Dependencies: 212
+-- TOC entry 2644 (class 0 OID 0)
+-- Dependencies: 207
 -- Name: COLUMN tb_records_tipo.records_tipo_peso; Type: COMMENT; Schema: public; Owner: atluser
 --
 
@@ -8225,7 +8385,7 @@ COMMENT ON COLUMN tb_records_tipo.records_tipo_peso IS 'Indica el peso , por eje
 
 
 --
--- TOC entry 211 (class 1259 OID 25287)
+-- TOC entry 208 (class 1259 OID 16708)
 -- Name: tb_records_tipo_pase; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -8248,7 +8408,7 @@ CREATE TABLE tb_records_tipo_pase (
 ALTER TABLE public.tb_records_tipo_pase OWNER TO postgres;
 
 --
--- TOC entry 204 (class 1259 OID 16681)
+-- TOC entry 209 (class 1259 OID 16711)
 -- Name: tb_regiones; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8266,7 +8426,7 @@ CREATE TABLE tb_regiones (
 ALTER TABLE public.tb_regiones OWNER TO atluser;
 
 --
--- TOC entry 205 (class 1259 OID 16685)
+-- TOC entry 210 (class 1259 OID 16715)
 -- Name: tb_sys_menu; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8289,7 +8449,7 @@ CREATE TABLE tb_sys_menu (
 ALTER TABLE public.tb_sys_menu OWNER TO atluser;
 
 --
--- TOC entry 206 (class 1259 OID 16690)
+-- TOC entry 211 (class 1259 OID 16720)
 -- Name: tb_sys_menu_menu_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -8304,8 +8464,8 @@ CREATE SEQUENCE tb_sys_menu_menu_id_seq
 ALTER TABLE public.tb_sys_menu_menu_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2644 (class 0 OID 0)
--- Dependencies: 206
+-- TOC entry 2645 (class 0 OID 0)
+-- Dependencies: 211
 -- Name: tb_sys_menu_menu_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
@@ -8313,7 +8473,7 @@ ALTER SEQUENCE tb_sys_menu_menu_id_seq OWNED BY tb_sys_menu.menu_id;
 
 
 --
--- TOC entry 218 (class 1259 OID 59124)
+-- TOC entry 212 (class 1259 OID 16722)
 -- Name: tb_sys_perfil; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8333,7 +8493,7 @@ CREATE TABLE tb_sys_perfil (
 ALTER TABLE public.tb_sys_perfil OWNER TO atluser;
 
 --
--- TOC entry 220 (class 1259 OID 59150)
+-- TOC entry 213 (class 1259 OID 16726)
 -- Name: tb_sys_perfil_detalle; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8358,7 +8518,7 @@ CREATE TABLE tb_sys_perfil_detalle (
 ALTER TABLE public.tb_sys_perfil_detalle OWNER TO atluser;
 
 --
--- TOC entry 219 (class 1259 OID 59148)
+-- TOC entry 214 (class 1259 OID 16735)
 -- Name: tb_sys_perfil_detalle_perfdet_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -8373,8 +8533,8 @@ CREATE SEQUENCE tb_sys_perfil_detalle_perfdet_id_seq
 ALTER TABLE public.tb_sys_perfil_detalle_perfdet_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2645 (class 0 OID 0)
--- Dependencies: 219
+-- TOC entry 2646 (class 0 OID 0)
+-- Dependencies: 214
 -- Name: tb_sys_perfil_detalle_perfdet_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
@@ -8382,7 +8542,7 @@ ALTER SEQUENCE tb_sys_perfil_detalle_perfdet_id_seq OWNED BY tb_sys_perfil_detal
 
 
 --
--- TOC entry 217 (class 1259 OID 59122)
+-- TOC entry 215 (class 1259 OID 16737)
 -- Name: tb_sys_perfil_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -8397,8 +8557,8 @@ CREATE SEQUENCE tb_sys_perfil_id_seq
 ALTER TABLE public.tb_sys_perfil_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2646 (class 0 OID 0)
--- Dependencies: 217
+-- TOC entry 2647 (class 0 OID 0)
+-- Dependencies: 215
 -- Name: tb_sys_perfil_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
@@ -8406,7 +8566,7 @@ ALTER SEQUENCE tb_sys_perfil_id_seq OWNED BY tb_sys_perfil.perfil_id;
 
 
 --
--- TOC entry 207 (class 1259 OID 16692)
+-- TOC entry 216 (class 1259 OID 16739)
 -- Name: tb_sys_sistemas; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8424,7 +8584,7 @@ CREATE TABLE tb_sys_sistemas (
 ALTER TABLE public.tb_sys_sistemas OWNER TO atluser;
 
 --
--- TOC entry 222 (class 1259 OID 59174)
+-- TOC entry 217 (class 1259 OID 16743)
 -- Name: tb_sys_usuario_perfiles; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8443,7 +8603,7 @@ CREATE TABLE tb_sys_usuario_perfiles (
 ALTER TABLE public.tb_sys_usuario_perfiles OWNER TO atluser;
 
 --
--- TOC entry 221 (class 1259 OID 59172)
+-- TOC entry 218 (class 1259 OID 16747)
 -- Name: tb_sys_usuario_perfiles_usuario_perfil_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -8458,8 +8618,8 @@ CREATE SEQUENCE tb_sys_usuario_perfiles_usuario_perfil_id_seq
 ALTER TABLE public.tb_sys_usuario_perfiles_usuario_perfil_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2647 (class 0 OID 0)
--- Dependencies: 221
+-- TOC entry 2648 (class 0 OID 0)
+-- Dependencies: 218
 -- Name: tb_sys_usuario_perfiles_usuario_perfil_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
@@ -8467,7 +8627,7 @@ ALTER SEQUENCE tb_sys_usuario_perfiles_usuario_perfil_id_seq OWNED BY tb_sys_usu
 
 
 --
--- TOC entry 208 (class 1259 OID 16696)
+-- TOC entry 219 (class 1259 OID 16749)
 -- Name: tb_unidad_medida; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8490,7 +8650,7 @@ CREATE TABLE tb_unidad_medida (
 ALTER TABLE public.tb_unidad_medida OWNER TO atluser;
 
 --
--- TOC entry 216 (class 1259 OID 59108)
+-- TOC entry 220 (class 1259 OID 16755)
 -- Name: tb_usuarios; Type: TABLE; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -8511,7 +8671,7 @@ CREATE TABLE tb_usuarios (
 ALTER TABLE public.tb_usuarios OWNER TO atluser;
 
 --
--- TOC entry 215 (class 1259 OID 59106)
+-- TOC entry 221 (class 1259 OID 16760)
 -- Name: tb_usuarios_usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: atluser
 --
 
@@ -8526,8 +8686,8 @@ CREATE SEQUENCE tb_usuarios_usuarios_id_seq
 ALTER TABLE public.tb_usuarios_usuarios_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2648 (class 0 OID 0)
--- Dependencies: 215
+-- TOC entry 2649 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: tb_usuarios_usuarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
@@ -8535,7 +8695,7 @@ ALTER SEQUENCE tb_usuarios_usuarios_id_seq OWNED BY tb_usuarios.usuarios_id;
 
 
 --
--- TOC entry 209 (class 1259 OID 16702)
+-- TOC entry 222 (class 1259 OID 16762)
 -- Name: v_peso_desde; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -8547,7 +8707,7 @@ CREATE TABLE v_peso_desde (
 ALTER TABLE public.v_peso_desde OWNER TO postgres;
 
 --
--- TOC entry 2154 (class 2604 OID 16705)
+-- TOC entry 2155 (class 2604 OID 16789)
 -- Name: atletas_carnets_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8555,7 +8715,7 @@ ALTER TABLE ONLY tb_atletas_carnets ALTER COLUMN atletas_carnets_id SET DEFAULT 
 
 
 --
--- TOC entry 2161 (class 2604 OID 16706)
+-- TOC entry 2162 (class 2604 OID 16790)
 -- Name: atletas_resultados_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8563,7 +8723,7 @@ ALTER TABLE ONLY tb_atletas_resultados ALTER COLUMN atletas_resultados_id SET DE
 
 
 --
--- TOC entry 2164 (class 2604 OID 16707)
+-- TOC entry 2165 (class 2604 OID 16791)
 -- Name: atletas_resultados_detalle_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8571,7 +8731,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle ALTER COLUMN atletas_resultados_d
 
 
 --
--- TOC entry 2182 (class 2604 OID 16708)
+-- TOC entry 2183 (class 2604 OID 16792)
 -- Name: clubesatletas_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8579,7 +8739,7 @@ ALTER TABLE ONLY tb_clubes_atletas ALTER COLUMN clubesatletas_id SET DEFAULT nex
 
 
 --
--- TOC entry 2193 (class 2604 OID 16709)
+-- TOC entry 2194 (class 2604 OID 16793)
 -- Name: competencias_pruebas_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8587,7 +8747,7 @@ ALTER TABLE ONLY tb_competencias_pruebas ALTER COLUMN competencias_pruebas_id SE
 
 
 --
--- TOC entry 2196 (class 2604 OID 16710)
+-- TOC entry 2197 (class 2604 OID 16794)
 -- Name: entidad_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8595,7 +8755,7 @@ ALTER TABLE ONLY tb_entidad ALTER COLUMN entidad_id SET DEFAULT nextval('tb_enti
 
 
 --
--- TOC entry 2199 (class 2604 OID 16711)
+-- TOC entry 2200 (class 2604 OID 16795)
 -- Name: entrenadoresatletas_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8603,7 +8763,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas ALTER COLUMN entrenadoresatletas_id SET
 
 
 --
--- TOC entry 2204 (class 2604 OID 16712)
+-- TOC entry 2205 (class 2604 OID 16796)
 -- Name: ligasclubes_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8611,7 +8771,7 @@ ALTER TABLE ONLY tb_ligas_clubes ALTER COLUMN ligasclubes_id SET DEFAULT nextval
 
 
 --
--- TOC entry 2214 (class 2604 OID 16713)
+-- TOC entry 2215 (class 2604 OID 16797)
 -- Name: pruebas_detalle_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -8619,7 +8779,7 @@ ALTER TABLE ONLY tb_pruebas_detalle ALTER COLUMN pruebas_detalle_id SET DEFAULT 
 
 
 --
--- TOC entry 2231 (class 2604 OID 25309)
+-- TOC entry 2219 (class 2604 OID 16798)
 -- Name: records_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8627,7 +8787,7 @@ ALTER TABLE ONLY tb_records ALTER COLUMN records_id SET DEFAULT nextval('tb_reco
 
 
 --
--- TOC entry 2219 (class 2604 OID 16715)
+-- TOC entry 2230 (class 2604 OID 16799)
 -- Name: menu_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8635,7 +8795,7 @@ ALTER TABLE ONLY tb_sys_menu ALTER COLUMN menu_id SET DEFAULT nextval('tb_sys_me
 
 
 --
--- TOC entry 2237 (class 2604 OID 59127)
+-- TOC entry 2232 (class 2604 OID 16800)
 -- Name: perfil_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8643,7 +8803,7 @@ ALTER TABLE ONLY tb_sys_perfil ALTER COLUMN perfil_id SET DEFAULT nextval('tb_sy
 
 
 --
--- TOC entry 2239 (class 2604 OID 59153)
+-- TOC entry 2239 (class 2604 OID 16801)
 -- Name: perfdet_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8651,7 +8811,7 @@ ALTER TABLE ONLY tb_sys_perfil_detalle ALTER COLUMN perfdet_id SET DEFAULT nextv
 
 
 --
--- TOC entry 2246 (class 2604 OID 59177)
+-- TOC entry 2242 (class 2604 OID 16802)
 -- Name: usuario_perfil_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8659,7 +8819,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles ALTER COLUMN usuario_perfil_id SET DEFA
 
 
 --
--- TOC entry 2234 (class 2604 OID 59111)
+-- TOC entry 2248 (class 2604 OID 16803)
 -- Name: usuarios_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8667,7 +8827,7 @@ ALTER TABLE ONLY tb_usuarios ALTER COLUMN usuarios_id SET DEFAULT nextval('tb_us
 
 
 --
--- TOC entry 2566 (class 0 OID 16488)
+-- TOC entry 2567 (class 0 OID 16512)
 -- Dependencies: 170
 -- Data for Name: tb_app_categorias_values; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8684,7 +8844,7 @@ INF	6	t	ADMIN	2014-03-11 12:50:34.557352	postgres	2014-03-11 12:56:08.382828
 
 
 --
--- TOC entry 2567 (class 0 OID 16492)
+-- TOC entry 2568 (class 0 OID 16516)
 -- Dependencies: 171
 -- Data for Name: tb_app_pruebas_values; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8701,7 +8861,6 @@ LJABALINA	Lanzamiento de Jabalina	LANZ	10.20	70.00	f	f	\N	\N	f	t	postgres	2014-0
 110MV	110 Metros Con Vallas	VEL	11.00	24.00	f	t	2.00	4.00	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:02:57.772999	1	0.24	f
 400MV	400 Metros con Vallas	VEL	55.00	4:00.00	f	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:02:57.772999	1	0.14	f
 LMARTILLO	Lanzamiento de Martillo	LANZ	11.00	90.00	f	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:02:57.772999	1	0.00	f
-DECATLON	Decatlon	COMBI	2000	8000	f	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:02:57.772999	1	0.00	f
 800MP	800 Metros Planos	SFONDO	0:41.00	4:30.10	f	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:02:57.772999	1	0.00	f
 200MP	200 Metros Planos	VEL	20.00	40.00	f	t	2.00	4.00	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:02:57.772999	1	0.24	f
 SLARGO	Salto Largo	SALTO	2.10	6.45	f	t	2.00	4.00	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2014-06-04 03:07:52.969061	1	0.00	t
@@ -8711,11 +8870,12 @@ STRIPLE	Salto Triple	SALTO	5.00	15.00	f	t	2.00	4.00	f	t	postgres	2014-03-21 04:3
 10000MMARCHA	10000 Metros-Marcha	FONDO	0:20:00.00	1:30:00.00	f	f	\N	\N	f	t	TESTUSER	2014-07-28 16:27:05.221417	TESTUSER	2014-07-28 16:28:44.444895	1	0.00	f
 400MP	400 Metros Planos	VEL	45:00	1:59.59	f	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2015-04-26 14:52:46.349739	1	0.14	f
 SGARROCHA	Salto con Garrocha	SALTO	2.00	5.00	f	f	\N	\N	f	t	TESTUSER	2015-04-19 20:17:40.800641	TESTUSER	2015-04-26 16:58:54.75577	1	0.00	f
+DECATLON	Decatlon	COMBI	2000	8000	t	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145286	TESTUSER	2016-02-10 03:09:12.603376	1	0.00	f
 \.
 
 
 --
--- TOC entry 2568 (class 0 OID 16502)
+-- TOC entry 2569 (class 0 OID 16526)
 -- Dependencies: 172
 -- Data for Name: tb_atletas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8730,7 +8890,6 @@ COPY tb_atletas (atletas_codigo, atletas_ap_paterno, atletas_ap_materno, atletas
 10305307	Massa	Vidarte	Gilda Maria	Massa Vidarte, Gilda Maria	F	10305307		PER	1976-02-19				??		??	??	\N	??		t	atluser	2014-07-27 17:56:59.815211	TESTUSER	\N
 DEBSOUZA	Souza	Peixoto Luna	Deborah	Souza Peixoto Luna, Deborah	F	99999991		PER	1969-01-01				???		??	??	\N	??		t	atluser	2014-07-27 18:20:54.522625	TESTUSER	\N
 70424527	Mautino	Ruiz	Paola	Mautino Ruiz, Paola	F	70424527		PER	1990-01-01				??????		??	??	\N	??		t	atluser	2014-07-28 22:31:47.624488	TESTUSER	\N
-09753033	Yañez	Lazo	Katherine	Yañez Lazo, Katherine	F	09753033		PER	1972-09-07				??		??	??	\N	??		t	atluser	2014-07-27 19:31:46.526579	TESTUSER	2014-07-27 20:40:17.759941
 70830992	Martinez	Chiroque	Andy	Martinez Chiroque, Andy	M	70830992		PER	1993-09-28				??		??	??	\N	??		t	atluser	2014-08-02 17:41:39.623876	TESTUSER	\N
 07197388	Bolivar	Rios	Carmela	Bolivar Rios, Carmela	F	07197388		PER	1957-04-23				????		??	??	\N	??		t	atluser	2014-09-07 15:04:07.335452	TESTUSER	\N
 40503227	Reategui	Valdez	Sandra	Reategui Valdez, Sandra	F	40503227		PER	1980-03-10				????		??	??	\N	??		t	atluser	2014-09-07 15:15:43.263211	TESTUSER	\N
@@ -8738,11 +8897,12 @@ DEBSOUZA	Souza	Peixoto Luna	Deborah	Souza Peixoto Luna, Deborah	F	99999991		PER	
 70690315	Toche	Zevallos	Candy Naomi	Toche Zevallos, Candy Naomi	F	70690315		PER	1998-09-13				no indicada		??	??	\N	??		t	atluser	2015-03-14 15:33:12.314335	TESTUSER	\N
 79515419	Torres	Cordova	Maitte De La Flor	Torres Cordova, Maitte De La Flor	F	79515419		PER	1993-09-04				No Indicada		??	??	\N	??		t	atluser	2015-03-14 16:25:11.930399	TESTUSER	2015-04-26 14:58:58.005031
 72661990	Gutierrez	Pozo	Jose Mauricio	Gutierrez Pozo, Jose Mauricio	M	72661990		PER	1998-09-13				No indicada		??	??	\N	??		t	atluser	2015-04-26 16:57:36.049823	TESTUSER	\N
+09753033	Yañez	Lazo	Katherine	Yañez Lazo, Katherine	F	09753033		PER	1972-09-07				??		??	??	\N	??		t	atluser	2014-07-27 19:31:46.526579	TESTUSER	2014-07-27 20:40:17.759941
 \.
 
 
 --
--- TOC entry 2569 (class 0 OID 16513)
+-- TOC entry 2570 (class 0 OID 16537)
 -- Dependencies: 173
 -- Data for Name: tb_atletas_carnets; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8754,16 +8914,16 @@ COPY tb_atletas_carnets (atletas_carnets_id, atletas_carnets_numero, atletas_car
 
 
 --
--- TOC entry 2649 (class 0 OID 0)
+-- TOC entry 2650 (class 0 OID 0)
 -- Dependencies: 174
 -- Name: tb_atletas_carnets_atletas_carnets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_atletas_carnets_atletas_carnets_id_seq', 14, true);
+SELECT pg_catalog.setval('tb_atletas_carnets_atletas_carnets_id_seq', 16, true);
 
 
 --
--- TOC entry 2571 (class 0 OID 16520)
+-- TOC entry 2572 (class 0 OID 16544)
 -- Dependencies: 175
 -- Data for Name: tb_atletas_resultados; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8821,8 +8981,6 @@ COPY tb_atletas_resultados (atletas_resultados_id, atletas_codigo, competencias_
 775	73501965	609	30.90	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:03.397934	494	\N
 770	73501965	604	15.60	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-12-27 14:12:48.118234	764	\N
 769	73501965	603	4628	10	f	t	TESTUSER	2014-07-18 17:11:05.352493	atluser	2014-07-18 17:13:22.259515	0	\N
-738	46658908	570	5.45	0	f	t	TESTUSER	2014-07-16 16:52:13.089386	TESTUSER	2014-12-27 13:59:48.187106	686	1.50
-733	46658908	565	4947	4	f	t	TESTUSER	2014-07-16 16:45:13.196204	TESTUSER	2014-07-16 16:54:20.797871	0	\N
 774	73501965	608	5.03	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-12-27 14:10:45.694125	567	2.50
 803	70690315	647	1.74	1	f	t	TESTUSER	2015-03-14 15:39:01.10463	TESTUSER	2015-03-14 15:42:17.511566	0	\N
 804	79515419	648	54.74	1	f	t	TESTUSER	2015-03-14 16:31:52.311957	\N	\N	0	\N
@@ -8841,20 +8999,22 @@ COPY tb_atletas_resultados (atletas_resultados_id, atletas_codigo, competencias_
 819	79515419	674	54.63	2	f	t	TESTUSER	2015-04-26 14:53:43.436547	\N	\N	0	\N
 820	72661990	675	4.70	1	f	t	TESTUSER	2015-04-26 17:06:44.705213	\N	\N	0	\N
 818	70424527	662	6.43	1	f	t	TESTUSER	2015-04-26 12:40:05.470178	TESTUSER	2015-04-26 19:32:26.950783	0	0.90
+738	46658908	570	5.45	0	f	t	TESTUSER	2014-07-16 16:52:13.089386	TESTUSER	2016-02-17 18:57:31.373183	686	1.50
+733	46658908	565	4947	4	f	t	TESTUSER	2014-07-16 16:45:13.196204	TESTUSER	2014-07-16 16:54:20.797871	0	\N
 \.
 
 
 --
--- TOC entry 2650 (class 0 OID 0)
+-- TOC entry 2651 (class 0 OID 0)
 -- Dependencies: 176
 -- Name: tb_atletas_resultados_atletas_resultados_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_atletas_resultados_atletas_resultados_id_seq', 820, true);
+SELECT pg_catalog.setval('tb_atletas_resultados_atletas_resultados_id_seq', 965, true);
 
 
 --
--- TOC entry 2573 (class 0 OID 16531)
+-- TOC entry 2574 (class 0 OID 16555)
 -- Dependencies: 177
 -- Data for Name: tb_atletas_resultados_detalle; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8864,7 +9024,7 @@ COPY tb_atletas_resultados_detalle (atletas_resultados_detalle_id, atletas_resul
 
 
 --
--- TOC entry 2651 (class 0 OID 0)
+-- TOC entry 2652 (class 0 OID 0)
 -- Dependencies: 178
 -- Name: tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -8873,7 +9033,7 @@ SELECT pg_catalog.setval('tb_atletas_resultados_detalle_atletas_resultados_detal
 
 
 --
--- TOC entry 2575 (class 0 OID 16538)
+-- TOC entry 2576 (class 0 OID 16562)
 -- Dependencies: 179
 -- Data for Name: tb_atletas_resultados_old; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8894,7 +9054,7 @@ COPY tb_atletas_resultados_old (atletas_resultados_id, atletas_codigo, competenc
 
 
 --
--- TOC entry 2576 (class 0 OID 16551)
+-- TOC entry 2577 (class 0 OID 16575)
 -- Dependencies: 180
 -- Data for Name: tb_categorias; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8911,7 +9071,7 @@ INF	Infantil	11	12	1940-01-01	INF	t	t	TESTUSER	2014-03-05 21:14:00.037012	TESTUS
 
 
 --
--- TOC entry 2577 (class 0 OID 16557)
+-- TOC entry 2578 (class 0 OID 16581)
 -- Dependencies: 181
 -- Data for Name: tb_ciudades; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8920,7 +9080,6 @@ COPY tb_ciudades (ciudades_codigo, ciudades_descripcion, paises_codigo, activo, 
 LIM	Lima	PER	t	TESTUSER	2014-01-15 17:31:24.272057	TESTUSER	2014-01-15 17:53:38.778161	f
 TRU	Trujillo	PER	t	TESTUSER	2014-01-15 17:37:59.111946	TESTUSER	2014-01-15 17:53:46.405956	f
 SCHI	Santiago de Chile	CHI	t	TESTUSER	2014-01-15 17:57:26.057761	\N	\N	f
-COR	Cordova	ARG	t	TESTUSER	2014-01-15 17:58:01.517872	\N	\N	f
 DON	Doneskt	UKR	t	TESTUSER	2014-03-05 21:53:57.846678	\N	\N	f
 SOP	Sopot	POL	t	TESTUSER	2014-03-07 04:03:17.038401	\N	\N	f
 LPAZ	La Paz	BOL	t	TESTUSER	2014-04-25 19:31:58.761949	\N	\N	t
@@ -8935,12 +9094,13 @@ PMA	Palma de Mallorca	ESP	t	TESTUSER	2014-07-28 21:39:19.38885	\N	\N	f
 SAO	Sao Paulo	BRA	t	TESTUSER	2014-08-01 13:43:55.071158	\N	\N	f
 CUEN	Cuenca	ECU	t	TESTUSER	2015-03-14 12:30:45.866155	\N	\N	t
 MONT	Montevideo	URU	t	TESTUSER	2015-03-14 16:50:26.951072	\N	\N	f
-ASU	Asuncio	PAR	t	TESTUSER	2015-04-19 19:24:47.551946	\N	\N	f
+COR	Cordova	ARG	t	TESTUSER	2014-01-15 17:58:01.517872	TESTUSER	2016-02-08 02:01:37.447632	f
+ASU	Asuncion	PAR	t	TESTUSER	2015-04-19 19:24:47.551946	TESTUSER	2016-02-08 16:52:09.286009	f
 \.
 
 
 --
--- TOC entry 2578 (class 0 OID 16562)
+-- TOC entry 2579 (class 0 OID 16586)
 -- Dependencies: 182
 -- Data for Name: tb_clubes; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8951,40 +9111,39 @@ AVIA	Club De Atletismo Avia	Marita Letts				SURCO		t	TESTUSER	2014-03-05 21:23:4
 SYRSA	Club de Atletismo SYRSA	Marita Letts				surco		t	TESTUSER	2014-03-05 21:31:45.516033	TESTUSER	2014-03-05 21:31:54.402111
 NOCON	No Conocidos	????				????		t	TESTUSER	2014-03-05 22:07:40.405955	\N	\N
 ALBORADA	Club Alborada	Oscar y Marcial Zuñiga Parra				N/C		t	TESTUSER	2014-07-16 15:35:51.084452	\N	\N
-CCANG	Club Canguros Valiente	Oscar Valiente / Fernando Valiente				Por Definir		t	TESTUSER	2014-03-05 21:21:51.326401	TESTUSER	2015-03-14 16:45:48.153301
+CCANG	Club Canguros Valiente	Oscar Valiente / Fernando Valiente				Por Definir		t	TESTUSER	2014-03-05 21:21:51.326401	TESTUSER	2016-02-11 00:09:46.217774
 \.
 
 
 --
--- TOC entry 2579 (class 0 OID 16569)
+-- TOC entry 2580 (class 0 OID 16593)
 -- Dependencies: 183
 -- Data for Name: tb_clubes_atletas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_clubes_atletas (clubesatletas_id, clubes_codigo, atletas_codigo, clubesatletas_desde, clubesatletas_hasta, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-6	CCANG	46134708	2010-01-01	2031-01-01	t	TESTUSER	2014-05-05 17:11:02.275356	\N	\N
-7	ALBORADA	73501965	2012-01-01	2035-01-01	t	TESTUSER	2014-07-16 15:39:07.275625	\N	\N
+7	ALBORADA	10307755	2012-01-01	2035-01-01	t	TESTUSER	2014-07-16 15:39:07.275625	TESTUSER	2016-02-11 02:56:12.25852
+8	CCANG	70424527	2010-01-01	2011-01-01	t	TESTUSER	2016-02-10 21:48:24.234373	TESTUSER	2016-02-11 11:43:39.39831
 \.
 
 
 --
--- TOC entry 2652 (class 0 OID 0)
+-- TOC entry 2653 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: tb_clubes_atletas_clubesatletas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_clubes_atletas_clubesatletas_id_seq', 7, true);
+SELECT pg_catalog.setval('tb_clubes_atletas_clubesatletas_id_seq', 12, true);
 
 
 --
--- TOC entry 2581 (class 0 OID 16575)
+-- TOC entry 2582 (class 0 OID 16599)
 -- Dependencies: 185
 -- Data for Name: tb_competencia_tipo; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_competencia_tipo (competencia_tipo_codigo, competencia_tipo_descripcion, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
 MUN	Mundial	t	TESTUSER	2014-02-19 04:05:07.388753	\N	\N
-SUDA	Sud-Americano	t	TESTUSER	2014-02-19 04:06:26.558116	\N	\N
 GPRIX	Gran Prix	t	TESTUSER	2014-02-19 04:06:50.210692	\N	\N
 NAC	Nacional	t	TESTUSER	2014-02-19 04:07:28.815042	\N	\N
 OLIM	Olimpiadas	t	TESTUSER	2014-02-19 04:05:58.088152	TESTUSER	2014-03-05 23:22:44.410609
@@ -8993,11 +9152,12 @@ BOL	Bolivarianos	t	TESTUSER	2014-03-05 23:23:28.096861	\N	\N
 ODES	Odesur	t	TESTUSER	2014-03-05 23:23:46.025479	\N	\N
 IBERO	Iberoamericano	t	TESTUSER	2014-08-01 13:42:24.331214	\N	\N
 CTROL	Control Evaluativo	t	TESTUSER	2015-04-26 17:03:00.847058	\N	\N
+SUDA	Sud Americano	t	TESTUSER	2014-02-19 04:06:26.558116	TESTUSER	2016-02-22 01:30:58.68104
 \.
 
 
 --
--- TOC entry 2582 (class 0 OID 16579)
+-- TOC entry 2583 (class 0 OID 16603)
 -- Dependencies: 186
 -- Data for Name: tb_competencias; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9013,25 +9173,26 @@ GPCC2014	Gran Prix Carlos Calmet	GPRIX	MAY	PER	LIM	2014-06-25	2014-06-25	f	t	TES
 GPPGV2014	Gran Prix Pedro Galvez Velarde	GPRIX	MAY	PER	LIM	2014-06-22	2014-06-22	f	t	TESTUSER	2014-07-27 14:44:36.260828	\N	\N	O
 GPBIRIARTE	Gran Prix Brigido Iriarte	GPRIX	MAY	VEN	BARIN	2013-05-10	2013-05-11	f	t	TESTUSER	2014-03-18 23:08:36.115572	TESTUSER	2014-07-27 14:45:35.849702	O
 PANMEX1975	Panamericanos De Mexico 1975	PANAM	MAY	MEX	CMDF	1975-10-12	1975-10-26	f	t	TESTUSER	2014-07-27 21:02:15.887998	\N	\N	O
-GPARIC1996	Gran Prix Arica 1996	GPRIX	MAY	CHI	ARI	1996-05-26	1996-05-26	f	t	TESTUSER	2014-07-27 22:43:43.864479	\N	\N	O
 SUDAM1999	Sudamericano Colombia 1999	SUDA	MAY	COL	BOG	1999-06-25	1999-06-27	f	t	TESTUSER	2014-07-27 23:03:22.3321	\N	\N	O
 NACJUV2014	Nacional Juvenil 2014	NAC	JUV	PER	LIM	2014-05-16	2014-05-18	f	t	TESTUSER	2014-07-28 16:54:39.411333	\N	\N	O
 GPMUN1977	Gran Prix Munich 1977	GPRIX	MAY	GER	MUN	1977-06-14	1977-06-14	f	t	TESTUSER	2014-07-28 21:27:22.589176	\N	\N	O
 UNIVPM1999	Universiada 1999	MUN	MAY	ESP	PMA	1999-07-03	1999-07-13	f	t	TESTUSER	2014-07-28 21:46:19.421784	\N	\N	O
-BOL2013	Bolivarianos 2013	BOL	MAY	PER	TRU	2013-11-15	2013-11-30	f	t	TESTUSER	2014-03-05 23:26:19.196013	TESTUSER	2014-07-28 22:36:24.977528	O
 IBERO2014	Iberoamericano de Sao Paulo 2014	IBERO	MAY	BRA	SAO	2014-08-01	2014-08-03	f	t	TESTUSER	2014-08-01 13:45:28.714072	\N	\N	O
 GPCUEN2015	Gran Prix Cuenca 2015	GPRIX	MAY	ECU	CUEN	2015-03-14	2015-03-15	f	t	TESTUSER	2015-03-14 12:52:18.179989	\N	\N	O
 S232015	Sudamericano Sub 23 Montevideo	SUDA	SUB23	URU	MONT	2014-05-03	2014-05-05	f	t	TESTUSER	2015-03-14 16:53:15.073492	\N	\N	O
-GPPCOMBASU	Gran Prix Pruebas Combinadas Asuncion 2015	GPRIX	MAY	PAR	ASU	2015-04-11	2015-04-12	f	t	TESTUSER	2015-04-19 19:27:24.243217	\N	\N	O
 GPORLG2015	Gran Prix Orlando Guayta 2015	GPRIX	MAY	CHI	SCHI	2015-04-10	2015-04-11	f	t	TESTUSER	2015-04-19 20:11:43.169528	\N	\N	O
 GPCLIM2015	Grand Prix Ciudad de Lima	GPRIX	MAY	PER	LIM	2015-04-25	2015-04-25	f	t	TESTUSER	2015-04-26 12:18:26.999509	\N	\N	O
 GPPGV2015	Gran Prix Pedro Galvez Velarde 2015	GPRIX	MAY	PER	LIM	2015-04-24	2015-04-24	f	t	TESTUSER	2015-04-26 14:45:44.358426	\N	\N	O
 CTRL032015	Control Evaluativo 03/2015	CTROL	MEN	PER	LIM	2015-03-11	2015-03-11	f	t	TESTUSER	2015-04-26 17:06:12.206382	\N	\N	O
+GPPCOMBASU	Gran Prix Pruebas Combinadas Asuncion 2015	GPRIX	MAY	PAR	ASU	2015-04-11	2015-04-12	f	t	TESTUSER	2015-04-19 19:27:24.243217	TESTUSER	2016-02-25 13:59:53.746583	O
+SDQ	qweqew	NAC	MAY	PER	LIM	2016-01-01	2016-02-01	f	t	TESTUSER	2016-02-25 02:57:32.585897	TESTUSER	2016-02-26 01:36:00.768478	O
+GPARIC1996	Gran Prix Arica 1996	GPRIX	MAY	CHI	ARI	1996-05-26	1996-05-26	f	t	TESTUSER	2014-07-27 22:43:43.864479		2016-02-26 03:41:51.654001	O
+BOL2013	Bolivarianos 2013	BOL	MAY	PER	TRU	2013-11-15	2013-11-30	f	t	TESTUSER	2014-03-05 23:26:19.196013		2016-02-26 03:44:02.378378	O
 \.
 
 
 --
--- TOC entry 2583 (class 0 OID 16586)
+-- TOC entry 2584 (class 0 OID 16610)
 -- Dependencies: 187
 -- Data for Name: tb_competencias_pruebas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9043,14 +9204,8 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 605	PANPC2014J	SALTOFJVHEP	t	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:11:36.932776	603
 606	PANPC2014J	IBALAFJVHEP	t	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:11:50.920194	603
 607	PANPC2014J	200MPFJVHEP	t	2014-07-16	1.80	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:12:16.581166	603
-97	SOP2014	SLALTOMMY	f	2014-03-07	\N	f	SM	1	t	t		f	t	TESTUSER	2014-05-07 04:35:53.674748	TESTUSER	2014-05-07 04:36:21.962669	\N
 553	GPBIRIARTE	SLARGOFMYHEP	t	2013-05-11	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2014-07-16 16:55:30.993895	548
 609	PANPC2014J	JABALFJVHEP	t	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:03.397934	603
-490	BOL2013	IBALAFMY	f	2013-12-12	\N	f	FI	1	t	t		f	t	TESTUSER	2014-06-03 22:06:48.008965	\N	\N	\N
-100	SOP2014	SLALTOMMY	f	2014-03-07	\N	f	SR	3	t	t		f	t	TESTUSER	2014-05-07 04:51:31.026892	\N	\N	\N
-101	SOP2014	SLALTOMMY	f	2014-03-07	\N	f	HT	3	t	t		f	t	TESTUSER	2014-05-07 04:51:47.547505	\N	\N	\N
-492	BOL2013	LMARTFMY	f	2013-12-12	\N	f	FI	1	t	t		f	t	TESTUSER	2014-06-03 22:11:03.462954	\N	\N	\N
-99	SOP2014	SLALTOMMY	f	2014-03-07	\N	f	SM	3	t	t		f	t	TESTUSER	2014-05-07 04:50:56.882913	TESTUSER	2014-05-07 04:52:00.901737	\N
 494	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SR	1	t	t		f	t	TESTUSER	2014-06-03 22:15:27.055772	\N	\N	\N
 610	PANPC2014J	800MPFJVHEP	t	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:22.259515	603
 247	GPBIRIARTE	200MPFMY	f	2013-05-10	2.00	t	FI	1	t	t		f	t	TESTUSER	2014-05-30 20:54:52.875641	\N	\N	\N
@@ -9076,13 +9231,9 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 579	PANPC2014M	JABALFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	\N	\N	573
 580	PANPC2014M	800MPFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	\N	\N	573
 187	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SM	1	t	t		f	t	TESTUSER	2014-05-23 15:12:13.940767	\N	\N	\N
-188	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SM	3	t	t		f	t	TESTUSER	2014-05-23 15:14:45.473074	\N	\N	\N
 193	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SM	6	t	t		f	t	TESTUSER	2014-05-23 16:39:59.593517	\N	\N	\N
 165	GPBIRIARTE	100MPMMY	f	2013-05-10	2.00	f	SM	9	t	t		f	t	TESTUSER	2014-05-23 05:14:29.773319	TESTUSER	2014-05-23 22:37:18.503359	\N
-194	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SM	4	t	t		f	t	TESTUSER	2014-05-23 16:50:44.047395	\N	\N	\N
-196	GPBIRIARTE	100MPMMY	f	2013-05-10	4.00	f	SR	1	t	t		f	t	TESTUSER	2014-05-23 16:57:09.210976	\N	\N	\N
 533	ODESUR2014	200MPFMY	f	2014-03-01	2.00	t	FI	1	t	t		f	t	TESTUSER	2014-06-07 02:54:22.394027	TESTUSER	2014-06-07 02:54:51.500813	\N
-202	GPBIRIARTE	100MPMMY	f	2013-05-10	1.00	f	SR	6	t	t		f	t	TESTUSER	2014-05-23 23:15:53.90987	\N	\N	\N
 624	MUNJV2014	300MOBSFJV	f	2014-07-22	\N	f	SM	1	t	t		f	t	TESTUSER	2014-07-26 15:05:47.826234	\N	\N	\N
 626	GPCC2014	3000MOBSFMY	f	2014-06-25	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-27 14:16:34.798897	\N	\N	\N
 195	GPBIRIARTE	100MPMMY	f	2013-05-10	3.00	t	SM	7	t	t		f	t	TESTUSER	2014-05-23 16:53:25.383245	TESTUSER	2014-05-24 04:28:53.059496	\N
@@ -9091,69 +9242,69 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 630	SUDAM1999	SLLARGOFMY	f	1999-06-25	\N	f	SM	1	t	t	No se conoce el viento pero se sabe que fue reglamentario	f	t	TESTUSER	2014-07-28 03:11:37.207778	\N	\N	\N
 204	GPBIRIARTE	100MPMMY	f	2013-05-10	3.00	t	HT	1	t	t		f	t	TESTUSER	2014-05-24 04:34:27.79928	\N	\N	\N
 633	NACJUV2014	100MVFJVHEP	t	2014-05-16	-1.30	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 16:59:08.520638	632
-566	BOL2013	100MVFMYHEP	t	2013-11-28	0.30	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:25.366098	565
 634	NACJUV2014	SALTOFJVHEP	t	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 16:59:26.55692	632
 567	BOL2013	SALTOFMYHEP	t	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:43.877491	565
 635	NACJUV2014	IBALAFJVHEP	t	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 16:59:42.038764	632
 491	GPBIRIARTE	JABALFMY	f	2013-05-10	\N	f	FI	1	t	t		f	t	TESTUSER	2014-06-03 22:09:28.371387	\N	\N	\N
 568	BOL2013	IBALAFMYHEP	t	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:51.99181	565
 636	NACJUV2014	200MPFJVHEP	t	2014-05-16	0.00	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:00:15.975446	632
-569	BOL2013	200MPFMYHEP	t	2013-11-28	-0.10	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:59.386831	565
 637	NACJUV2014	SLARGOFJVHEP	t	2014-05-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:00:41.783238	632
 638	NACJUV2014	JABALFJVHEP	t	2014-05-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:01:12.930891	632
 571	BOL2013	JABALFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:41:15.799022	565
 639	NACJUV2014	800MPFJVHEP	t	2014-05-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:01:31.360077	632
 632	NACJUV2014	HEPTAFJV	f	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	\N	\N	\N
 641	UNIVPM1999	SLLARGOFMY	f	1999-07-12	\N	f	SM	1	t	t		f	t	TESTUSER	2014-07-28 22:10:49.166631	\N	\N	\N
+569	BOL2013	200MPFMYHEP	t	2013-11-28	-1.10	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2016-02-17 23:47:38.406094	565
 604	PANPC2014J	100MVFJVHEP	t	2014-07-16	2.60	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-12-27 14:15:41.686707	603
 608	PANPC2014J	SLARGOFJVHEP	t	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:12:39.365828	603
 572	BOL2013	800MPFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:41:21.795285	565
 644	IBERO2014	100MPMMY	f	2014-08-01	-0.20	f	SM	1	t	t		f	t	TESTUSER	2014-08-02 17:45:35.458328	\N	\N	\N
-570	BOL2013	SLARGOFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-12-27 14:01:19.411617	565
-565	BOL2013	HEPTAFMY	f	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-12-27 14:01:19.411617	\N
 603	PANPC2014J	HEPTAFJV	f	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	atluser	2014-12-27 14:15:41.686707	\N
 647	GPCUEN2015	SLALTOFMY	f	2015-03-14	\N	f	FI	1	t	t	Record  de menores y juveniles	f	t	TESTUSER	2015-03-14 15:39:01.10463	TESTUSER	2015-03-14 15:42:17.511566	\N
 648	GPCUEN2015	400MPFMY	f	2015-03-14	0.00	f	FI	1	t	t	Record Nacional Sub 23 y Mayores	f	t	TESTUSER	2015-03-14 16:31:52.311957	\N	\N	\N
 650	S232015	400MVFS23	f	2014-05-05	\N	f	FI	1	t	t		f	t	TESTUSER	2015-03-14 17:01:01.717668	\N	\N	\N
 651	GPCUEN2015	SLLARGOFMY	f	2015-03-15	\N	f	FI	1	t	t		f	t	TESTUSER	2015-03-15 17:54:47.066594	TESTUSER	2015-03-15 17:55:40.783741	\N
-653	GPPCOMBASU	100MVFMYHEP	t	2015-04-11	0.90	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:32:23.938427	652
 654	GPPCOMBASU	SALTOFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:32:52.337993	652
 655	GPPCOMBASU	IBALAFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:33:07.661453	652
 656	GPPCOMBASU	200MPFMYHEP	t	2015-04-11	-1.10	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:33:35.035804	652
 657	GPPCOMBASU	SLARGOFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:34:06.309458	652
 658	GPPCOMBASU	JABALFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:34:37.414615	652
 659	GPPCOMBASU	800MPFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:34:56.151349	652
-652	GPPCOMBASU	HEPTAFMY	f	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	\N	\N	\N
 660	GPORLG2015	SLLARGOFMY	f	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 20:12:25.326492	\N	\N	\N
 661	GPCLIM2015	200MPMMY	f	2015-04-25	0.30	f	FI	1	t	t	Record Nacional Sub 23	f	t	TESTUSER	2015-04-26 12:23:36.297155	\N	\N	\N
 674	GPPGV2015	400MPFMY	f	2015-04-24	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-26 14:53:13.20512	\N	\N	\N
 675	CTRL032015	SGARROCHAMME	f	2015-03-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-26 17:06:30.200271	\N	\N	\N
 662	GPCLIM2015	SLLARGOFMY	f	2015-04-25	\N	f	FI	1	t	t	Record Nacional Absoluto	f	t	TESTUSER	2015-04-26 12:40:05.470178	TESTUSER	2015-04-26 12:43:40.098072	\N
-\.
-
-
---
--- TOC entry 2653 (class 0 OID 0)
--- Dependencies: 188
--- Name: tb_competencias_pruebas_competencias_pruebas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
---
-
-SELECT pg_catalog.setval('tb_competencias_pruebas_competencias_pruebas_id_seq', 675, true);
-
-
---
--- TOC entry 2585 (class 0 OID 16597)
--- Dependencies: 189
--- Data for Name: tb_entidad; Type: TABLE DATA; Schema: public; Owner: atluser
---
-
-COPY tb_entidad (entidad_id, entidad_razon_social, entidad_ruc, entidad_titulo_alterno, entidad_direccion, entidad_web_url, entidad_telefonos, entidad_fax, entidad_eslogan, entidad_siglas, entidad_correo, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-1	FEDERACION DEPORTIVA PERUANA DE ATLETISMO	09900100010	FEDEATLE2	AV CANADA CDRA 6 / LA VIDENA					FDPA		t	TESTUSER	2014-01-14 18:29:40.943718	TESTUSER	2014-01-14 19:00:53.948758
+566	BOL2013	100MVFMYHEP	t	2013-11-28	0.30	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:25.366098	565
+570	BOL2013	SLARGOFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-12-27 14:01:19.411617	565
+565	BOL2013	HEPTAFMY	f	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-12-27 14:01:19.411617	\N
+653	GPPCOMBASU	100MVFMYHEP	t	2015-04-11	0.90	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:32:23.938427	652
+652	GPPCOMBASU	HEPTAFMY	f	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	\N	\N	\N
 \.
 
 
 --
 -- TOC entry 2654 (class 0 OID 0)
+-- Dependencies: 188
+-- Name: tb_competencias_pruebas_competencias_pruebas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
+--
+
+SELECT pg_catalog.setval('tb_competencias_pruebas_competencias_pruebas_id_seq', 777, true);
+
+
+--
+-- TOC entry 2586 (class 0 OID 16621)
+-- Dependencies: 189
+-- Data for Name: tb_entidad; Type: TABLE DATA; Schema: public; Owner: atluser
+--
+
+COPY tb_entidad (entidad_id, entidad_razon_social, entidad_ruc, entidad_titulo_alterno, entidad_direccion, entidad_web_url, entidad_telefonos, entidad_fax, entidad_eslogan, entidad_siglas, entidad_correo, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
+1	FEDERACION DEPORTIVA PERUANA DE ATLETISMO	09900100010	FEDEATLE	AV CANADA CDRA 6 / LA VIDENA / SAN LUIS					FDPA		t	TESTUSER	2014-01-14 18:29:40.943718	TESTUSER	2016-02-07 18:29:20.594996
+\.
+
+
+--
+-- TOC entry 2655 (class 0 OID 0)
 -- Dependencies: 190
 -- Name: tb_entidad_entidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9162,46 +9313,45 @@ SELECT pg_catalog.setval('tb_entidad_entidad_id_seq', 1, true);
 
 
 --
--- TOC entry 2587 (class 0 OID 16606)
+-- TOC entry 2588 (class 0 OID 16630)
 -- Dependencies: 191
 -- Data for Name: tb_entrenadores; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_entrenadores (entrenadores_codigo, entrenadores_ap_paterno, entrenadores_ap_materno, entrenadores_nombres, entrenadores_nombre_completo, entrenadores_nivel_codigo, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
 00001	Urbina	Galvez	Alberto	Urbina Galvez, Alberto	NIVEL5	t	atluser	2014-03-06 03:11:02.555597	TESTUSER	\N
-NOIND	No Indicado	NN	NN	No Indicado NN, NN	NOIND	t	atluser	2014-03-16 05:17:17.471232	TESTUSER	2014-03-16 05:17:58.170135
 00002	Valiente	Nose	Fernando	Valiente Nose, Fernando	NIVEL1	t	atluser	2014-05-06 22:04:55.137619	TESTUSER	\N
+NOIND	No indicado	NA	NA	No indicado NA, NA	PROMO	t	atluser	2014-03-16 05:17:17.471232	TESTUSER	2016-02-11 15:07:07.723436
 \.
 
 
 --
--- TOC entry 2588 (class 0 OID 16613)
+-- TOC entry 2589 (class 0 OID 16637)
 -- Dependencies: 192
 -- Data for Name: tb_entrenadores_atletas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_entrenadores_atletas (entrenadoresatletas_id, entrenadores_codigo, atletas_codigo, entrenadoresatletas_desde, entrenadoresatletas_hasta, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-1	00001	46658908	2007-01-01	2035-01-01	t	TESTUSER	2014-04-14 12:33:52.214018	TESTUSER	2014-05-05 17:12:00.729635
+1	00001	46658908	2007-01-01	2035-01-01	t	TESTUSER	2014-04-14 12:33:52.214018	TESTUSER	2016-02-12 02:31:53.796567
 \.
 
 
 --
--- TOC entry 2655 (class 0 OID 0)
+-- TOC entry 2656 (class 0 OID 0)
 -- Dependencies: 193
 -- Name: tb_entrenadores_atletas_entrenadoresatletas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_entrenadores_atletas_entrenadoresatletas_id_seq', 2, true);
+SELECT pg_catalog.setval('tb_entrenadores_atletas_entrenadoresatletas_id_seq', 3, true);
 
 
 --
--- TOC entry 2590 (class 0 OID 16619)
+-- TOC entry 2591 (class 0 OID 16643)
 -- Dependencies: 194
 -- Data for Name: tb_entrenadores_nivel; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_entrenadores_nivel (entrenadores_nivel_codigo, entrenadores_nivel_descripcion, entrenadores_nivel_protected, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-PROMO	Promotor	f	t	TESTUSER	2014-03-06 03:02:33.722386	\N	\N
 EDFISICA	Educacion Fisica	t	t	TESTUSER	2014-03-06 03:01:00.736498	postgres	2014-03-06 03:03:48.662056
 NIVEL1	Nivel 1 IAAF	t	t	TESTUSER	2014-03-06 03:01:19.01571	postgres	2014-03-06 03:03:48.662056
 NIVEL2	Nivel 2 IAAF	t	t	TESTUSER	2014-03-06 03:01:28.828614	postgres	2014-03-06 03:03:48.662056
@@ -9209,11 +9359,12 @@ NIVEL3	Nivel 3 IAAF	t	t	TESTUSER	2014-03-06 03:01:42.723429	postgres	2014-03-06 
 NIVEL4	Nivel 4 IAAF	t	t	TESTUSER	2014-03-06 03:02:11.506018	postgres	2014-03-06 03:03:48.662056
 NIVEL5	Nivel 5 IAAF	t	t	TESTUSER	2014-03-06 03:02:23.353387	postgres	2014-03-06 03:03:48.662056
 NOIND	No Indicado	f	t	TESTUSER	2014-03-16 05:17:33.124416	\N	\N
+PROMO	Promotor	f	t	TESTUSER	2014-03-06 03:02:33.722386	TESTUSER	2016-02-11 14:52:01.277123
 \.
 
 
 --
--- TOC entry 2591 (class 0 OID 16624)
+-- TOC entry 2592 (class 0 OID 16648)
 -- Dependencies: 195
 -- Data for Name: tb_ligas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9227,7 +9378,7 @@ LSANLUIS	Liga De San Luis	Oscar Valiente				????		t	TESTUSER	2015-03-14 16:46:20
 
 
 --
--- TOC entry 2592 (class 0 OID 16631)
+-- TOC entry 2593 (class 0 OID 16655)
 -- Dependencies: 196
 -- Data for Name: tb_ligas_clubes; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9242,27 +9393,24 @@ COPY tb_ligas_clubes (ligasclubes_id, ligas_codigo, clubes_codigo, ligasclubes_d
 
 
 --
--- TOC entry 2656 (class 0 OID 0)
+-- TOC entry 2657 (class 0 OID 0)
 -- Dependencies: 197
 -- Name: tb_ligas_clubes_ligasclubes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_ligas_clubes_ligasclubes_id_seq', 14, true);
+SELECT pg_catalog.setval('tb_ligas_clubes_ligasclubes_id_seq', 16, true);
 
 
 --
--- TOC entry 2594 (class 0 OID 16637)
+-- TOC entry 2595 (class 0 OID 16661)
 -- Dependencies: 198
 -- Data for Name: tb_paises; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_paises (paises_codigo, paises_descripcion, paises_entidad, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion, regiones_codigo) FROM stdin;
-BRA	Brasil	f	t	TESTUSER	2014-01-15 04:09:48.671663	TESTUSER	2014-01-15 04:32:02.72683	SAMERICA
-CHI	Chile	f	t	TESTUSER	2014-01-15 04:32:53.663519	TESTUSER	2014-01-15 04:33:25.817332	SAMERICA
 PAR	Paraguay	f	t	TESTUSER	2014-01-15 04:32:41.280826	TESTUSER	2014-01-15 13:07:28.362285	SAMERICA
 ECU	Ecuador	f	t	TESTUSER	2014-01-15 04:33:04.408989	TESTUSER	2014-01-15 14:30:05.49188	SAMERICA
 PER	Peru	t	t	TESTUSER	2014-01-15 02:56:36.298578	TESTUSER	2014-01-15 15:14:55.247207	SAMERICA
-COL	Colombia	f	t	TESTUSER	2014-03-03 01:07:47.093623	\N	\N	SAMERICA
 VEN	Venezuela	f	t	TESTUSER	2014-03-18 23:08:55.320403	TESTUSER	2014-03-18 23:09:42.421893	SAMERICA
 BOL	Bolivia	f	t	TESTUSER	2014-04-25 19:31:41.082426	\N	\N	SAMERICA
 ARG	Argentina	f	t	TESTUSER	2014-01-15 14:30:29.047479	TESTUSER	2014-06-27 18:01:24.005236	SAMERICA
@@ -9273,14 +9421,17 @@ CAN	Canada	f	t	TESTUSER	2014-07-16 15:33:10.2895	\N	\N	CAMECARIB
 USA	Estados Unidos	f	t	TESTUSER	2014-07-26 12:07:04.595319	\N	\N	CAMECARIB
 MEX	Mexico	f	t	TESTUSER	2014-07-27 20:59:05.312412	\N	\N	CAMECARIB
 GER	Alemania	f	t	TESTUSER	2014-07-28 21:25:46.495951	\N	\N	EUROPA
-ESP	España	f	t	TESTUSER	2014-07-28 21:37:55.772452	\N	\N	EUROPA
 IRL	Irlanda	f	t	TESTUSER	2014-10-05 12:49:46.222586	\N	\N	EUROPA
 URU	Uruguay	f	t	TESTUSER	2015-03-14 16:49:57.378678	\N	\N	SAMERICA
+CHI	Chile	f	t	TESTUSER	2014-01-15 04:32:53.663519	TESTUSER	2016-02-07 21:42:21.055783	SAMERICA
+COL	Colombia	f	t	TESTUSER	2014-03-03 01:07:47.093623	TESTUSER	2016-02-07 21:42:46.30364	SAMERICA
+ESP	España	f	t	TESTUSER	2014-07-28 21:37:55.772452	TESTUSER	2016-02-07 21:44:18.384493	EUROPA
+BRA	Brasil	f	t	TESTUSER	2014-01-15 04:09:48.671663	TESTUSER	2016-02-07 21:57:32.520248	SAMERICA
 \.
 
 
 --
--- TOC entry 2595 (class 0 OID 16643)
+-- TOC entry 2596 (class 0 OID 16667)
 -- Dependencies: 199
 -- Data for Name: tb_pruebas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -9354,7 +9505,7 @@ SGARROCHAMME	Salto Con Garrocha	SGARROCHA	M	MEN	MAY		f	t	TESTUSER	2015-04-26 17:
 
 
 --
--- TOC entry 2596 (class 0 OID 16649)
+-- TOC entry 2597 (class 0 OID 16673)
 -- Dependencies: 200
 -- Data for Name: tb_pruebas_clasificacion; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9363,21 +9514,20 @@ COPY tb_pruebas_clasificacion (pruebas_clasificacion_codigo, pruebas_clasificaci
 VEL	Velocidad	PIS	SEG	t	TESTUSER	2014-03-21 02:54:21.520442	\N	\N
 LANZ	Lanzamientos o Impulsion	CAMP	MTSCM	t	TESTUSER	2014-03-21 02:54:21.520442	\N	\N
 SFONDO	Semi Fondo	PIS	MS	t	TESTUSER	2014-03-21 02:54:21.520442	\N	\N
-FONDO	Fondo	PIS	HMS	t	TESTUSER	2014-03-21 02:54:21.520442	\N	\N
 SALTO	Saltos	CAMP	MTSCM	t	TESTUSER	2014-03-21 02:54:21.520442	\N	\N
 COMBI	Combinada	PISCAM	PUNT	t	TESTUSER	2014-03-21 02:54:21.520442	\N	\N
+FONDO	Fondo	PIS	HMS	t	TESTUSER	2014-03-21 02:54:21.520442	TESTUSER	2016-02-09 00:01:18.305051
 \.
 
 
 --
--- TOC entry 2597 (class 0 OID 16653)
+-- TOC entry 2598 (class 0 OID 16677)
 -- Dependencies: 201
 -- Data for Name: tb_pruebas_detalle; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY tb_pruebas_detalle (pruebas_detalle_id, pruebas_codigo, pruebas_detalle_prueba_codigo, pruebas_detalle_orden, pruebas_detalle_protected, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
 56	HEPTAFMY	100MVFMYHEP	1	f	t	TESTUSER	2014-05-21 17:55:05.921211	\N	\N
-57	HEPTAFMY	SALTOFMYHEP	2	f	t	TESTUSER	2014-05-21 17:55:19.758764	\N	\N
 58	HEPTAFMY	IBALAFMYHEP	3	f	t	TESTUSER	2014-05-21 17:55:31.919541	\N	\N
 59	HEPTAFMY	200MPFMYHEP	4	f	t	TESTUSER	2014-05-21 17:56:09.68915	\N	\N
 60	HEPTAFMY	SLARGOFMYHEP	5	f	t	TESTUSER	2014-05-21 17:56:20.854266	\N	\N
@@ -9390,20 +9540,21 @@ COPY tb_pruebas_detalle (pruebas_detalle_id, pruebas_codigo, pruebas_detalle_pru
 74	HEPTAFJV	SLARGOFJVHEP	5	f	t	TESTUSER	2014-07-18 16:57:23.715137	\N	\N
 75	HEPTAFJV	JABALFJVHEP	6	f	t	TESTUSER	2014-07-18 16:57:35.082359	\N	\N
 76	HEPTAFJV	800MPFJVHEP	7	f	t	TESTUSER	2014-07-18 16:57:48.623408	\N	\N
+103	HEPTAFMY	SALTOFMYHEP	2	f	t	TESTUSER	2016-02-17 18:53:54.766673	\N	\N
 \.
 
 
 --
--- TOC entry 2657 (class 0 OID 0)
+-- TOC entry 2658 (class 0 OID 0)
 -- Dependencies: 202
 -- Name: tb_pruebas_detalle_pruebas_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('tb_pruebas_detalle_pruebas_detalle_id_seq', 76, true);
+SELECT pg_catalog.setval('tb_pruebas_detalle_pruebas_detalle_id_seq', 103, true);
 
 
 --
--- TOC entry 2599 (class 0 OID 16660)
+-- TOC entry 2600 (class 0 OID 16684)
 -- Dependencies: 203
 -- Data for Name: tb_pruebas_tipo; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9412,14 +9563,14 @@ COPY tb_pruebas_tipo (pruebas_tipo_codigo, pruebas_tipo_descripcion, activo, usu
 PIS	Pista	t	TESTUSER	2014-03-03 17:24:21.960897	\N	\N
 CAMP	Campo	t	TESTUSER	2014-03-03 17:24:33.815961	\N	\N
 PEDEST	Pedestre	t	TESTUSER	2014-03-03 17:24:59.342096	\N	\N
-CROSC	Cross Country	t	TESTUSER	2014-03-03 17:26:07.839675	\N	\N
 PISCAM	Pista y Campo	t	TESTUSER	2014-03-09 13:40:35.915179	\N	\N
+CROSC	Cross Country	t	TESTUSER	2014-03-03 17:26:07.839675	TESTUSER	2016-02-08 17:23:02.523075
 \.
 
 
 --
--- TOC entry 2610 (class 0 OID 25306)
--- Dependencies: 214
+-- TOC entry 2601 (class 0 OID 16688)
+-- Dependencies: 204
 -- Data for Name: tb_records; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
@@ -9461,8 +9612,8 @@ COPY tb_records (records_id, records_tipo_codigo, atletas_resultados_id, categor
 
 
 --
--- TOC entry 2606 (class 0 OID 25284)
--- Dependencies: 210
+-- TOC entry 2602 (class 0 OID 16693)
+-- Dependencies: 205
 -- Data for Name: tb_records_pase; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9493,17 +9644,17 @@ COPY tb_records_pase (records_id, records_tipo_codigo, atletas_resultados_id, ca
 
 
 --
--- TOC entry 2658 (class 0 OID 0)
--- Dependencies: 213
+-- TOC entry 2659 (class 0 OID 0)
+-- Dependencies: 206
 -- Name: tb_records_records_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_records_records_id_seq', 18, true);
+SELECT pg_catalog.setval('tb_records_records_id_seq', 24, true);
 
 
 --
--- TOC entry 2608 (class 0 OID 25290)
--- Dependencies: 212
+-- TOC entry 2604 (class 0 OID 16698)
+-- Dependencies: 207
 -- Data for Name: tb_records_tipo; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
@@ -9518,8 +9669,8 @@ REGIONAL	Record Regional	RR	A	R	600	t	t	TESTUSER	2015-01-05 00:40:42.112712	post
 
 
 --
--- TOC entry 2607 (class 0 OID 25287)
--- Dependencies: 211
+-- TOC entry 2605 (class 0 OID 16708)
+-- Dependencies: 208
 -- Data for Name: tb_records_tipo_pase; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9534,21 +9685,21 @@ RCOMPETEN	Record Competencia	RC	C	X	10	f	t	TESTUSER	2014-07-01 16:51:23.649336	T
 
 
 --
--- TOC entry 2600 (class 0 OID 16681)
--- Dependencies: 204
+-- TOC entry 2606 (class 0 OID 16711)
+-- Dependencies: 209
 -- Data for Name: tb_regiones; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_regiones (regiones_codigo, regiones_descripcion, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-SAMERICA	Sud America	t	TESTUSER	2014-06-27 16:15:35.642623	\N	\N
 EUROPA	Europa	t	TESTUSER	2014-06-27 16:16:28.302958	\N	\N
 CAMECARIB	Norte Centro America y el Caribe	t	TESTUSER	2014-06-27 16:16:13.512191	TESTUSER	2014-07-16 15:32:54.812526
+SAMERICA	Sud America	t	TESTUSER	2014-06-27 16:15:35.642623	TESTUSER	2016-02-07 19:17:14.23636
 \.
 
 
 --
--- TOC entry 2601 (class 0 OID 16685)
--- Dependencies: 205
+-- TOC entry 2607 (class 0 OID 16715)
+-- Dependencies: 210
 -- Data for Name: tb_sys_menu; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
@@ -9595,8 +9746,8 @@ ATLETISMO	56	mn_admin	Administrador	A         	4	5	t	ADMIN	2015-10-04 14:59:17.3
 
 
 --
--- TOC entry 2659 (class 0 OID 0)
--- Dependencies: 206
+-- TOC entry 2660 (class 0 OID 0)
+-- Dependencies: 211
 -- Name: tb_sys_menu_menu_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
@@ -9604,25 +9755,35 @@ SELECT pg_catalog.setval('tb_sys_menu_menu_id_seq', 58, true);
 
 
 --
--- TOC entry 2614 (class 0 OID 59124)
--- Dependencies: 218
+-- TOC entry 2609 (class 0 OID 16722)
+-- Dependencies: 212
 -- Data for Name: tb_sys_perfil; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_sys_perfil (perfil_id, sys_systemcode, perfil_codigo, perfil_descripcion, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
 4	ATLETISMO	ADMIN	Perfil Administrador	t	TESTUSER	2015-10-04 21:34:18.153993	\N	\N
-5	ATLETISMO	POWERUSER	Power User	t	TESTUSER	2015-10-04 21:41:49.702143	\N	\N
+5	ATLETISMO	POWERUSER	Power User	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2016-01-25 16:51:45.415906
+18	ATLETISMO	TRRTRT	rtrtrtrgfdfgdfghfgh	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-01 20:34:22.33115
 \.
 
 
 --
--- TOC entry 2616 (class 0 OID 59150)
--- Dependencies: 220
+-- TOC entry 2610 (class 0 OID 16726)
+-- Dependencies: 213
 -- Data for Name: tb_sys_perfil_detalle; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perfdet_accagregar, perfdet_accactualizar, perfdet_acceliminar, perfdet_accimprimir, perfil_id, menu_id, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
+571	\N	t	t	t	t	t	18	4	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+573	\N	t	t	t	t	t	18	25	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+574	\N	t	t	t	t	t	18	23	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+575	\N	t	t	t	t	t	18	29	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+576	\N	t	t	t	t	t	18	31	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+579	\N	t	t	t	t	t	18	24	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+580	\N	t	t	t	t	t	18	17	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+581	\N	t	t	t	t	t	18	30	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
 77	\N	t	t	t	t	t	5	4	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
+582	\N	t	t	t	t	t	18	32	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
 79	\N	t	t	t	t	t	5	11	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 80	\N	t	t	t	t	t	5	25	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 81	\N	t	t	t	t	t	5	23	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
@@ -9633,14 +9794,14 @@ COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perf
 39	\N	t	t	t	t	t	4	4	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 40	\N	t	t	t	t	t	4	56	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 41	\N	t	t	t	t	t	4	11	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
-42	\N	t	t	t	t	t	4	25	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
+42	\N	t	t	t	t	t	4	25	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2016-01-26 16:27:54.909082
 43	\N	t	t	t	t	t	4	23	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 44	\N	t	t	t	t	t	4	29	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 45	\N	t	t	t	t	t	4	31	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 46	\N	t	t	t	t	t	4	35	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 47	\N	t	t	t	t	t	4	12	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 48	\N	t	t	t	t	t	4	24	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
-49	\N	t	t	t	t	t	4	17	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
+49	\N	t	t	t	t	t	4	17	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2016-01-26 16:27:54.909082
 50	\N	t	t	t	t	t	4	30	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 51	\N	t	t	t	t	t	4	32	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 52	\N	t	t	t	t	t	4	45	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
@@ -9649,7 +9810,7 @@ COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perf
 55	\N	t	t	t	t	t	4	57	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 56	\N	t	t	t	t	t	4	43	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 57	\N	t	t	t	t	t	4	44	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
-58	\N	t	t	t	t	t	4	21	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
+583	\N	t	t	t	t	t	18	45	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
 59	\N	t	t	t	t	t	4	36	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 60	\N	t	t	t	t	t	4	38	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 61	\N	t	t	t	t	t	4	13	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
@@ -9666,6 +9827,7 @@ COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perf
 90	\N	t	t	t	t	t	5	45	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 91	\N	t	t	t	t	t	5	46	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 92	\N	t	t	t	t	t	5	55	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
+584	\N	t	t	t	t	t	18	46	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
 94	\N	t	t	t	t	t	5	43	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 95	\N	t	t	t	t	t	5	44	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 96	\N	t	t	t	t	t	5	21	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
@@ -9673,12 +9835,25 @@ COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perf
 98	\N	t	t	t	t	t	5	38	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 99	\N	t	t	t	t	t	5	13	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 100	\N	t	t	t	t	t	5	33	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
+585	\N	t	t	t	t	t	18	55	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
 102	\N	t	t	t	t	t	5	40	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 103	\N	t	t	t	t	t	5	14	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 104	\N	t	t	t	t	t	5	37	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
-78	\N	f	f	f	f	f	5	56	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:09.277544
-93	\N	f	f	f	f	f	5	57	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:09.277544
-101	\N	f	f	f	f	f	5	58	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:09.277544
+588	\N	t	t	t	t	t	18	21	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+590	\N	t	t	t	t	t	18	38	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+592	\N	t	t	t	t	t	18	33	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+596	\N	f	f	f	f	f	18	56	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+599	\N	t	t	t	t	t	18	39	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+78	\N	f	f	f	f	f	5	56	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2016-01-25 16:53:28.983914
+93	\N	f	f	f	f	f	5	57	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2016-01-25 16:53:28.983914
+101	\N	f	f	f	f	f	5	58	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2016-01-25 16:53:28.983914
+600	\N	t	t	t	t	t	18	42	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+604	\N	t	t	t	t	t	18	48	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+572	\N	t	t	t	t	t	18	11	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+605	\N	t	t	t	t	t	18	49	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+606	\N	t	t	t	t	t	18	27	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+607	\N	t	t	t	t	t	18	51	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
+608	\N	t	t	t	t	t	18	54	t	TESTUSER	2016-02-01 20:33:25.445028	\N	\N
 68	\N	t	t	t	t	t	4	42	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 69	\N	t	t	t	t	t	4	15	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
 70	\N	t	t	t	t	t	4	16	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2015-10-04 21:41:08.030972
@@ -9698,30 +9873,45 @@ COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perf
 112	\N	t	t	t	t	t	5	27	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 113	\N	t	t	t	t	t	5	51	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
 114	\N	t	t	t	t	t	5	54	t	TESTUSER	2015-10-04 21:41:49.702143	TESTUSER	2015-10-04 21:42:02.265457
+58	\N	t	t	t	t	t	4	21	t	TESTUSER	2015-10-04 21:34:18.153993	TESTUSER	2016-01-26 16:27:54.909082
+597	\N	t	t	t	f	f	18	57	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 16:46:46.778248
+598	\N	t	f	t	f	f	18	58	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 16:47:08.64293
+577	\N	t	t	t	t	t	18	35	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+578	\N	t	t	t	t	t	18	12	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+586	\N	t	t	t	t	t	18	43	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+587	\N	t	t	t	t	t	18	44	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+589	\N	t	t	t	t	t	18	36	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+591	\N	t	t	t	t	t	18	13	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+593	\N	t	t	t	t	t	18	40	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+594	\N	t	t	t	t	t	18	14	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+595	\N	t	t	t	t	t	18	37	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+601	\N	t	t	t	t	t	18	15	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+602	\N	t	t	t	t	t	18	16	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
+603	\N	t	t	t	t	t	18	34	t	TESTUSER	2016-02-01 20:33:25.445028	TESTUSER	2016-02-07 20:37:53.892013
 \.
 
 
 --
--- TOC entry 2660 (class 0 OID 0)
--- Dependencies: 219
+-- TOC entry 2661 (class 0 OID 0)
+-- Dependencies: 214
 -- Name: tb_sys_perfil_detalle_perfdet_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_sys_perfil_detalle_perfdet_id_seq', 114, true);
+SELECT pg_catalog.setval('tb_sys_perfil_detalle_perfdet_id_seq', 608, true);
 
 
 --
--- TOC entry 2661 (class 0 OID 0)
--- Dependencies: 217
+-- TOC entry 2662 (class 0 OID 0)
+-- Dependencies: 215
 -- Name: tb_sys_perfil_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_sys_perfil_id_seq', 5, true);
+SELECT pg_catalog.setval('tb_sys_perfil_id_seq', 18, true);
 
 
 --
--- TOC entry 2603 (class 0 OID 16692)
--- Dependencies: 207
+-- TOC entry 2613 (class 0 OID 16739)
+-- Dependencies: 216
 -- Data for Name: tb_sys_sistemas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
@@ -9731,64 +9921,65 @@ ATLETISMO	Sistema Deportivo de la Federacion Deportiva de Atletismo	t	ADMIN	2014
 
 
 --
--- TOC entry 2618 (class 0 OID 59174)
--- Dependencies: 222
+-- TOC entry 2614 (class 0 OID 16743)
+-- Dependencies: 217
 -- Data for Name: tb_sys_usuario_perfiles; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_sys_usuario_perfiles (usuario_perfil_id, perfil_id, usuarios_id, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-1	5	2	t	TESTUSER	2015-10-05 00:03:41.563698	\N	\N
-\.
-
-
---
--- TOC entry 2662 (class 0 OID 0)
--- Dependencies: 221
--- Name: tb_sys_usuario_perfiles_usuario_perfil_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
---
-
-SELECT pg_catalog.setval('tb_sys_usuario_perfiles_usuario_perfil_id_seq', 2, true);
-
-
---
--- TOC entry 2604 (class 0 OID 16696)
--- Dependencies: 208
--- Data for Name: tb_unidad_medida; Type: TABLE DATA; Schema: public; Owner: atluser
---
-
-COPY tb_unidad_medida (unidad_medida_codigo, unidad_medida_descripcion, unidad_medida_regex_e, unidad_medida_regex_m, unidad_medida_protected, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion, unidad_medida_tipo) FROM stdin;
-PUNT	Puntos	^([0-9]){2,4}	^([0-9]){2,4}	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-03-27 02:48:07.680461	P
-MTSCM	Metros,Centimetros	^([1-9]?[0-9]{1})\\.([0-9]?[0-9])$	^([1-9]?[0-9]{1})\\.([0-9]?[0-9])$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-03-27 03:15:05.398074	M
-MS	Minutos,Segundos,Decimas/Centesimas	^([0-5]?[0-9])\\:([0-5][0-9])\\.([0-9][0-9])$	^([0-5]?[0-9])\\:([0-5][0-9])\\.([0-9])$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-04-10 14:58:48.477279	T
-SEG	Segundos , Decimas , Centesimas	^((([0-5]?[0-9]|2[0-3]):)?([0-5]?[0-9])).([0-9][0-9])$	^((([0-5]?[0-9]|2[0-3]):)?([0-5]?[0-9])).[0-9]$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-04-20 17:55:20.38246	T
-HMS	Horas,Minutos,Segundos	^([0-2]?[0-9])\\:([0-5][0-9])\\:([0-5][0-9])\\.([0-9][0-9])$	^([0-2]?[0-9])\\:([0-5][0-9])\\:([0-5][0-9])\\.([0-9])$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-04-23 05:05:23.882472	T
-\.
-
-
---
--- TOC entry 2612 (class 0 OID 59108)
--- Dependencies: 216
--- Data for Name: tb_usuarios; Type: TABLE DATA; Schema: public; Owner: atluser
---
-
-COPY tb_usuarios (usuarios_id, usuarios_code, usuarios_password, usuarios_nombre_completo, usuarios_admin, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-1	ADMIN	melivane100	Carlos Arana Reategui	f	t	TESTUSER	2015-10-04 18:18:38.522948	TESTUSER	18:33:24.640328
-2	TEST	testx	Soy el Test User	f	t	TESTUSER	2015-10-04 19:20:13.66406	TESTUSER	19:20:21.229501
+1	4	2	t	TESTUSER	2015-10-05 00:03:41.563698	TESTUSER	2016-01-26 16:22:00.235152
+3	4	1	t	TESTUSER	2016-01-26 13:17:46.032845	TESTUSER	2016-02-01 15:09:50.479604
 \.
 
 
 --
 -- TOC entry 2663 (class 0 OID 0)
--- Dependencies: 215
+-- Dependencies: 218
+-- Name: tb_sys_usuario_perfiles_usuario_perfil_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
+--
+
+SELECT pg_catalog.setval('tb_sys_usuario_perfiles_usuario_perfil_id_seq', 5, true);
+
+
+--
+-- TOC entry 2616 (class 0 OID 16749)
+-- Dependencies: 219
+-- Data for Name: tb_unidad_medida; Type: TABLE DATA; Schema: public; Owner: atluser
+--
+
+COPY tb_unidad_medida (unidad_medida_codigo, unidad_medida_descripcion, unidad_medida_regex_e, unidad_medida_regex_m, unidad_medida_protected, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion, unidad_medida_tipo) FROM stdin;
+PUNT	Puntos	^([0-9]){2,4}	^([0-9]){2,4}	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-03-27 02:48:07.680461	P
+MS	Minutos,Segundos,Decimas/Centesimas	^([0-5]?[0-9])\\:([0-5][0-9])\\.([0-9][0-9])$	^([0-5]?[0-9])\\:([0-5][0-9])\\.([0-9])$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-04-10 14:58:48.477279	T
+SEG	Segundos , Decimas , Centesimas	^((([0-5]?[0-9]|2[0-3]):)?([0-5]?[0-9])).([0-9][0-9])$	^((([0-5]?[0-9]|2[0-3]):)?([0-5]?[0-9])).[0-9]$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-04-20 17:55:20.38246	T
+HMS	Horas,Minutos,Segundos	^([0-2]?[0-9])\\:([0-5][0-9])\\:([0-5][0-9])\\.([0-9][0-9])$	^([0-2]?[0-9])\\:([0-5][0-9])\\:([0-5][0-9])\\.([0-9])$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2014-04-23 05:05:23.882472	T
+MTSCM	Metros,Centimetros	^([1-9]?[0-9]{1})\\.([0-9]?[0-9])$	^([1-9]?[0-9]{1})\\.([0-9]?[0-9])$	f	t	postgres	2014-03-21 01:55:48.662382	TESTUSER	2016-02-08 16:34:56.425018	M
+\.
+
+
+--
+-- TOC entry 2617 (class 0 OID 16755)
+-- Dependencies: 220
+-- Data for Name: tb_usuarios; Type: TABLE DATA; Schema: public; Owner: atluser
+--
+
+COPY tb_usuarios (usuarios_id, usuarios_code, usuarios_password, usuarios_nombre_completo, usuarios_admin, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
+1	ADMIN	melivane100	Carlos Arana Reategui	f	t	TESTUSER	2015-10-04 18:18:38.522948	TESTUSER	18:33:24.640328
+2	TEST	testx1	Soy el Test User	f	t	TESTUSER	2015-10-04 19:20:13.66406	TESTUSER	01:09:30.537483
+\.
+
+
+--
+-- TOC entry 2664 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: tb_usuarios_usuarios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_usuarios_usuarios_id_seq', 2, true);
+SELECT pg_catalog.setval('tb_usuarios_usuarios_id_seq', 14, true);
 
 
 --
--- TOC entry 2605 (class 0 OID 16702)
--- Dependencies: 209
+-- TOC entry 2619 (class 0 OID 16762)
+-- Dependencies: 222
 -- Data for Name: v_peso_desde; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -9804,7 +9995,7 @@ COPY v_peso_desde (appcat_peso) FROM stdin;
 
 
 --
--- TOC entry 2249 (class 2606 OID 16717)
+-- TOC entry 2250 (class 2606 OID 16805)
 -- Name: pk_app_categorias; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9813,7 +10004,7 @@ ALTER TABLE ONLY tb_app_categorias_values
 
 
 --
--- TOC entry 2252 (class 2606 OID 16719)
+-- TOC entry 2253 (class 2606 OID 16807)
 -- Name: pk_app_pruebas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9822,7 +10013,7 @@ ALTER TABLE ONLY tb_app_pruebas_values
 
 
 --
--- TOC entry 2256 (class 2606 OID 16721)
+-- TOC entry 2257 (class 2606 OID 16809)
 -- Name: pk_atletas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9831,7 +10022,7 @@ ALTER TABLE ONLY tb_atletas
 
 
 --
--- TOC entry 2259 (class 2606 OID 16723)
+-- TOC entry 2260 (class 2606 OID 16811)
 -- Name: pk_atletas_carnets; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9840,7 +10031,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2267 (class 2606 OID 16725)
+-- TOC entry 2268 (class 2606 OID 16813)
 -- Name: pk_atletas_resultados; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9849,7 +10040,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2273 (class 2606 OID 16727)
+-- TOC entry 2274 (class 2606 OID 16815)
 -- Name: pk_atletas_resultados_detalle; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9858,7 +10049,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle
 
 
 --
--- TOC entry 2280 (class 2606 OID 16729)
+-- TOC entry 2281 (class 2606 OID 16817)
 -- Name: pk_categorias; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9867,7 +10058,7 @@ ALTER TABLE ONLY tb_categorias
 
 
 --
--- TOC entry 2283 (class 2606 OID 16731)
+-- TOC entry 2284 (class 2606 OID 16819)
 -- Name: pk_ciudades; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9876,7 +10067,7 @@ ALTER TABLE ONLY tb_ciudades
 
 
 --
--- TOC entry 2288 (class 2606 OID 16733)
+-- TOC entry 2289 (class 2606 OID 16821)
 -- Name: pk_clubes; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9885,7 +10076,7 @@ ALTER TABLE ONLY tb_clubes
 
 
 --
--- TOC entry 2292 (class 2606 OID 16735)
+-- TOC entry 2293 (class 2606 OID 16823)
 -- Name: pk_clubesatletas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9894,7 +10085,7 @@ ALTER TABLE ONLY tb_clubes_atletas
 
 
 --
--- TOC entry 2295 (class 2606 OID 16737)
+-- TOC entry 2296 (class 2606 OID 16825)
 -- Name: pk_competencia_clasificacion; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9903,7 +10094,7 @@ ALTER TABLE ONLY tb_competencia_tipo
 
 
 --
--- TOC entry 2301 (class 2606 OID 16739)
+-- TOC entry 2302 (class 2606 OID 16827)
 -- Name: pk_competencias; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9912,7 +10103,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2305 (class 2606 OID 16741)
+-- TOC entry 2306 (class 2606 OID 16829)
 -- Name: pk_competencias_pruebas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9921,7 +10112,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2311 (class 2606 OID 16743)
+-- TOC entry 2312 (class 2606 OID 16831)
 -- Name: pk_entrenadores; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9930,7 +10121,7 @@ ALTER TABLE ONLY tb_entrenadores
 
 
 --
--- TOC entry 2317 (class 2606 OID 16745)
+-- TOC entry 2318 (class 2606 OID 16833)
 -- Name: pk_entrenadores_nivel; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9939,7 +10130,7 @@ ALTER TABLE ONLY tb_entrenadores_nivel
 
 
 --
--- TOC entry 2315 (class 2606 OID 16747)
+-- TOC entry 2316 (class 2606 OID 16835)
 -- Name: pk_entrenadoresatletas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9948,7 +10139,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas
 
 
 --
--- TOC entry 2320 (class 2606 OID 16749)
+-- TOC entry 2321 (class 2606 OID 16837)
 -- Name: pk_ligas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9957,7 +10148,7 @@ ALTER TABLE ONLY tb_ligas
 
 
 --
--- TOC entry 2322 (class 2606 OID 16751)
+-- TOC entry 2323 (class 2606 OID 16839)
 -- Name: pk_ligasclubes; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9966,7 +10157,7 @@ ALTER TABLE ONLY tb_ligas_clubes
 
 
 --
--- TOC entry 2350 (class 2606 OID 16753)
+-- TOC entry 2359 (class 2606 OID 16841)
 -- Name: pk_menu; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9975,7 +10166,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2324 (class 2606 OID 16755)
+-- TOC entry 2325 (class 2606 OID 16843)
 -- Name: pk_paises; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9984,7 +10175,7 @@ ALTER TABLE ONLY tb_paises
 
 
 --
--- TOC entry 2376 (class 2606 OID 59161)
+-- TOC entry 2370 (class 2606 OID 16845)
 -- Name: pk_perfdet_id; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -9993,7 +10184,7 @@ ALTER TABLE ONLY tb_sys_perfil_detalle
 
 
 --
--- TOC entry 2336 (class 2606 OID 16757)
+-- TOC entry 2337 (class 2606 OID 16847)
 -- Name: pk_pruebas_clasificacion; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10002,7 +10193,7 @@ ALTER TABLE ONLY tb_pruebas_clasificacion
 
 
 --
--- TOC entry 2340 (class 2606 OID 16759)
+-- TOC entry 2341 (class 2606 OID 16849)
 -- Name: pk_pruebas_detalle; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10011,7 +10202,7 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2344 (class 2606 OID 16761)
+-- TOC entry 2345 (class 2606 OID 16851)
 -- Name: pk_pruebas_tipo; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10020,7 +10211,7 @@ ALTER TABLE ONLY tb_pruebas_tipo
 
 
 --
--- TOC entry 2362 (class 2606 OID 25313)
+-- TOC entry 2348 (class 2606 OID 16853)
 -- Name: pk_records; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10029,7 +10220,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2359 (class 2606 OID 25301)
+-- TOC entry 2353 (class 2606 OID 16855)
 -- Name: pk_records_tipos_codigo; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10038,7 +10229,7 @@ ALTER TABLE ONLY tb_records_tipo
 
 
 --
--- TOC entry 2346 (class 2606 OID 16767)
+-- TOC entry 2355 (class 2606 OID 16857)
 -- Name: pk_regiones; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10047,7 +10238,7 @@ ALTER TABLE ONLY tb_regiones
 
 
 --
--- TOC entry 2354 (class 2606 OID 16769)
+-- TOC entry 2372 (class 2606 OID 16859)
 -- Name: pk_sistemas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10056,7 +10247,7 @@ ALTER TABLE ONLY tb_sys_sistemas
 
 
 --
--- TOC entry 2370 (class 2606 OID 59130)
+-- TOC entry 2364 (class 2606 OID 16861)
 -- Name: pk_sys_perfil; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10065,7 +10256,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2356 (class 2606 OID 16771)
+-- TOC entry 2378 (class 2606 OID 16863)
 -- Name: pk_unidad_medida; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10074,7 +10265,7 @@ ALTER TABLE ONLY tb_unidad_medida
 
 
 --
--- TOC entry 2380 (class 2606 OID 59180)
+-- TOC entry 2376 (class 2606 OID 16865)
 -- Name: pk_usuarioperfiles; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10083,7 +10274,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles
 
 
 --
--- TOC entry 2367 (class 2606 OID 59115)
+-- TOC entry 2381 (class 2606 OID 16867)
 -- Name: pk_usuarios; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10092,7 +10283,7 @@ ALTER TABLE ONLY tb_usuarios
 
 
 --
--- TOC entry 2330 (class 2606 OID 16773)
+-- TOC entry 2331 (class 2606 OID 16869)
 -- Name: tb_pruebas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10101,7 +10292,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2261 (class 2606 OID 16775)
+-- TOC entry 2262 (class 2606 OID 16871)
 -- Name: unq_atletas_carnets; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10110,7 +10301,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2263 (class 2606 OID 16777)
+-- TOC entry 2264 (class 2606 OID 16873)
 -- Name: unq_atletas_carnets_numero; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10119,7 +10310,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2269 (class 2606 OID 16779)
+-- TOC entry 2270 (class 2606 OID 16875)
 -- Name: unq_atletas_resultados; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10128,7 +10319,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2275 (class 2606 OID 16781)
+-- TOC entry 2276 (class 2606 OID 16877)
 -- Name: unq_atletas_resultados_detalle_pruebas_detalle; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10137,7 +10328,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle
 
 
 --
--- TOC entry 2285 (class 2606 OID 16783)
+-- TOC entry 2286 (class 2606 OID 16879)
 -- Name: unq_ciudades_paises; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10146,7 +10337,7 @@ ALTER TABLE ONLY tb_ciudades
 
 
 --
--- TOC entry 2352 (class 2606 OID 16785)
+-- TOC entry 2361 (class 2606 OID 16881)
 -- Name: unq_codigomenu; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10155,7 +10346,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2307 (class 2606 OID 16787)
+-- TOC entry 2308 (class 2606 OID 16883)
 -- Name: unq_competencias_pruebas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10164,7 +10355,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2372 (class 2606 OID 59132)
+-- TOC entry 2366 (class 2606 OID 16885)
 -- Name: unq_perfil_syscode_codigo; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10173,7 +10364,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2374 (class 2606 OID 59134)
+-- TOC entry 2368 (class 2606 OID 16887)
 -- Name: unq_perfil_syscode_perfil_id; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10182,7 +10373,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2342 (class 2606 OID 16789)
+-- TOC entry 2343 (class 2606 OID 16889)
 -- Name: unq_pruebas_detalle; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10191,8 +10382,8 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2664 (class 0 OID 0)
--- Dependencies: 2342
+-- TOC entry 2665 (class 0 OID 0)
+-- Dependencies: 2343
 -- Name: CONSTRAINT unq_pruebas_detalle ON tb_pruebas_detalle; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -10200,7 +10391,7 @@ COMMENT ON CONSTRAINT unq_pruebas_detalle ON tb_pruebas_detalle IS 'No puede rep
 
 
 --
--- TOC entry 2332 (class 2606 OID 16791)
+-- TOC entry 2333 (class 2606 OID 16891)
 -- Name: unq_pruebas_nombre; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10209,7 +10400,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2364 (class 2606 OID 25315)
+-- TOC entry 2350 (class 2606 OID 16893)
 -- Name: unq_records; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10218,7 +10409,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2270 (class 1259 OID 16794)
+-- TOC entry 2271 (class 1259 OID 16894)
 -- Name: fk_atletas_resultados_pruebas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10226,7 +10417,7 @@ CREATE INDEX fk_atletas_resultados_pruebas_codigo ON tb_atletas_resultados_detal
 
 
 --
--- TOC entry 2250 (class 1259 OID 16795)
+-- TOC entry 2251 (class 1259 OID 16895)
 -- Name: fki_app_pruebas_pruebas_clasificacion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10234,7 +10425,7 @@ CREATE INDEX fki_app_pruebas_pruebas_clasificacion ON tb_app_pruebas_values USIN
 
 
 --
--- TOC entry 2253 (class 1259 OID 16796)
+-- TOC entry 2254 (class 1259 OID 16896)
 -- Name: fki_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10242,7 +10433,7 @@ CREATE INDEX fki_atletas ON tb_atletas USING btree (atletas_codigo);
 
 
 --
--- TOC entry 2257 (class 1259 OID 16797)
+-- TOC entry 2258 (class 1259 OID 16897)
 -- Name: fki_atletas_carnets_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10250,7 +10441,7 @@ CREATE INDEX fki_atletas_carnets_atletas ON tb_atletas_carnets USING btree (atle
 
 
 --
--- TOC entry 2264 (class 1259 OID 16798)
+-- TOC entry 2265 (class 1259 OID 16898)
 -- Name: fki_atletas_resultados_atletas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10258,7 +10449,7 @@ CREATE INDEX fki_atletas_resultados_atletas_codigo ON tb_atletas_resultados USIN
 
 
 --
--- TOC entry 2265 (class 1259 OID 16799)
+-- TOC entry 2266 (class 1259 OID 16899)
 -- Name: fki_atletas_resultados_competencias_pruebas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10266,7 +10457,7 @@ CREATE INDEX fki_atletas_resultados_competencias_pruebas ON tb_atletas_resultado
 
 
 --
--- TOC entry 2271 (class 1259 OID 16800)
+-- TOC entry 2272 (class 1259 OID 16900)
 -- Name: fki_atletas_resultados_detalle_resultados_id; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10274,7 +10465,7 @@ CREATE INDEX fki_atletas_resultados_detalle_resultados_id ON tb_atletas_resultad
 
 
 --
--- TOC entry 2278 (class 1259 OID 16801)
+-- TOC entry 2279 (class 1259 OID 16901)
 -- Name: fki_categorias_appcat; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10282,7 +10473,7 @@ CREATE INDEX fki_categorias_appcat ON tb_categorias USING btree (categorias_vali
 
 
 --
--- TOC entry 2281 (class 1259 OID 16802)
+-- TOC entry 2282 (class 1259 OID 16902)
 -- Name: fki_ciudad_pais; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10290,7 +10481,7 @@ CREATE INDEX fki_ciudad_pais ON tb_ciudades USING btree (paises_codigo);
 
 
 --
--- TOC entry 2289 (class 1259 OID 16803)
+-- TOC entry 2290 (class 1259 OID 16903)
 -- Name: fki_clubesatletas_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10298,7 +10489,7 @@ CREATE INDEX fki_clubesatletas_atletas ON tb_clubes_atletas USING btree (atletas
 
 
 --
--- TOC entry 2290 (class 1259 OID 16804)
+-- TOC entry 2291 (class 1259 OID 16904)
 -- Name: fki_clubesatletas_clubes; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10306,7 +10497,7 @@ CREATE INDEX fki_clubesatletas_clubes ON tb_clubes_atletas USING btree (clubes_c
 
 
 --
--- TOC entry 2296 (class 1259 OID 16805)
+-- TOC entry 2297 (class 1259 OID 16905)
 -- Name: fki_competencias_categorias_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10314,7 +10505,7 @@ CREATE INDEX fki_competencias_categorias_codigo ON tb_competencias USING btree (
 
 
 --
--- TOC entry 2297 (class 1259 OID 16806)
+-- TOC entry 2298 (class 1259 OID 16906)
 -- Name: fki_competencias_ciudades_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10322,7 +10513,7 @@ CREATE INDEX fki_competencias_ciudades_codigo ON tb_competencias USING btree (pa
 
 
 --
--- TOC entry 2298 (class 1259 OID 16807)
+-- TOC entry 2299 (class 1259 OID 16907)
 -- Name: fki_competencias_competencia_tipo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10330,7 +10521,7 @@ CREATE INDEX fki_competencias_competencia_tipo ON tb_competencias USING btree (c
 
 
 --
--- TOC entry 2299 (class 1259 OID 16808)
+-- TOC entry 2300 (class 1259 OID 16908)
 -- Name: fki_competencias_paises_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10338,7 +10529,7 @@ CREATE INDEX fki_competencias_paises_codigo ON tb_competencias USING btree (pais
 
 
 --
--- TOC entry 2308 (class 1259 OID 16809)
+-- TOC entry 2309 (class 1259 OID 16909)
 -- Name: fki_entrenadores_nivel; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10346,7 +10537,7 @@ CREATE INDEX fki_entrenadores_nivel ON tb_entrenadores USING btree (entrenadores
 
 
 --
--- TOC entry 2312 (class 1259 OID 16810)
+-- TOC entry 2313 (class 1259 OID 16910)
 -- Name: fki_entrenadoresatletas_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10354,7 +10545,7 @@ CREATE INDEX fki_entrenadoresatletas_atletas ON tb_entrenadores_atletas USING bt
 
 
 --
--- TOC entry 2313 (class 1259 OID 16811)
+-- TOC entry 2314 (class 1259 OID 16911)
 -- Name: fki_entrenadoresatletas_entrenadores; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10362,7 +10553,7 @@ CREATE INDEX fki_entrenadoresatletas_entrenadores ON tb_entrenadores_atletas USI
 
 
 --
--- TOC entry 2347 (class 1259 OID 16812)
+-- TOC entry 2356 (class 1259 OID 16912)
 -- Name: fki_menu_parent_id; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10370,7 +10561,7 @@ CREATE INDEX fki_menu_parent_id ON tb_sys_menu USING btree (menu_parent_id);
 
 
 --
--- TOC entry 2348 (class 1259 OID 16813)
+-- TOC entry 2357 (class 1259 OID 16913)
 -- Name: fki_menu_sistemas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10378,7 +10569,7 @@ CREATE INDEX fki_menu_sistemas ON tb_sys_menu USING btree (sys_systemcode);
 
 
 --
--- TOC entry 2368 (class 1259 OID 59140)
+-- TOC entry 2362 (class 1259 OID 16914)
 -- Name: fki_perfil_sistema; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10386,7 +10577,7 @@ CREATE INDEX fki_perfil_sistema ON tb_sys_perfil USING btree (sys_systemcode);
 
 
 --
--- TOC entry 2377 (class 1259 OID 59191)
+-- TOC entry 2373 (class 1259 OID 16915)
 -- Name: fki_perfil_usuario; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10394,7 +10585,7 @@ CREATE INDEX fki_perfil_usuario ON tb_sys_usuario_perfiles USING btree (perfil_i
 
 
 --
--- TOC entry 2325 (class 1259 OID 16814)
+-- TOC entry 2326 (class 1259 OID 16916)
 -- Name: fki_pruebas_apppruebas; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10402,7 +10593,7 @@ CREATE INDEX fki_pruebas_apppruebas ON tb_pruebas USING btree (pruebas_generica_
 
 
 --
--- TOC entry 2326 (class 1259 OID 16815)
+-- TOC entry 2327 (class 1259 OID 16917)
 -- Name: fki_pruebas_categoria; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10410,7 +10601,7 @@ CREATE INDEX fki_pruebas_categoria ON tb_pruebas USING btree (categorias_codigo)
 
 
 --
--- TOC entry 2327 (class 1259 OID 16816)
+-- TOC entry 2328 (class 1259 OID 16918)
 -- Name: fki_pruebas_categorias_hasta; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10418,7 +10609,7 @@ CREATE INDEX fki_pruebas_categorias_hasta ON tb_pruebas USING btree (pruebas_rec
 
 
 --
--- TOC entry 2333 (class 1259 OID 16817)
+-- TOC entry 2334 (class 1259 OID 16919)
 -- Name: fki_pruebas_clasificacion_pruebas_tipo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10426,7 +10617,7 @@ CREATE INDEX fki_pruebas_clasificacion_pruebas_tipo ON tb_pruebas_clasificacion 
 
 
 --
--- TOC entry 2334 (class 1259 OID 16818)
+-- TOC entry 2335 (class 1259 OID 16920)
 -- Name: fki_pruebas_clasificacion_um; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10434,7 +10625,7 @@ CREATE INDEX fki_pruebas_clasificacion_um ON tb_pruebas_clasificacion USING btre
 
 
 --
--- TOC entry 2360 (class 1259 OID 25336)
+-- TOC entry 2346 (class 1259 OID 16921)
 -- Name: fki_record_id_origen; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10442,7 +10633,7 @@ CREATE INDEX fki_record_id_origen ON tb_records USING btree (records_id_origen);
 
 
 --
--- TOC entry 2276 (class 1259 OID 16820)
+-- TOC entry 2277 (class 1259 OID 16922)
 -- Name: fki_tb_atletas_resultados_competencias_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10450,7 +10641,7 @@ CREATE INDEX fki_tb_atletas_resultados_competencias_codigo ON tb_atletas_resulta
 
 
 --
--- TOC entry 2277 (class 1259 OID 16821)
+-- TOC entry 2278 (class 1259 OID 16923)
 -- Name: fki_tb_atletas_resultados_pruebas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10458,7 +10649,7 @@ CREATE INDEX fki_tb_atletas_resultados_pruebas_codigo ON tb_atletas_resultados_o
 
 
 --
--- TOC entry 2302 (class 1259 OID 16822)
+-- TOC entry 2303 (class 1259 OID 16924)
 -- Name: fki_tb_competencias_pruebas_competencias_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10466,7 +10657,7 @@ CREATE INDEX fki_tb_competencias_pruebas_competencias_codigo ON tb_competencias_
 
 
 --
--- TOC entry 2303 (class 1259 OID 16823)
+-- TOC entry 2304 (class 1259 OID 16925)
 -- Name: fki_tb_competencias_pruebas_pruebas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10474,7 +10665,7 @@ CREATE INDEX fki_tb_competencias_pruebas_pruebas_codigo ON tb_competencias_prueb
 
 
 --
--- TOC entry 2337 (class 1259 OID 16824)
+-- TOC entry 2338 (class 1259 OID 16926)
 -- Name: fki_tb_pruebas_detalle_prueba_detalle_codigo; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10482,7 +10673,7 @@ CREATE INDEX fki_tb_pruebas_detalle_prueba_detalle_codigo ON tb_pruebas_detalle 
 
 
 --
--- TOC entry 2338 (class 1259 OID 16825)
+-- TOC entry 2339 (class 1259 OID 16927)
 -- Name: fki_tb_pruebas_detalle_pruebas; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10490,7 +10681,7 @@ CREATE INDEX fki_tb_pruebas_detalle_pruebas ON tb_pruebas_detalle USING btree (p
 
 
 --
--- TOC entry 2378 (class 1259 OID 59192)
+-- TOC entry 2374 (class 1259 OID 16928)
 -- Name: fki_usuarioperfiles; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10498,7 +10689,7 @@ CREATE INDEX fki_usuarioperfiles ON tb_sys_usuario_perfiles USING btree (usuario
 
 
 --
--- TOC entry 2254 (class 1259 OID 16826)
+-- TOC entry 2255 (class 1259 OID 16929)
 -- Name: idx_atletas_nmcompleto; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10506,7 +10697,7 @@ CREATE UNIQUE INDEX idx_atletas_nmcompleto ON tb_atletas USING btree (upper((atl
 
 
 --
--- TOC entry 2293 (class 1259 OID 16827)
+-- TOC entry 2294 (class 1259 OID 16930)
 -- Name: idx_competencia_tipo_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10514,7 +10705,7 @@ CREATE UNIQUE INDEX idx_competencia_tipo_descripcion ON tb_competencia_tipo USIN
 
 
 --
--- TOC entry 2309 (class 1259 OID 16828)
+-- TOC entry 2310 (class 1259 OID 16931)
 -- Name: idx_entrenadores_nmcompleto; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10522,7 +10713,7 @@ CREATE UNIQUE INDEX idx_entrenadores_nmcompleto ON tb_entrenadores USING btree (
 
 
 --
--- TOC entry 2357 (class 1259 OID 25302)
+-- TOC entry 2351 (class 1259 OID 16932)
 -- Name: idx_records_tipo_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10530,7 +10721,7 @@ CREATE UNIQUE INDEX idx_records_tipo_descripcion ON tb_records_tipo USING btree 
 
 
 --
--- TOC entry 2365 (class 1259 OID 59116)
+-- TOC entry 2379 (class 1259 OID 16933)
 -- Name: idx_unique_usuarios; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10538,7 +10729,7 @@ CREATE UNIQUE INDEX idx_unique_usuarios ON tb_usuarios USING btree (upper((usuar
 
 
 --
--- TOC entry 2286 (class 1259 OID 16830)
+-- TOC entry 2287 (class 1259 OID 16934)
 -- Name: idx_unq_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10546,7 +10737,7 @@ CREATE UNIQUE INDEX idx_unq_descripcion ON tb_clubes USING btree (upper((clubes_
 
 
 --
--- TOC entry 2318 (class 1259 OID 16831)
+-- TOC entry 2319 (class 1259 OID 16935)
 -- Name: idx_unq_ligas_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10554,7 +10745,7 @@ CREATE UNIQUE INDEX idx_unq_ligas_descripcion ON tb_ligas USING btree (upper((li
 
 
 --
--- TOC entry 2328 (class 1259 OID 16832)
+-- TOC entry 2329 (class 1259 OID 16936)
 -- Name: pk_pruebas; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10562,7 +10753,7 @@ CREATE UNIQUE INDEX pk_pruebas ON tb_pruebas USING btree (pruebas_codigo);
 
 
 --
--- TOC entry 2454 (class 2620 OID 59117)
+-- TOC entry 2458 (class 2620 OID 16937)
 -- Name: sptrg_verify_usuario_code_change; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10570,7 +10761,7 @@ CREATE TRIGGER sptrg_verify_usuario_code_change BEFORE INSERT OR DELETE OR UPDAT
 
 
 --
--- TOC entry 2440 (class 2620 OID 16833)
+-- TOC entry 2441 (class 2620 OID 16938)
 -- Name: t__entrenadores_nivel; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10578,7 +10769,7 @@ CREATE TRIGGER t__entrenadores_nivel BEFORE INSERT OR UPDATE ON tb_entrenadores_
 
 
 --
--- TOC entry 2450 (class 2620 OID 16834)
+-- TOC entry 2457 (class 2620 OID 16939)
 -- Name: tb_unidad_medida; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10586,7 +10777,7 @@ CREATE TRIGGER tb_unidad_medida BEFORE INSERT OR UPDATE ON tb_unidad_medida FOR 
 
 
 --
--- TOC entry 2423 (class 2620 OID 16835)
+-- TOC entry 2424 (class 2620 OID 16940)
 -- Name: tr_app_categorias_values; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10594,7 +10785,7 @@ CREATE TRIGGER tr_app_categorias_values BEFORE INSERT OR UPDATE ON tb_app_catego
 
 
 --
--- TOC entry 2424 (class 2620 OID 16836)
+-- TOC entry 2425 (class 2620 OID 16941)
 -- Name: tr_app_pruebas_values; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10602,7 +10793,7 @@ CREATE TRIGGER tr_app_pruebas_values BEFORE INSERT OR UPDATE ON tb_app_pruebas_v
 
 
 --
--- TOC entry 2425 (class 2620 OID 16837)
+-- TOC entry 2426 (class 2620 OID 16942)
 -- Name: tr_atletas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10610,7 +10801,7 @@ CREATE TRIGGER tr_atletas BEFORE INSERT OR UPDATE ON tb_atletas FOR EACH ROW EXE
 
 
 --
--- TOC entry 2426 (class 2620 OID 16838)
+-- TOC entry 2427 (class 2620 OID 16943)
 -- Name: tr_atletas_carnets; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10618,7 +10809,7 @@ CREATE TRIGGER tr_atletas_carnets BEFORE INSERT OR UPDATE ON tb_atletas_carnets 
 
 
 --
--- TOC entry 2429 (class 2620 OID 16839)
+-- TOC entry 2430 (class 2620 OID 16944)
 -- Name: tr_atletas_resultados; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10626,7 +10817,7 @@ CREATE TRIGGER tr_atletas_resultados BEFORE INSERT OR UPDATE ON tb_atletas_resul
 
 
 --
--- TOC entry 2427 (class 2620 OID 16840)
+-- TOC entry 2428 (class 2620 OID 16945)
 -- Name: tr_atletas_resultados; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10634,7 +10825,7 @@ CREATE TRIGGER tr_atletas_resultados BEFORE INSERT OR UPDATE ON tb_atletas_resul
 
 
 --
--- TOC entry 2428 (class 2620 OID 16841)
+-- TOC entry 2429 (class 2620 OID 16946)
 -- Name: tr_atletas_resultados_detalle; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10642,7 +10833,7 @@ CREATE TRIGGER tr_atletas_resultados_detalle BEFORE INSERT OR UPDATE ON tb_atlet
 
 
 --
--- TOC entry 2430 (class 2620 OID 16842)
+-- TOC entry 2431 (class 2620 OID 16947)
 -- Name: tr_categorias; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10650,7 +10841,7 @@ CREATE TRIGGER tr_categorias BEFORE INSERT OR UPDATE ON tb_categorias FOR EACH R
 
 
 --
--- TOC entry 2431 (class 2620 OID 16843)
+-- TOC entry 2432 (class 2620 OID 16948)
 -- Name: tr_ciudades; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10658,7 +10849,7 @@ CREATE TRIGGER tr_ciudades BEFORE INSERT OR UPDATE ON tb_ciudades FOR EACH ROW E
 
 
 --
--- TOC entry 2432 (class 2620 OID 16844)
+-- TOC entry 2433 (class 2620 OID 16949)
 -- Name: tr_clubes; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10666,7 +10857,7 @@ CREATE TRIGGER tr_clubes BEFORE INSERT OR UPDATE ON tb_clubes FOR EACH ROW EXECU
 
 
 --
--- TOC entry 2433 (class 2620 OID 16845)
+-- TOC entry 2434 (class 2620 OID 16950)
 -- Name: tr_clubes_atletas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10674,7 +10865,7 @@ CREATE TRIGGER tr_clubes_atletas BEFORE INSERT OR UPDATE ON tb_clubes_atletas FO
 
 
 --
--- TOC entry 2434 (class 2620 OID 16846)
+-- TOC entry 2435 (class 2620 OID 16951)
 -- Name: tr_competencia_clasificacion; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10682,7 +10873,7 @@ CREATE TRIGGER tr_competencia_clasificacion BEFORE INSERT OR UPDATE ON tb_compet
 
 
 --
--- TOC entry 2435 (class 2620 OID 16847)
+-- TOC entry 2436 (class 2620 OID 16952)
 -- Name: tr_competencias; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10690,7 +10881,7 @@ CREATE TRIGGER tr_competencias BEFORE INSERT OR UPDATE ON tb_competencias FOR EA
 
 
 --
--- TOC entry 2436 (class 2620 OID 16848)
+-- TOC entry 2437 (class 2620 OID 16953)
 -- Name: tr_competencias_pruebas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10698,7 +10889,7 @@ CREATE TRIGGER tr_competencias_pruebas BEFORE INSERT OR UPDATE ON tb_competencia
 
 
 --
--- TOC entry 2437 (class 2620 OID 16849)
+-- TOC entry 2438 (class 2620 OID 16954)
 -- Name: tr_entidad; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10706,7 +10897,7 @@ CREATE TRIGGER tr_entidad BEFORE INSERT OR UPDATE ON tb_entidad FOR EACH ROW EXE
 
 
 --
--- TOC entry 2438 (class 2620 OID 16850)
+-- TOC entry 2439 (class 2620 OID 16955)
 -- Name: tr_entrenadores; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10714,7 +10905,7 @@ CREATE TRIGGER tr_entrenadores BEFORE INSERT OR UPDATE ON tb_entrenadores FOR EA
 
 
 --
--- TOC entry 2439 (class 2620 OID 16851)
+-- TOC entry 2440 (class 2620 OID 16956)
 -- Name: tr_entrenadores_atletas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10722,7 +10913,7 @@ CREATE TRIGGER tr_entrenadores_atletas BEFORE INSERT OR UPDATE ON tb_entrenadore
 
 
 --
--- TOC entry 2441 (class 2620 OID 16852)
+-- TOC entry 2442 (class 2620 OID 16957)
 -- Name: tr_ligas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10730,7 +10921,7 @@ CREATE TRIGGER tr_ligas BEFORE INSERT OR UPDATE ON tb_ligas FOR EACH ROW EXECUTE
 
 
 --
--- TOC entry 2442 (class 2620 OID 16853)
+-- TOC entry 2443 (class 2620 OID 16958)
 -- Name: tr_ligasclubes; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10738,7 +10929,7 @@ CREATE TRIGGER tr_ligasclubes BEFORE INSERT OR UPDATE ON tb_ligas_clubes FOR EAC
 
 
 --
--- TOC entry 2443 (class 2620 OID 16854)
+-- TOC entry 2444 (class 2620 OID 16959)
 -- Name: tr_paises; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10746,7 +10937,7 @@ CREATE TRIGGER tr_paises BEFORE INSERT OR UPDATE ON tb_paises FOR EACH ROW EXECU
 
 
 --
--- TOC entry 2444 (class 2620 OID 16855)
+-- TOC entry 2445 (class 2620 OID 16960)
 -- Name: tr_pruebas; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -10754,7 +10945,7 @@ CREATE TRIGGER tr_pruebas BEFORE INSERT OR UPDATE ON tb_pruebas FOR EACH ROW EXE
 
 
 --
--- TOC entry 2445 (class 2620 OID 16856)
+-- TOC entry 2446 (class 2620 OID 16961)
 -- Name: tr_pruebas_clasificacion; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10762,7 +10953,7 @@ CREATE TRIGGER tr_pruebas_clasificacion BEFORE INSERT OR UPDATE ON tb_pruebas_cl
 
 
 --
--- TOC entry 2446 (class 2620 OID 16857)
+-- TOC entry 2447 (class 2620 OID 16962)
 -- Name: tr_pruebas_detalle; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -10770,7 +10961,7 @@ CREATE TRIGGER tr_pruebas_detalle BEFORE INSERT OR UPDATE ON tb_pruebas_detalle 
 
 
 --
--- TOC entry 2447 (class 2620 OID 16858)
+-- TOC entry 2448 (class 2620 OID 16963)
 -- Name: tr_pruebas_tipo; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10778,7 +10969,7 @@ CREATE TRIGGER tr_pruebas_tipo BEFORE INSERT OR UPDATE ON tb_pruebas_tipo FOR EA
 
 
 --
--- TOC entry 2452 (class 2620 OID 25337)
+-- TOC entry 2449 (class 2620 OID 16964)
 -- Name: tr_records; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10786,7 +10977,7 @@ CREATE TRIGGER tr_records BEFORE INSERT OR UPDATE ON tb_records FOR EACH ROW EXE
 
 
 --
--- TOC entry 2453 (class 2620 OID 25338)
+-- TOC entry 2450 (class 2620 OID 16965)
 -- Name: tr_records_save; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10794,7 +10985,7 @@ CREATE TRIGGER tr_records_save BEFORE INSERT OR UPDATE ON tb_records FOR EACH RO
 
 
 --
--- TOC entry 2451 (class 2620 OID 25303)
+-- TOC entry 2451 (class 2620 OID 16966)
 -- Name: tr_records_tipo; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10802,7 +10993,7 @@ CREATE TRIGGER tr_records_tipo BEFORE INSERT OR UPDATE ON tb_records_tipo FOR EA
 
 
 --
--- TOC entry 2448 (class 2620 OID 16862)
+-- TOC entry 2452 (class 2620 OID 16967)
 -- Name: tr_regiones; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10810,7 +11001,7 @@ CREATE TRIGGER tr_regiones BEFORE INSERT OR UPDATE ON tb_regiones FOR EACH ROW E
 
 
 --
--- TOC entry 2456 (class 2620 OID 59141)
+-- TOC entry 2453 (class 2620 OID 16968)
 -- Name: tr_sys_perfil; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10818,7 +11009,7 @@ CREATE TRIGGER tr_sys_perfil BEFORE INSERT OR UPDATE ON tb_sys_perfil FOR EACH R
 
 
 --
--- TOC entry 2457 (class 2620 OID 59167)
+-- TOC entry 2454 (class 2620 OID 16969)
 -- Name: tr_sys_perfil_detalle; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10826,7 +11017,7 @@ CREATE TRIGGER tr_sys_perfil_detalle BEFORE INSERT OR UPDATE ON tb_sys_perfil_de
 
 
 --
--- TOC entry 2449 (class 2620 OID 16863)
+-- TOC entry 2455 (class 2620 OID 16970)
 -- Name: tr_sys_sistemas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10834,7 +11025,7 @@ CREATE TRIGGER tr_sys_sistemas BEFORE INSERT OR UPDATE ON tb_sys_sistemas FOR EA
 
 
 --
--- TOC entry 2458 (class 2620 OID 59193)
+-- TOC entry 2456 (class 2620 OID 16971)
 -- Name: tr_sys_usuario_perfiles; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10842,7 +11033,7 @@ CREATE TRIGGER tr_sys_usuario_perfiles BEFORE INSERT OR UPDATE ON tb_sys_usuario
 
 
 --
--- TOC entry 2455 (class 2620 OID 59118)
+-- TOC entry 2459 (class 2620 OID 16972)
 -- Name: tr_usuarios; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10850,7 +11041,7 @@ CREATE TRIGGER tr_usuarios BEFORE INSERT OR UPDATE ON tb_usuarios FOR EACH ROW E
 
 
 --
--- TOC entry 2415 (class 2606 OID 25316)
+-- TOC entry 2414 (class 2606 OID 16973)
 -- Name: categorias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10859,7 +11050,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2381 (class 2606 OID 16869)
+-- TOC entry 2382 (class 2606 OID 16978)
 -- Name: fk_app_pruebas_pruebas_clasificacion; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10868,7 +11059,7 @@ ALTER TABLE ONLY tb_app_pruebas_values
 
 
 --
--- TOC entry 2383 (class 2606 OID 16874)
+-- TOC entry 2384 (class 2606 OID 16983)
 -- Name: fk_atletas_carnets_atletas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10877,7 +11068,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2382 (class 2606 OID 16879)
+-- TOC entry 2383 (class 2606 OID 16988)
 -- Name: fk_atletas_pais; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10886,7 +11077,7 @@ ALTER TABLE ONLY tb_atletas
 
 
 --
--- TOC entry 2384 (class 2606 OID 16884)
+-- TOC entry 2385 (class 2606 OID 16993)
 -- Name: fk_atletas_resultados_atletas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10895,7 +11086,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2385 (class 2606 OID 16889)
+-- TOC entry 2386 (class 2606 OID 16998)
 -- Name: fk_atletas_resultados_competencias_pruebas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10904,7 +11095,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2386 (class 2606 OID 16894)
+-- TOC entry 2387 (class 2606 OID 17003)
 -- Name: fk_atletas_resultados_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10913,7 +11104,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle
 
 
 --
--- TOC entry 2389 (class 2606 OID 16899)
+-- TOC entry 2390 (class 2606 OID 17008)
 -- Name: fk_categorias_appcat; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10922,7 +11113,7 @@ ALTER TABLE ONLY tb_categorias
 
 
 --
--- TOC entry 2390 (class 2606 OID 16904)
+-- TOC entry 2391 (class 2606 OID 17013)
 -- Name: fk_ciudad_pais; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10931,7 +11122,7 @@ ALTER TABLE ONLY tb_ciudades
 
 
 --
--- TOC entry 2391 (class 2606 OID 16909)
+-- TOC entry 2392 (class 2606 OID 17018)
 -- Name: fk_clubesatletas_atletas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10940,7 +11131,7 @@ ALTER TABLE ONLY tb_clubes_atletas
 
 
 --
--- TOC entry 2392 (class 2606 OID 16914)
+-- TOC entry 2393 (class 2606 OID 17023)
 -- Name: fk_clubesatletas_clubes; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10949,7 +11140,7 @@ ALTER TABLE ONLY tb_clubes_atletas
 
 
 --
--- TOC entry 2393 (class 2606 OID 16919)
+-- TOC entry 2394 (class 2606 OID 17028)
 -- Name: fk_competencias_categorias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10958,7 +11149,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2394 (class 2606 OID 16924)
+-- TOC entry 2395 (class 2606 OID 17033)
 -- Name: fk_competencias_ciudades_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10967,7 +11158,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2395 (class 2606 OID 16929)
+-- TOC entry 2396 (class 2606 OID 17038)
 -- Name: fk_competencias_competencia_tipo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10976,7 +11167,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2396 (class 2606 OID 16934)
+-- TOC entry 2397 (class 2606 OID 17043)
 -- Name: fk_competencias_paises_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10985,7 +11176,16 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2397 (class 2606 OID 16939)
+-- TOC entry 2400 (class 2606 OID 17153)
+-- Name: fk_competencias_pruebas_competencias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
+--
+
+ALTER TABLE ONLY tb_competencias_pruebas
+    ADD CONSTRAINT fk_competencias_pruebas_competencias_codigo FOREIGN KEY (competencias_codigo) REFERENCES tb_competencias(competencias_codigo);
+
+
+--
+-- TOC entry 2398 (class 2606 OID 17048)
 -- Name: fk_competencias_pruebas_origen_id; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -10994,7 +11194,16 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2400 (class 2606 OID 16944)
+-- TOC entry 2399 (class 2606 OID 17158)
+-- Name: fk_competencias_pruebas_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
+--
+
+ALTER TABLE ONLY tb_competencias_pruebas
+    ADD CONSTRAINT fk_competencias_pruebas_pruebas_codigo FOREIGN KEY (pruebas_codigo) REFERENCES tb_pruebas(pruebas_codigo);
+
+
+--
+-- TOC entry 2401 (class 2606 OID 17053)
 -- Name: fk_entrenadores_nivel; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11003,7 +11212,7 @@ ALTER TABLE ONLY tb_entrenadores
 
 
 --
--- TOC entry 2401 (class 2606 OID 16949)
+-- TOC entry 2402 (class 2606 OID 17058)
 -- Name: fk_entrenadoresatletas_atletas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11012,7 +11221,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas
 
 
 --
--- TOC entry 2402 (class 2606 OID 16954)
+-- TOC entry 2403 (class 2606 OID 17063)
 -- Name: fk_entrenadoresatletas_entrenadores; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11021,7 +11230,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas
 
 
 --
--- TOC entry 2403 (class 2606 OID 16959)
+-- TOC entry 2404 (class 2606 OID 17068)
 -- Name: fk_ligasclubes_clubes; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11030,7 +11239,7 @@ ALTER TABLE ONLY tb_ligas_clubes
 
 
 --
--- TOC entry 2404 (class 2606 OID 16964)
+-- TOC entry 2405 (class 2606 OID 17073)
 -- Name: fk_ligasclubes_ligas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11039,7 +11248,7 @@ ALTER TABLE ONLY tb_ligas_clubes
 
 
 --
--- TOC entry 2413 (class 2606 OID 16969)
+-- TOC entry 2418 (class 2606 OID 17078)
 -- Name: fk_menu_parent; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11048,7 +11257,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2414 (class 2606 OID 16974)
+-- TOC entry 2419 (class 2606 OID 17083)
 -- Name: fk_menu_sistemas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11057,7 +11266,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2405 (class 2606 OID 16979)
+-- TOC entry 2406 (class 2606 OID 17088)
 -- Name: fk_paises_regiones; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11066,7 +11275,7 @@ ALTER TABLE ONLY tb_paises
 
 
 --
--- TOC entry 2420 (class 2606 OID 59162)
+-- TOC entry 2421 (class 2606 OID 17093)
 -- Name: fk_perfdet_perfil; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11075,7 +11284,7 @@ ALTER TABLE ONLY tb_sys_perfil_detalle
 
 
 --
--- TOC entry 2419 (class 2606 OID 59135)
+-- TOC entry 2420 (class 2606 OID 17098)
 -- Name: fk_perfil_sistema; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11084,7 +11293,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2406 (class 2606 OID 16984)
+-- TOC entry 2407 (class 2606 OID 17103)
 -- Name: fk_pruebas_apppruebas; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11093,7 +11302,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2409 (class 2606 OID 16989)
+-- TOC entry 2410 (class 2606 OID 17108)
 -- Name: fk_pruebas_clasificacion_pruebas_tipo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11102,7 +11311,7 @@ ALTER TABLE ONLY tb_pruebas_clasificacion
 
 
 --
--- TOC entry 2410 (class 2606 OID 16994)
+-- TOC entry 2411 (class 2606 OID 17113)
 -- Name: fk_pruebas_clasificacion_um; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11111,7 +11320,7 @@ ALTER TABLE ONLY tb_pruebas_clasificacion
 
 
 --
--- TOC entry 2416 (class 2606 OID 25321)
+-- TOC entry 2415 (class 2606 OID 17118)
 -- Name: fk_record_id_origen; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11120,7 +11329,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2417 (class 2606 OID 25326)
+-- TOC entry 2416 (class 2606 OID 17123)
 -- Name: fk_records_atletas_resultados; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11129,7 +11338,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2418 (class 2606 OID 25331)
+-- TOC entry 2417 (class 2606 OID 17128)
 -- Name: fk_records_tipo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11138,7 +11347,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2421 (class 2606 OID 59181)
+-- TOC entry 2422 (class 2606 OID 17133)
 -- Name: fk_usuarioperfiles; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11147,7 +11356,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles
 
 
 --
--- TOC entry 2422 (class 2606 OID 59186)
+-- TOC entry 2423 (class 2606 OID 17138)
 -- Name: fk_usuarioperfiles_usuario; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11156,7 +11365,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles
 
 
 --
--- TOC entry 2387 (class 2606 OID 17014)
+-- TOC entry 2388 (class 2606 OID 17143)
 -- Name: tb_atletas_resultados_competencias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11165,7 +11374,7 @@ ALTER TABLE ONLY tb_atletas_resultados_old
 
 
 --
--- TOC entry 2388 (class 2606 OID 17019)
+-- TOC entry 2389 (class 2606 OID 17148)
 -- Name: tb_atletas_resultados_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11174,25 +11383,7 @@ ALTER TABLE ONLY tb_atletas_resultados_old
 
 
 --
--- TOC entry 2398 (class 2606 OID 17024)
--- Name: tb_competencias_pruebas_competencias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
---
-
-ALTER TABLE ONLY tb_competencias_pruebas
-    ADD CONSTRAINT tb_competencias_pruebas_competencias_codigo FOREIGN KEY (competencias_codigo) REFERENCES tb_competencias(competencias_codigo);
-
-
---
--- TOC entry 2399 (class 2606 OID 17029)
--- Name: tb_competencias_pruebas_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
---
-
-ALTER TABLE ONLY tb_competencias_pruebas
-    ADD CONSTRAINT tb_competencias_pruebas_pruebas_codigo FOREIGN KEY (pruebas_codigo) REFERENCES tb_pruebas(pruebas_codigo);
-
-
---
--- TOC entry 2407 (class 2606 OID 17034)
+-- TOC entry 2408 (class 2606 OID 17163)
 -- Name: tb_pruebas_categorias_codigo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11201,7 +11392,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2411 (class 2606 OID 17039)
+-- TOC entry 2412 (class 2606 OID 17168)
 -- Name: tb_pruebas_detalle_prueba_detalle_codigo; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11210,7 +11401,7 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2412 (class 2606 OID 17044)
+-- TOC entry 2413 (class 2606 OID 17173)
 -- Name: tb_pruebas_detalle_pruebas_codigo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11219,7 +11410,7 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2408 (class 2606 OID 17049)
+-- TOC entry 2409 (class 2606 OID 17178)
 -- Name: tb_pruebas_pruebas_record_hasta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11228,7 +11419,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2625 (class 0 OID 0)
+-- TOC entry 2626 (class 0 OID 0)
 -- Dependencies: 6
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
@@ -11239,7 +11430,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2016-01-24 20:06:05 PET
+-- Completed on 2016-02-26 22:15:52 PET
 
 --
 -- PostgreSQL database dump complete
