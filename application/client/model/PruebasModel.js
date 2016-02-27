@@ -9,6 +9,7 @@
 isc.RestDataSource.create({
     ID: "mdl_pruebas",
     dataFormat: "json",
+    showPrompt: true,
     fields: [
         {name: "pruebas_codigo", title: 'Codigo', primaryKey: "true", required: true},
         {name: "pruebas_descripcion", title: "Descripcion", required: true},
@@ -59,7 +60,9 @@ isc.RestDataSource.create({
      * POST.
      */
     transformRequest: function(dsRequest) {
-        dsRequest.blocking = true;
+        // Se desactiva se usa mejores metodos para controlar el problema de la lectura asincrona.
+        //dsRequest.blocking = true;
+
         var data = this.Super("transformRequest", arguments);
         // Si esxiste criteria y se define que proviene de un advanced filter y la operacion es fetch,
         // construimos un objeto JSON serializado como texto para que el lado servidor lo interprete correctamente.

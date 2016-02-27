@@ -8,8 +8,9 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_paises",
+    showPrompt: true,
     dataFormat: "json",
-    cacheAllData: true, // Son datos pequeños hay que evitar releer
+ //   cacheAllData: true, // Son datos pequeños hay que evitar releer
     fields: [
         {name: "paises_codigo", title: "Codigo", primaryKey: "true", required: true},
         {name: "paises_descripcion", title: "Descripcion", required: true,

@@ -9,6 +9,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_records",
+    showPrompt: true,
     dataFormat: "json",
     noNullUpdates: true,
     // sendExtraFields: true,

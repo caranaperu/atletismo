@@ -9,13 +9,14 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_entrenadores",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "entrenadores_codigo", primaryKey: "true", title: "Codigo", required: true},
         {name: "entrenadores_ap_paterno", title: "Apellido Paterno", required: true, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
         {name: "entrenadores_ap_materno", title: "Apellido Materno", required: true, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
         {name: "entrenadores_nombres", title: "Nombres", required: true, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
-        {name: "entrenadores_nombre_completo", title: "Apellidos,Nombres", required: false, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
+        {name: "entrenadores_nombre_completo", title: "Apellidos,Nombres", required: false, validators: [{type: "regexp", expression: glb_RE_onlyValidTextWithComma}]},
         {name: "entrenadores_nivel_codigo", title: "Nivel", required: true, foreignKey: "mdl_entrenadores_nivel.entrenadores_nivel_codigo"}
     ],
     fetchDataURL: glb_dataUrl + 'entrenadoresController?op=fetch&libid=SmartClient',

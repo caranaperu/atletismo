@@ -9,6 +9,7 @@
 isc.RestDataSource.create({
     ID: "mdl_apppruebas",
     dataFormat: "json",
+    showPrompt: true,
     //   cacheAllData: true, // Son datos pequeños y en este caso fijos hay que evitar releer
     fields: [
         {name: "apppruebas_codigo", title: 'Codigo', primaryKey: "true", required: true},

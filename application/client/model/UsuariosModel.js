@@ -9,7 +9,7 @@
 isc.RestDataSource.create({
     ID: "mdl_usuarios",
     dataFormat: "json",
-    cacheAllData: true,
+    showPrompt: true,
     fields: [
         {name: "usuarios_id", primaryKey: "true"},
         {name: "usuarios_code", title: 'Codigo', required: true, validators: [{type: "regexp", expression: glb_RE_alpha_dash}]},

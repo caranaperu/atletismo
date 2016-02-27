@@ -9,6 +9,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_competenciasresultados",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "atletas_resultados_id"},

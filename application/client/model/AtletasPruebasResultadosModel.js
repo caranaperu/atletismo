@@ -9,6 +9,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_atletaspruebas_resultados",
+    showPrompt: true,
     dataFormat: "json",
     noNullUpdates: true,
     sendExtraFields: false,
@@ -18,9 +19,6 @@ isc.RestDataSource.create({
         {name: "atletas_codigo", title: 'Atleta', foreignKey: "mdl_atletas.atletas_codigo", required: true},
         {name: "competencias_codigo", title: "Competencia", foreignKey: "mdl_competencias.competencias_codigo", required: true},
         {name: "pruebas_codigo", title: "Prueba", foreignKey: "mdl_pruebas.pruebas_codigo", required: true},
-        {name: "competencias_pruebas_origen_combinada", type: 'boolean', getFieldValue: function(r, v, f, fn) {
-                return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
-            }},
         {name: "competencias_pruebas_fecha", title: "Fecha", type: 'date', required: true},
         {name: "competencias_pruebas_viento", title: "Viento", type: 'double'},
         {name: "competencias_pruebas_tipo_serie", title: "Tipo Serie",
@@ -28,29 +26,29 @@ isc.RestDataSource.create({
             required: true},
         {name: "competencias_pruebas_nro_serie", title: "Nro.Serie", type: 'integer',
             validators: [{type: "integerRange", min: 1, max: 20}],
-             nullReplacementValue: null},
-        {name: "competencias_pruebas_anemometro", title: 'Anemometro?', type: 'boolean', getFieldValue: function(r, v, f, fn) {
+            nullReplacementValue: null},
+        {name: "competencias_pruebas_anemometro", title: 'Anemometro?', type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }, required: true},
-        {name: "competencias_pruebas_material_reglamentario", title: 'Material Regl.?', type: 'boolean', getFieldValue: function(r, v, f, fn) {
+        {name: "competencias_pruebas_material_reglamentario", title: 'Material Regl.?', type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }, required: true},
-        {name: "competencias_pruebas_manual", title: 'Manual?', type: 'boolean', getFieldValue: function(r, v, f, fn) {
+        {name: "competencias_pruebas_manual", title: 'Manual?', type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }, required: true},
         /*    {name: "competencias_pruebas_origen_combinada", type: 'boolean', getFieldValue: function(r, v, f, fn) {
-                return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
-            }, required: true},*/
+         return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
+         }, required: true},*/
         {name: "competencias_pruebas_observaciones", title: "Observaciones", validators: [{type: "lengthRange", max: 250}]},
         {name: "atletas_resultados_resultado", title: 'Marca', required: true},
         {name: "atletas_resultados_puntos", title: "Puntos", type: 'integer'},
         {name: "atletas_resultados_puesto", title: "Puesto", type: 'integer'},
         {name: "versionId", type: 'integer', nullReplacementValue: null},
         // Virtuales producto de un join
-        {name: "ciudades_altura", title: 'Altura?', type: 'boolean', getFieldValue: function(r, v, f, fn) {
+        {name: "ciudades_altura", title: 'Altura?', type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }},
-        {name: "obs", title: 'Obs.', type: 'boolean', getFieldValue: function(r, v, f, fn) {
+        {name: "obs", title: 'Obs.', type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }},
         // Solo para efectos de GUI no se grabaran
@@ -61,13 +59,17 @@ isc.RestDataSource.create({
         {name: "paises_descripcion", title: 'Pais'},
         {name: "ciudades_descripcion", title: ' Ciudad'},
         {name: "categorias_codigo", title: 'Categoria'},
-        {name: "competencias_pruebas_id"}
+        {name: "competencias_pruebas_id"},
+        {name: "atletas_sexo"},
+        {name: "apppruebas_multiple", type: 'boolean', getFieldValue: function (r, v, f, fn) {
+                return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
+            }},
     ],
     /**
      * Normalizador de valores booleanos ya que el backend pude devolver de diversas formas
      * segun la base de datos.
      */
-    _getBooleanFieldValue: function(value) {
+    _getBooleanFieldValue: function (value) {
         //  console.log(value);
         if (value !== 't' && value !== 'T' && value !== 'Y' && value !== 'y' && value !== 'TRUE' && value !== 'true' && value !== true) {
             return false;
@@ -90,7 +92,7 @@ isc.RestDataSource.create({
      * Caso especial para generar el JSON de un advanced criteria para ser pasada como parte del
      * POST.
      */
-    transformRequest: function(dsRequest) {
+    transformRequest: function (dsRequest) {
         var data = this.Super("transformRequest", arguments);
         // Si esxiste criteria y se define que proviene de un advanced filter y la operacion es fetch,
         // construimos un objeto JSON serializado como texto para que el lado servidor lo interprete correctamente.

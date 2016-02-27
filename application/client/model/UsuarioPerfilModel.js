@@ -12,6 +12,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_usuario_perfil",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "usuario_perfil_id", primaryKey: "true", canEdit: false},

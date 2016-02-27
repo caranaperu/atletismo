@@ -9,6 +9,7 @@
 isc.RestDataSource.create({
     ID: "mdl_pruebas_clasificacion",
     dataFormat: "json",
+    showPrompt: true,
     //  cacheAllData: true, // Es necesario en diversos lugares de diversas formas , hay que obligar a leeer
     fields: [
         {name: "pruebas_clasificacion_codigo", primaryKey: "true", required: true},
@@ -32,9 +33,11 @@ isc.RestDataSource.create({
     /**
      * Solo para hacerla sincronica.
      * POST.
+     *
+     * @TODO: Si se resuelve con el dataArrived del control eliminar esto.
      */
     transformRequest: function(dsRequest) {
-        dsRequest.blocking = true;
+        // dsRequest.blocking = true;
         return  this.Super("transformRequest", arguments);
     }
 });

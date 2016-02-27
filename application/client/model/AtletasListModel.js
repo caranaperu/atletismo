@@ -11,6 +11,7 @@
 isc.RestDataSource.create({
     ID: "mdl_atletas_list",
     dataFormat: "json",
+    showPrompt: true,
     fields: [
         {name: "atletas_codigo", primaryKey: "true", title: "Codigo"},
         {name: "atletas_nombre_completo", title: "Apellidos,Nombres"},

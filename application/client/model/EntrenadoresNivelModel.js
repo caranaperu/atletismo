@@ -8,6 +8,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_entrenadores_nivel",
+    showPrompt: true,
     dataFormat: "json",
     cacheAllData: true, // Son datos pequeños hay que evitar releer
     fields: [

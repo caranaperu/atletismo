@@ -8,13 +8,14 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_competencias",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "competencias_codigo", title: "Codigo", primaryKey: "true", required: true},
         {name: "competencias_descripcion", title: "Descripcion", required: true,
             validators: [{type: "regexp", expression: glb_RE_onlyValidText}]
         },
-        {name: "competencia_tipo_codigo", title: "Tipo", required: true},
+        {name: "competencia_tipo_codigo", title: "Tipo", foreignKey:"mdl_competencia_tipo.competencia_tipo_codigo",required: true},
         {name: "paises_codigo", title: "Pais", foreignKey: "mdl_paises.paises_codigo", required: true},
         {name: "ciudades_codigo", title: 'Ciudad', foreignKey: "mdl_ciudades.ciudades_codigo", required: true},
         {name: "categorias_codigo", title: 'Categoria', foreignKey: "mdl_categorias.categorias_codigo", required: true},

@@ -12,6 +12,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_atletaspruebas_resultados_for_records",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "atletas_resultados_id", primaryKey: "true", type: 'integer'},

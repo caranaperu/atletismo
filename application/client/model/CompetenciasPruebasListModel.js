@@ -11,6 +11,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_competencias_pruebas_list",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "pruebas_codigo", title: 'Codigo', primaryKey: "true", required: true},
@@ -56,7 +57,7 @@ isc.RestDataSource.create({
      * POST.
      */
     transformRequest: function(dsRequest) {
-        dsRequest.blocking = true;
+     //   dsRequest.blocking = true;
         var data = this.Super("transformRequest", arguments);
         // Si esxiste criteria y se define que proviene de un advanced filter y la operacion es fetch,
         // construimos un objeto JSON serializado como texto para que el lado servidor lo interprete correctamente.

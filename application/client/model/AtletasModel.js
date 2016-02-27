@@ -9,13 +9,14 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_atletas",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "atletas_codigo", primaryKey: "true", title: "Codigo", mask: '>AAAAAAAA', required: true},
         {name: "atletas_ap_paterno", title: "Apellido Paterno", required: true, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
         {name: "atletas_ap_materno", title: "Apellido Materno", required: true, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
         {name: "atletas_nombres", title: "Nombres", required: true, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
-        {name: "atletas_nombre_completo", title: "Apellidos,Nombres", required: false, validators: [{type: "regexp", expression: glb_RE_onlyValidText}]},
+        {name: "atletas_nombre_completo", title: "Apellidos,Nombres", required: false, validators: [{type: "regexp", expression: glb_RE_onlyValidTextWithComma}]},
         {name: "paises_codigo", title: "Pais", required: true, foreignKey: "mdl_paises.paises_codigo"},
         {name: "atletas_sexo", title: "Sexo", valueMap: ["M", "F"], required: true},
         {name: "atletas_nro_documento", title: "D.N.I", mask: '########', required: true, validators: [{type: "lengthRange", min: 8, max: 8}]},

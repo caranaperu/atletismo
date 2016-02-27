@@ -10,6 +10,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_competencias_pruebas",
+    showPrompt: true,
     dataFormat: "json",
     noNullUpdates: true,
     sendExtraFields: false,

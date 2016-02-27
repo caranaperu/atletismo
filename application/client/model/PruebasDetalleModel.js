@@ -9,6 +9,7 @@
 isc.RestDataSource.create({
     ID: "mdl_pruebasdetalle",
     dataFormat: "json",
+    showPrompt: true,
     fields: [
         {name: "pruebas_detalle_id", primaryKey: "true", type: 'integer'},
         {name: "pruebas_codigo", required: true, hidden: true, },

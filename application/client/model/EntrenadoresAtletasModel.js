@@ -8,6 +8,7 @@
  */
 isc.RestDataSource.create({
     ID: "mdl_entrenadoresatletas",
+    showPrompt: true,
     dataFormat: "json",
     fields: [
         {name: "entrenadoresatletas_id", primaryKey: "true"},
