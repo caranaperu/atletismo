@@ -88,6 +88,16 @@ isc.DynamicFormExt.addProperties({
         //  console.log('implementame si deseas que haga algo');
     },
     /**
+     * Metodo a ser implementado e nel caso que se requiera pre procesar algunos campos a editar
+     * este metodo sera llamado previo a que los valores originales son cargados a la forma ,
+     * dando oportunidad de modificar o armar campos especiales.
+     *
+     * @param Object fields conteniendo un record con los datos.
+     */
+    preSetFieldsToEdit: function(fields) {
+        //  console.log('implementame si deseas que haga algo');
+    },
+    /**
      * Metodo a ser implementado e nel caso que se requiera procesar algunos campos a editar
      * este metodo sera llamado luego de que los valores originales son cargados a la forma ,
      * dando oportunidad de modificar o armar campos especiales.
