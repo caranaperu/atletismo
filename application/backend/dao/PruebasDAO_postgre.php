@@ -100,7 +100,7 @@ class PruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
                 $sql .= ' where pr.pruebas_codigo not in (select pruebas_detalle_prueba_codigo from tb_pruebas_detalle)';
             }
         }
-        //echo $sql;
+ //       echo $sql;
 
         if (isset($constraints)) {
             $orderby = $constraints->getSortFieldsAsString();

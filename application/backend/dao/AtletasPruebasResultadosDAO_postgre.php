@@ -42,7 +42,6 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                 '\'' . $record->get_atletas_codigo() . '\'::character varying,' .
                 '\'' . $record->get_competencias_codigo() . '\'::character varying,' .
                 '\'' . $record->get_pruebas_codigo() . '\'::character varying,' .
-                '\'' . $record->get_competencias_pruebas_origen_combinada() . '\'::boolean,' .
                 '\'' . $record->get_competencias_pruebas_fecha() . '\'::date,' .
                 ($record->get_competencias_pruebas_viento() == null ? 'null' : $record->get_competencias_pruebas_viento()) . '::numeric ,' .
                 '\'' . $record->get_competencias_pruebas_tipo_serie() . '\'::character varying,' .
@@ -92,7 +91,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                     'order by apppruebas_descripcion';
         } else if ($subOperation == 'fetchForRecords') {
             // Aqui solo se devolveran las pruebas genericas de uno o mas atletas , se espera como filto un atleta y
-            // una prueba para una seleccion afinada.
+            // una prueba para una seleccion afinada. Se retiran las pruebas con viento ilegal
             $where = $constraints->getFilterFieldsAsString();
             if(strlen($where) > 0) {
                 $where = str_replace('"atletas_codigo"', 'eatl.atletas_codigo', $where);
@@ -132,11 +131,12 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
 
         } else {
             if ($subOperation == 'fetchJoined') {
-                $sql = 'select * from (select atletas_resultados_id,cp.pruebas_codigo,eatl.atletas_codigo,atletas_nombre_completo,pr.pruebas_descripcion,cp.competencias_pruebas_tipo_serie,' .
+                $sql = //'select * from ('.
+                         'select atletas_resultados_id,cp.pruebas_codigo,eatl.atletas_codigo,atletas_nombre_completo,pr.pruebas_descripcion,cp.competencias_pruebas_tipo_serie,' .
                         'cp.competencias_pruebas_nro_serie,cp.competencias_codigo,' .
                         '(case when apppruebas_viento_individual = TRUE THEN eatl.atletas_resultados_viento ELSE competencias_pruebas_viento END) as competencias_pruebas_viento,' .
                         'atletas_resultados_puesto,competencias_pruebas_manual,' .
-                        'competencias_pruebas_origen_combinada,co.categorias_codigo,competencias_pruebas_material_reglamentario,competencias_pruebas_anemometro,' .
+                        'apppruebas_multiple,co.categorias_codigo,competencias_pruebas_material_reglamentario,competencias_pruebas_anemometro,' .
                         'co.competencias_descripcion,ciudades_descripcion,paises_descripcion,atl.atletas_sexo,ciudades_altura,competencias_pruebas_observaciones,atletas_resultados_protected,' .
                         'competencias_pruebas_fecha,atletas_resultados_resultado,atletas_resultados_puntos,' .
                         '(case when competencias_pruebas_tipo_serie IN (\'SU\',\'FI\') then competencias_pruebas_tipo_serie else (competencias_pruebas_tipo_serie || \'-\' || competencias_pruebas_nro_serie) end) as serie,' .
@@ -149,7 +149,8 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                         'inner join tb_app_pruebas_values pv on pv.apppruebas_codigo = pr.pruebas_generica_codigo ' .
                         'inner join tb_competencias co on co.competencias_codigo = cp.competencias_codigo ' .
                         'inner join tb_ciudades ciu on ciu.ciudades_codigo = co.ciudades_codigo ' .
-                        'inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo ) answer ';
+                        'inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo ';
+                       // . ' ) answer ';
             } else if ($subOperation == 'fetchAtletasResultadoPrueba') {
                 // Devuelve los datos de una tleta para una especifica prueba , si la prueba es null retornara todos
                 // sus resultados.
@@ -159,7 +160,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
             } else {
                 $sql = 'select atletas_resultados_id, atletas_codigo, competencias_codigo, pruebas_codigo,'
                         . 'atletas_resultados_viento, atletas_resultados_puesto, atletas_resultados_manual,'
-                        . 'competencias_pruebas_origen_combinada, competencias_pruebas_fecha, competencias_pruebas_viento,'
+                        . 'competencias_pruebas_fecha, competencias_pruebas_viento,'
                         . 'competencias_pruebas_tipo_serie, competencias_pruebas_nro_serie, competencias_pruebas_anemometro,'
                         . 'competencias_pruebas_material_reglamentario, competencias_pruebas_manual, competencias_pruebas_observaciones,'
                         . 'atletas_resultados_resultado, atletas_resultados_puntos, '
@@ -203,7 +204,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                 if (strpos($sql, 'where') !== false) {
                     $sql = str_replace('where', 'where competencias_pruebas_origen_combinada=FALSE and', $sql);
                 } else {
-                    $sql = str_replace('answer', 'answer where competencias_pruebas_origen_combinada=FALSE', $sql);
+                    $sql .= ' where competencias_pruebas_origen_combinada=FALSE';
                 }
             }
 
@@ -216,7 +217,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
             }
         }
         $sql = str_replace('like', 'ilike', $sql);
-        //  echo $sql;
+          echo $sql;
         return $sql;
     }
 
@@ -236,7 +237,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                 'cp.competencias_pruebas_nro_serie,cp.competencias_codigo,' .
                 '(case when apppruebas_viento_individual = TRUE THEN eatl.atletas_resultados_viento ELSE competencias_pruebas_viento END) as competencias_pruebas_viento,' .
                 'atletas_resultados_puesto,competencias_pruebas_manual,' .
-                'atletas_resultados_puntos,competencias_pruebas_origen_combinada,competencias_pruebas_material_reglamentario,' .
+                'atletas_resultados_puntos,competencias_pruebas_material_reglamentario,' .
                 'competencias_pruebas_observaciones,atletas_resultados_protected,competencias_pruebas_fecha,atletas_resultados_resultado,' .
                 'eatl.activo,eatl.xmin as "versionId" ' .
                 'from  tb_atletas_resultados eatl ' .
@@ -258,7 +259,6 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                 '\'' . $record->get_atletas_codigo() . '\'::character varying,' .
                 '\'' . $record->get_competencias_codigo() . '\'::character varying,' .
                 '\'' . $record->get_pruebas_codigo() . '\'::character varying,' .
-                '\'' . $record->get_competencias_pruebas_origen_combinada() . '\'::boolean,' .
                 '\'' . $record->get_competencias_pruebas_fecha() . '\'::date,' .
                 ($record->get_competencias_pruebas_viento() == null ? 'null' : $record->get_competencias_pruebas_viento()) . '::numeric ,' .
                 '\'' . $record->get_competencias_pruebas_tipo_serie() . '\'::character varying,' .

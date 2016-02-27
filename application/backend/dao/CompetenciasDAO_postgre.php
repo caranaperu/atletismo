@@ -36,19 +36,19 @@ class CompetenciasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postg
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  CompetenciasModel  */
-        $sql = 'insert into tb_competencias (competencias_codigo,competencias_descripcion,competencia_tipo_codigo,categorias_codigo,' .
-                'paises_codigo,ciudades_codigo,competencias_fecha_inicio,competencias_fecha_final,competencias_clasificacion,activo,usuario) values(\'' .
-                $record->get_competencias_codigo() . '\',\'' .
-                $record->get_competencias_descripcion() . '\',\'' .
-                $record->get_competencia_tipo_codigo() . '\',\'' .
-                $record->get_categorias_codigo() . '\',\'' .
-                $record->get_paises_codigo() . '\',\'' .
-                $record->get_ciudades_codigo() . '\',\'' .
-                $record->get_competencias_fecha_inicio() . '\',\'' .
-                $record->get_competencias_fecha_final() . '\',\'' .
-                $record->get_competencias_clasificacion() . '\',\'' .
-                $record->getActivo() . '\',\'' .
-                $record->getUsuario() . '\')';
+        $sql = 'select sp_competencias_save_record(' .
+                '\'' . $record->get_competencias_codigo() . '\'::character varying,' .
+                '\'' . $record->get_competencias_descripcion() . '\'::character varying,' .
+                '\'' . $record->get_competencia_tipo_codigo() . '\'::character varying,' .
+                '\'' . $record->get_categorias_codigo() . '\'::character varying,' .
+                '\'' . $record->get_paises_codigo() . '\'::character varying,' .
+                '\'' . $record->get_ciudades_codigo() . '\'::character varying,' .
+                '\'' . $record->get_competencias_fecha_inicio() . '\'::date,' .
+                '\'' . $record->get_competencias_fecha_final() . '\'::date,' .
+                '\'' . $record->get_competencias_clasificacion() . '\'::character varying,' .
+                '\'' . $record->getActivo() . '\'::boolean,' .
+                '\'' . $record->getUsuario() . '\'::character varying,' .
+                'null::integer,0::bit)';
         return $sql;
     }
 
@@ -123,18 +123,19 @@ class CompetenciasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postg
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
         /* @var $record  CompetenciasModel  */
-        $sql = 'update tb_competencias set competencias_codigo=\'' . $record->get_competencias_codigo() . '\',' .
-                'competencias_descripcion=\'' . $record->get_competencias_descripcion() . '\',' .
-                'competencia_tipo_codigo=\'' . $record->get_competencia_tipo_codigo() . '\',' .
-                'categorias_codigo=\'' . $record->get_categorias_codigo() . '\',' .
-                'paises_codigo=\'' . $record->get_paises_codigo() . '\',' .
-                'ciudades_codigo=\'' . $record->get_ciudades_codigo() . '\',' .
-                'competencias_fecha_inicio=\'' . $record->get_competencias_fecha_inicio() . '\',' .
-                'competencias_fecha_final=\'' . $record->get_competencias_fecha_final() . '\',' .
-                'competencias_clasificacion=\'' . $record->get_competencias_clasificacion() . '\',' .
-                'activo=\'' . $record->getActivo() . '\',' .
-                'usuario_mod=\'' . $record->get_Usuario_mod() . '\'' .
-                ' where "competencias_codigo" = \'' . $record->get_competencias_codigo() . '\'  and xmin =' . $record->getVersionId();
+        $sql = 'select * from (select sp_competencias_save_record(' .
+                '\'' . $record->get_competencias_codigo() . '\'::character varying,' .
+                '\'' . $record->get_competencias_descripcion() . '\'::character varying,' .
+                '\'' . $record->get_competencia_tipo_codigo() . '\'::character varying,' .
+                '\'' . $record->get_categorias_codigo() . '\'::character varying,' .
+                '\'' . $record->get_paises_codigo() . '\'::character varying,' .
+                '\'' . $record->get_ciudades_codigo() . '\'::character varying,' .
+                '\'' . $record->get_competencias_fecha_inicio() . '\'::date,' .
+                '\'' . $record->get_competencias_fecha_final() . '\'::date,' .
+                '\'' . $record->get_competencias_clasificacion() . '\'::character varying,' .
+                '\'' . $record->getActivo() . '\'::boolean,' .
+                '\'' . $record->getUsuario() . '\'::character varying,' .
+                $record->getVersionId() . '::integer,1::bit)  as insupd) as ans where insupd is not null;';
 
         return $sql;
     }

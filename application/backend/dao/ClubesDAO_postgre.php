@@ -26,6 +26,7 @@ class ClubesDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
 
     /**
      * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * @todo DELETE ON CASCADE
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'delete from tb_clubes where clubes_codigo = \'' . $id . '\'  and xmin =' . $versionId;
