@@ -42,6 +42,12 @@ var glb_photoFemaleUrl = glb_photoUrl + "/user_female.png"
 var glb_RE_onlyValidText = '^[A-Za-z0-9][A-Za-z0-9 ._\/-ÁÉÍÓÚáéíóuñÑ]*[A-Za-z0-9.]$';
 
 /**
+ * @cfg {String} glb_RE_onlyValidText
+ * Define la expresion regular para marcaidaciones de texto marcaido
+ */
+var glb_RE_onlyValidTextWithComma = '^[A-Za-z0-9][A-Za-z0-9 ._\/-ÁÉÍÓÚáéíóuñÑ,]*[A-Za-z0-9.]$';
+
+/**
  * @cfg {String} glb_MSK_phone
  * Define la mascara para los telefonos del sistema
  */
@@ -76,7 +82,7 @@ var glb_systemident = 'ATLETISMO';
 /* @cfg {String} glb_reportServerUrl
  * Define el url basico del  sevidor de reportes
  */
-var glb_reportServerUrl = 'http://192.168.1.24:8080/jasperserver';
+var glb_reportServerUrl = 'http://192.168.1.42:8080/jasperserver';
 
 var glb_reportServerUser = 'atluser';
 var glb_reportServerPsw = 'atluser';
@@ -105,7 +111,8 @@ isc.defineClass("AtlUtils").addClassProperties({
      *
      * @return un integer on la marca en milisegundos (no formales).
      */
-    getMarcaNormalizada: function(marca, clasificacion_prueba, ismanual, adjustManualTime) {
+    getMarcaNormalizada: function (marca, clasificacion_prueba, ismanual, adjustManualTime) {
+        //  console.log('MN : ' + marca + ' Clasificacion ' + clasificacion_prueba);
         if (marca && marca.trim().length > 0) {
             marca = marca.replace('.', ':');
             marca = marca.split(':');
