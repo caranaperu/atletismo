@@ -30,9 +30,9 @@ $config['v_atletaspruebas_resultados'] = array(
             'rules' => 'required|alpha_numeric|xss_clean|max_length[15]'
         ),
         array(
-            'field' => 'competencias_pruebas_origen_combinada',
-            'label' => 'lang:competencias_pruebas_origen_combinada',
-            'rules' => 'required|is_bool|xss_clean'
+            'field' => 'apppruebas_multiple',
+            'label' => 'lang:apppruebas_multiple',
+            'rules' => 'is_bool|xss_clean'
         ),
         array(
             'field' => 'competencias_pruebas_fecha',
@@ -124,9 +124,9 @@ $config['v_atletaspruebas_resultados'] = array(
             'rules' => 'required|alpha_numeric|xss_clean|max_length[15]'
         ),
         array(
-            'field' => 'competencias_pruebas_origen_combinada',
-            'label' => 'lang:competencias_pruebas_origen_combinada',
-            'rules' => 'required|is_bool|xss_clean'
+            'field' => 'apppruebas_multiple',
+            'label' => 'lang:apppruebas_multiple',
+            'rules' => 'is_bool|xss_clean'
         ),
         array(
             'field' => 'competencias_pruebas_fecha',
