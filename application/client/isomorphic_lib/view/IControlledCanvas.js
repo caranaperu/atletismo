@@ -42,8 +42,10 @@ isc.IControlledCanvas.addInterfaceProperties({
      * Este metodo es llamado po el controlador para el caso que la forma
      * requiera algunos campos o valores de este controlled canvas.
      * Debera hacerse el override de ser necesario.
+     *
+     * @param string mode un string con llos odos sea edit o add.
      */
-    getRequiredFieldsToAdd: function() {
+    getRequiredFieldsToAddOrEdit: function(mode) {
         return undefined;
     },
     /**
