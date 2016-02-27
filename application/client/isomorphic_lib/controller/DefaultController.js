@@ -108,6 +108,7 @@ isc.DefaultController.addProperties({
                 // pero que no son parte del modelo.
                 var list = this._mainWindow.getGridList();
 
+                this._mantForm.preSetFieldsToEdit(this._mainWindow.getRequiredFieldsToAddOrEdit(mode))
                 this._mantForm.editSelectedData(list);
                 this._mantForm.postSetFieldsToEdit();
 
@@ -124,7 +125,6 @@ isc.DefaultController.addProperties({
                     // de llave de enlace o el falg de lectura eficiente este prendido,
                     //  de lo contrario reactualizamos datos incondicionalmente.
                     if (this._formWindow.efficientDetailGrid == true || JSON.stringify(this._lastJoinKeys) !== JSON.stringify(this._formWindow.joinKeyFields)) {
-                        //  console.log('LEYO 01');
                         this._lastJoinKeys = JSON.parse(JSON.stringify(this._formWindow.joinKeyFields));
 
                         if (this._formWindow.isRequiredReadDetailGridData() == true) {
@@ -135,7 +135,6 @@ isc.DefaultController.addProperties({
                         // de la grilla de detalle , no siempre es necesario hacerlo cuando el efficientDetailGrid es false.
                         if (this._formWindow.isRequiredReadDetailGridData() == true) {
                             // Releemos siempre , en la practica hay casos
-                            //  console.log('LEYO 02');
                             this._detailGrid.invalidateCache();
                         }
                     }
@@ -165,7 +164,6 @@ isc.DefaultController.addProperties({
                 }
                 this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'clearCopy', this._lastJoinKeys, undefined);
 
-                //   console.log('LEYO 02');
             }
         }
         // Mostramos la forma
@@ -175,7 +173,7 @@ isc.DefaultController.addProperties({
         // los campos o inicializar campos que son solo visuales pero no parte del modelo.
         // Se consulta a la forma en el caso se requiera algunos valores desde alli.
         if (mode == 'add') {
-            this._formWindow.getForm().setupFieldsToAdd(this._mainWindow.getRequiredFieldsToAdd());
+            this._formWindow.getForm().setupFieldsToAdd(this._mainWindow.getRequiredFieldsToAddOrEdit(mode));
         }
     },
     /**
@@ -332,7 +330,7 @@ isc.DefaultController.addProperties({
      * otros controles que compartan el DataSource.
      */
     _formTransformResponse: function(dsResponse, dsRequest, data) {
-        if (dsResponse.status >= 0 && dsRequest.componentId == this._mantForm.ID) {
+        if (dsResponse.status >= 0 && dsRequest.componentId == this._mantForm.ID) {           
             if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
                 // Se invoca usando la referencia a los datos que regresan del servidor,
                 // para que puedan ser modificados.
@@ -365,11 +363,9 @@ isc.DefaultController.addProperties({
                 useSimpleHttp: true, downloadResult: true, downloadToNewWindow: true,
                 showPrompt: true,
                 callback: function(data) {
-                    // console.log(data);
                     if (data.httpResponseCode != 200) {
                         isc.say(((data.httpResponseText && data.httpResponseText.length > 2) ? data.httpResponseText : 'Error interno...'))
                     } else {
-                        //  console.log(data);
                         window.location.href = data.httpResponseText;
                     }
                 }});
@@ -399,7 +395,6 @@ isc.DefaultController.addProperties({
             }
         }
         t += "\"}";
-        //    console.log(t);
         isc.addProperties(searchCriteria, Class.evaluate(t));
         return searchCriteria;
     },
@@ -427,8 +422,6 @@ isc.DefaultController.addProperties({
         return false;
     },
     _detailGridRefresh: function() {
-        //    console.log('LEYO 03');
-
         // Se cancela cualquier pendiente de grabacion
         this._detailGrid.cancelEditing();
 
