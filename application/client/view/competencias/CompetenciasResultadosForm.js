@@ -21,6 +21,7 @@ isc.CompetenciasResultadosForm.addProperties({
     // Para cache solamente y pasarlo a otras vistas
     _vcache_competencias_fecha_inicio: undefined,
     _vcache_competencias_fecha_final: undefined,
+  //  _vcache_sourceRecord: undefined,
     /**
      * Este metodo es llamado por el controller cuando en la forma de mantenimiento , en la
      * grilla de detalle , de existir ha ocurrido una operacion sobre alguno de sus registros.
@@ -33,9 +34,11 @@ isc.CompetenciasResultadosForm.addProperties({
      * lo que hace es limpiar la grilla de resultados.
      */
     onInfoKeyChanged: function(formRecord) {
-        //     console.log(formRecord);
-        competenciasResultadosInfoLabel.setContents('<span style="font-weight:bold; font-size:16px">' + formRecord.competencias_descripcion + '</span> (' + formRecord.categorias_codigo + ' / ' + formRecord.agno + ' / ' + formRecord.ciudades_descripcion + '-' + formRecord.paises_descripcion + ')'
-                )
+        console.log('????????????????????????????????????????????????????????????????')
+             console.log(formRecord);
+           //  _vcache_sourceRecord = formRecord;
+        var infLabelContents='<span style="font-weight:bold; font-size:16px">' + formRecord.competencias_descripcion + '</span> (' + formRecord.categorias_codigo + ' / ' + formRecord.agno + ' / ' + formRecord.ciudades_descripcion + '-' + formRecord.paises_descripcion + ')'
+        competenciasResultadosInfoLabel.setContents(infLabelContents)
         // Limpio la grilla.
         var obj = [];
         competenciasResultadosList.setData(obj);
@@ -49,9 +52,10 @@ isc.CompetenciasResultadosForm.addProperties({
     /**
      * En este caso la forma
      */
-    getRequiredFieldsToAdd: function() {
+    getRequiredFieldsToAddOrEdit: function(mode) {
         // La vista que agrega pruebas requiere datos de la competencia, se los retorna.
-        return {
+        //return _vcache_sourceRecord;
+       return {
             competencias_codigo: this.infoKey,
             competencias_descripcion_visual: competenciasResultadosInfoLabel.getContents(),
             competencias_fecha_inicio: CompetenciasResultadosFormID._vcache_competencias_fecha_inicio,
@@ -72,6 +76,7 @@ isc.CompetenciasResultadosForm.addProperties({
             dataSource: mdl_competencias_pruebas,
             fetchOperation: 'fetchPruebasPorCompetencia',
             fields: [
+                {name: 'competencias_pruebas_id', hidden: true},
                 {name: "pruebas_sexo", hidden: true,
                     getGroupValue: function(value, record, field, fieldName, grid) {
                         if (value == 'F')
@@ -117,10 +122,10 @@ isc.CompetenciasResultadosForm.addProperties({
                     undefined, {textMatchStyle: 'exact'});
                 }
             },
-            // Si es prueba multiple , luego de un delete se requiere repintar toda la grilla ya que una pruena
-            // multiple elimina mas de una prueba.
+            // Refrescamos la lista de resultados para la prueba e indicamos relectura de la lista de pruebas.
             isPostRemoveDataRefreshMainListRequired: function(recordToDelete) {
-                return recordToDelete.apppruebas_multiple;
+                competenciasResultadosList.invalidateCache();
+                return true;
             }
         });
     },

@@ -15,7 +15,7 @@ isc.WinRecordsForm.addProperties({
     title: "Mantenimiento de Records",
     autoSize: false,
     width: '600', height: '230',
-    createForm: function(formMode) {
+    createForm: function (formMode) {
         return isc.DynamicFormExt.create({
             ID: "formRecords",
             fixedColWidths: false,
@@ -36,13 +36,10 @@ isc.WinRecordsForm.addProperties({
                     completeOnTab: true,
                     // vital para indicar el opertion id , si se usa en otro lugar recarga por gusto.
                     optionOperationId: 'fetch',
-                    editorProperties: {
-                        optionDataSource: mdl_records_tipo,
-                        minimumSearchLength: 3,
-                        autoFetchData: true,
-                        textMatchStyle: 'substring',
-                        sortField: "records_tipo_descripcion"
-                    }
+                    optionDataSource: mdl_records_tipo,
+                    autoFetchData: true,
+                    textMatchStyle: 'substring',
+                    sortField: "records_tipo_descripcion"
                 },
                 {name: "apppruebas_codigo", title: 'Prueba', editorType: "comboBoxExt", length: 50, width: "200",
                     valueField: "apppruebas_codigo", displayField: "apppruebas_descripcion",
@@ -52,14 +49,11 @@ isc.WinRecordsForm.addProperties({
                     pickListWidth: 250,
                     completeOnTab: true,
                     optionOperationId: 'fetchDescriptions',
-                    editorProperties: {
-                        optionDataSource: mdl_apppruebas_description,
-                        minimumSearchLength: 3,
-                        autoFetchData: false,
-                        textMatchStyle: 'substring',
-                        sortField: "apppruebas_descripcion",
-                    },
-                    changed: function(form, item, value) {
+                    optionDataSource: mdl_apppruebas_description,
+                    autoFetchData: false,
+                    textMatchStyle: 'substring',
+                    sortField: "apppruebas_descripcion",
+                    changed: function (form, item, value) {
                         // si la prueba es cambiada debe limpiarse el atleta ,competencia y
                         // categorias elegidas.
                         var record = item.getSelectedRecord();
@@ -74,16 +68,11 @@ isc.WinRecordsForm.addProperties({
                     pickListWidth: 260,
                     completeOnTab: true,
                     optionOperationId: 'fetchForListByPruebaGenerica',
-                    editorProperties: {
-                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                        // en pickListProperties o afuera funciona de distinta manera.
-                        optionDataSource: mdl_atletas,
-                        minimumSearchLength: 3,
-                        autoFetchData: false,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo"
-                    },
-                    changed: function(form, item, value) {
+                    optionDataSource: mdl_atletas,
+                    autoFetchData: false,
+                    textMatchStyle: 'substring',
+                    sortField: "atletas_nombre_completo",
+                    changed: function (form, item, value) {
                         // si el codigo del atleta es cambiado  la competencia y
                         // categorias elegidas deben ser apagadas.
                         var record = item.getSelectedRecord();
@@ -96,7 +85,7 @@ isc.WinRecordsForm.addProperties({
                      * que dependen de la de la categoria y el sexo del atleta,el primero proviene
                      * de la competencia y el segundo del atleta.
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         // Recogo primero el filtro si existe uno y luego le agrego
                         // la categoria y el sexo.
                         var filter = this.Super("getPickListFilterCriteria", arguments);
@@ -140,7 +129,7 @@ isc.WinRecordsForm.addProperties({
                 {name: "atletas_resultados_id", title: 'Competecia/Marca', editorType: "comboBoxExt", length: 50, width: "450", disabled: true,
                     valueField: "atletas_resultados_id", displayField: "competencias_descripcion",
                     pickListFields: [
-                        {name: 'Resultado', formatCellValue: function(value, record, rownum, colnum) {
+                        {name: 'Resultado', formatCellValue: function (value, record, rownum, colnum) {
                                 if (record) {
                                     var fvalue = record.numb_resultado;
                                     if (record.ciudades_altura == true) {
@@ -155,7 +144,7 @@ isc.WinRecordsForm.addProperties({
                             }, width: 100},
                         {name: "competencias_pruebas_fecha", width: '60'},
                         {name: "categorias_codigo", width: '70'},
-                        {name: 'Lugar', formatCellValue: function(value, record, rownum, colnum) {
+                        {name: 'Lugar', formatCellValue: function (value, record, rownum, colnum) {
                                 if (record) {
                                     return record.competencias_descripcion + '/' + record.paises_descripcion + '/' + record.ciudades_descripcion;
                                 } else {
@@ -166,57 +155,54 @@ isc.WinRecordsForm.addProperties({
                     ],
                     pickListWidth: 500,
                     formatOnBlur: true,
-                    //   completeOnTab: true,
-                    editorProperties: {
-                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                        // en pickListProperties o afuera funciona de distinta manera.
-                        optionDataSource: mdl_atletaspruebas_resultados_for_records,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "competencias_pruebas_fecha",
-                        autoFetchData: false,
-                        formatValue: function(value, record, form, item) {
-                            var recordFinal = record;
-                            // Si recordFinal.atletas_resultados_id ya se selecciono un o o es una edicion.
-                            if (recordFinal != null && recordFinal.atletas_resultados_id) {
-                                // Si existe un registro ya seleccionado , partmos de alli
-                                if (item.getSelectedRecord()) {
-                                    recordFinal = item.getSelectedRecord();
-                                }
-                                var fvalue = 'Marca: ' + recordFinal.numb_resultado;
-                                if (recordFinal.ciudades_altura == true) {
-                                    fvalue += '(A)'
-                                }
-                                fvalue += ', V:' + recordFinal.competencias_pruebas_viento;
-                                fvalue += ', Cat: ' + recordFinal.categorias_codigo;
+                    optionDataSource: mdl_atletaspruebas_resultados_for_records,
+                    textMatchStyle: 'substring',
+                    sortField: "competencias_pruebas_fecha",
+                    autoFetchData: false,
+                    formatValue: function (value, record, form, item) {
 
-                                // Siel campo lugar esta definido quiere decir que viene de una edicion y es suficiente
-                                // sacar el valor de record que viene de la grilla.
-                                // De lo contrario lo hacemos del record final seleccionadado en el campo.
-                                if (recordFinal.lugar) {
-                                    fvalue += ', ' + recordFinal.lugar;
-                                } else {
-                                    fvalue += ', ' + recordFinal.competencias_descripcion + '/' + recordFinal.paises_descripcion + '/' + recordFinal.ciudades_descripcion;
-                                }
-                                return fvalue;
+                        // closure para mejor lectura
+                        var _doFormat =  function (lugar,resultado,enAltura,viento,categoria) {
+                            var fvalue = 'Marca: ' + resultado;
+                            if (enAltura == true) {
+                                fvalue += '(A)'
+                            }
+                            fvalue += ', V:' + viento;
+                            fvalue += ', Cat: ' + categoria;
+                            fvalue += ', ' + lugar;
+
+                            return fvalue;
+                        }
+                        // caso edit
+                        // En este caso usamos el parametro record que contiene los datos del registro a editar
+                        // y alli estan todos los valores necesarios a pintar.
+                        // Si es un modo add los valores los extraemos del registro leido por el combo.
+                        if (formRecords.formMode == 'edit') {
+                            return _doFormat(record.lugar,record.atletas_resultados_resultado,record.ciudades_altura,record.competencias_pruebas_viento,record.categorias_codigo);
+                        } else {
+                            // Si existe un registro ya seleccionado , partmos de alli
+                            var recordFinal = item.getSelectedRecord();
+                            if (recordFinal) {
+                                return _doFormat(recordFinal.competencias_descripcion + '/' + recordFinal.paises_descripcion + '/' + recordFinal.ciudades_descripcion,
+                                    recordFinal.numb_resultado,recordFinal.ciudades_altura,recordFinal.competencias_pruebas_viento,recordFinal.categorias_codigo);
                             } else {
                                 return value;
                             }
                         }
+
                     },
                     /**
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la categoria y el sexo del atleta,el primero proviene
                      * de la competencia y el segundo del atleta.
                      */
-                    getPickListFilterCriteria: function() {
+                    getPickListFilterCriteria: function () {
                         // Recogo primero el filtro si existe uno y luego le agrego
                         // la categoria y el sexo.
                         var filter = this.Super("getPickListFilterCriteria", arguments);
                         if (filter == null) {
                             filter = {};
                         }
-
                         // Esta es una optimizacion realizada para que en mode edit solo lea un especifico registro.
                         // YA QUE AHORA NO SE PUEDE EDITAR EL CODIGO DE PRUEBA AL EDITARSE!!! , DE LO CONTRARIO DEBERIA
                         // LEERSE SIEMPRE TODO.
@@ -249,7 +235,7 @@ isc.WinRecordsForm.addProperties({
                         }
                         return filter;
                     },
-                    changed: function(form, item, value) {
+                    changed: function (form, item, value) {
                         // si el codigo del atleta es cambiado  la competencia y
                         // categorias elegidas deben ser apagadas.
                         var record = item.getSelectedRecord();
@@ -266,10 +252,8 @@ isc.WinRecordsForm.addProperties({
                     valueField: "categorias_codigo", displayField: "categorias_descripcion",
                     pickListFields: [{name: "categorias_codigo", width: '20%'}, {name: "categorias_descripcion", width: '80%'}],
                     pickListWidth: 240,
-                    editorProperties: {
-                        optionDataSource: mdl_categorias,
-                        autoFetchData: false,
-                    }
+                    optionDataSource: mdl_categorias,
+                    autoFetchData: false
                 },
                 {name: "records_id", visible: false}
             ],
@@ -279,7 +263,7 @@ isc.WinRecordsForm.addProperties({
              *
              * @param {string} mode 'add' o 'edit'
              */
-            setEditMode: function(mode) {
+            setEditMode: function (mode) {
                 this.Super("setEditMode", arguments);
                 if (mode == 'add') {
                     formRecords.getItem('atletas_codigo').setDisabled(true);
@@ -287,7 +271,7 @@ isc.WinRecordsForm.addProperties({
                     formRecords.getItem('categorias_codigo').setDisabled(true);
                 }
             },
-            isPostOperationDataRefreshMainListRequired: function(operationType) {
+            isPostOperationDataRefreshMainListRequired: function (operationType) {
                 return true;
             },
             /*******************************************************************
@@ -300,7 +284,7 @@ isc.WinRecordsForm.addProperties({
              * @param {boolean} disable true para desactivar , false para activar.
              * @param {boolean} clear true para limpiar campo, false no tocarlo.
              */
-            _setFieldStatus: function(fieldName, disable, clear)
+            _setFieldStatus: function (fieldName, disable, clear)
             {
                 formRecords.getItem(fieldName).setDisabled(disable);
                 formRecords.clearFieldErrors(fieldName, true);
@@ -311,7 +295,7 @@ isc.WinRecordsForm.addProperties({
             //  , cellBorder: 1
         });
     },
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
     }
 });

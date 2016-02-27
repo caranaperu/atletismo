@@ -27,10 +27,10 @@ isc.WinAtletasCarnetsForm.addProperties({
             // Campos virtuales del vie de la lista , se usan para preservar los valores originales
             _atletas_nombre_completo: undefined,
             fields: [
-                {name: "atletas_carnets_agno", type: "text", width: "50", mask: "9999", defaultValue: new Date().getFullYear()},
-                {name: "atletas_carnets_numero", length: 10, width: "120"},
-                {name: "atletas_carnets_fecha", useTextField: true, width: "90"},
-                {name: "atletas_codigo", editorType: "comboBoxExt", length: 200, width: "300",
+                {name: "atletas_carnets_agno", type: "text", showPending: true,width: "50", mask: "9999", defaultValue: new Date().getFullYear()},
+                {name: "atletas_carnets_numero",showPending: true, length: 10, width: "120"},
+                {name: "atletas_carnets_fecha", useTextField: true, showPending: true,width: "90"},
+                {name: "atletas_codigo", editorType: "comboBoxExt", showPending: true,length: 200, width: "300",
                     valueField: "atletas_codigo", displayField: "atletas_nombre_completo",
                     optionDataSource: mdl_atletas,
                     pickListFields: [{name: "atletas_codigo", width: '25%'}, {name: "atletas_nombre_completo", width: '75%'}],

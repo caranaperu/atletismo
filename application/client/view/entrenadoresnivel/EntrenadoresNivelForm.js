@@ -26,8 +26,8 @@ isc.WinEntrenadoresNivelForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'entrenadores_nivel_descripcion',
             fields: [
-                {name: "entrenadores_nivel_codigo", title: "Codigo", type: "text", width: "80", mask: "AAAAAAAAAA"},
-                {name: "entrenadores_nivel_descripcion", title: "Descripcion", length: 60, width: "260"}
+                {name: "entrenadores_nivel_codigo", title: "Codigo", type: "text",showPending: true, width: "80", mask: "AAAAAAAAAA"},
+                {name: "entrenadores_nivel_descripcion", title: "Descripcion",showPending: true, length: 60, width: "260"}
             ],
             isAllowedToSave: function() {
                 var record = this.getValues();

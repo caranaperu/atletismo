@@ -12,7 +12,7 @@ isc.defineClass("WinEntidadForm", "WindowBasicFormExt");
 isc.WinEntidadForm.addProperties({
     ID: "winEntidadForm",
     title: "Mantenimiento de Datos de la Entidad",
-    width: 670, height: 340,
+    width: 670, height: 350,
     canDragResize: true,
     createForm: function(formMode) {
         return isc.DynamicFormExt.create({
@@ -31,16 +31,16 @@ isc.WinEntidadForm.addProperties({
             focusInEditFld: 'entidad_razon_social',
             //disableValidation: true,
             fields: [
-                {name: "entidad_razon_social", width: "450", length: 200, type: 'text', colSpan: 4},
-                {name: "entidad_direccion", width: "450", length: 200, colSpan: 4},
-                {name: "entidad_ruc", width: "120", endRow: true, colSpan: 4},
-                {name: "entidad_siglas", width: "100", length: 15, colSpan: 4},
-                {name: "entidad_titulo_alterno", width: "400", length: 200, colSpan: 4},
-                {name: "entidad_web_url", width: "300", length: 200, colSpan: 4},
-                {name: "entidad_correo", width: "220", length: 100, colSpan: 4},
-                {name: "entidad_telefonos", width: "240", length: 60},
-                {name: "entidad_fax", width: "120", length: 10, endRow: true},
-                {name: "entidad_eslogan", width: "550", length: 250, type: 'text', colSpan: 4}
+                {name: "entidad_razon_social", showPending: true, width: "450", length: 200, type: 'text', colSpan: 4},
+                {name: "entidad_direccion", showPending: true, width: "450", length: 200, colSpan: 4},
+                {name: "entidad_ruc", showPending: true, width: "120", endRow: true, colSpan: 4},
+                {name: "entidad_siglas", showPending: true, width: "100", length: 15, colSpan: 4},
+                {name: "entidad_titulo_alterno", showPending: true, width: "400", length: 200, colSpan: 4},
+                {name: "entidad_web_url", showPending: true, width: "300", length: 200, colSpan: 4},
+                {name: "entidad_correo", showPending: true, width: "220", length: 100, colSpan: 4},
+                {name: "entidad_telefonos", showPending: true, width: "240", length: 60},
+                {name: "entidad_fax", showPending: true, width: "120", length: 10, endRow: true},
+                {name: "entidad_eslogan", showPending: true, width: "550", length: 250, type: 'text', colSpan: 4}
             ],
             /**
              * Override , ver clase base

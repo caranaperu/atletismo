@@ -26,11 +26,11 @@ isc.WinUnidadMedidaForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'unidad_medida_descripcion',
             fields: [
-                {name: "unidad_medida_codigo", title: "Codigo", type: "text", width: "90", mask: ">LLLLLLL"},
-                {name: "unidad_medida_descripcion", title: "Descripcion", length: 120, width: "260"},
-                {name: "unidad_medida_tipo", title: "Tipo", length: 1, width: "40", hint: "Tiempo,Puntos,Metros"},
-                {name: "unidad_medida_regex_e", length: 60, width: "270"},
-                {name: "unidad_medida_regex_m", length: 60, width: "270"}
+                {name: "unidad_medida_codigo", title: "Codigo", type: "text", showPending: true, width: "90", mask: ">LLLLLLL"},
+                {name: "unidad_medida_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"},
+                {name: "unidad_medida_tipo", title: "Tipo", showPending: true, length: 1, width: "40", hint: "Tiempo,Puntos,Metros"},
+                {name: "unidad_medida_regex_e", showPending: true, length: 60, width: "270"},
+                {name: "unidad_medida_regex_m", showPending: true, length: 60, width: "270"}
             ],
             isAllowedToSave: function() {
                 var record = this.getValues();

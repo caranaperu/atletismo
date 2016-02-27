@@ -12,13 +12,13 @@ isc.defineClass("WinClubesForm", "WindowBasicFormExt");
 isc.WinClubesForm.addProperties({
     ID: "winClubesForm",
     title: "Mantenimiento de Clubes",
-    width: 780, height: 300,
+    width: 780, height: 315,
     joinKeyFields: [{fieldName: 'clubes_codigo', fieldValue: ''}],
-    createForm: function(formMode) {
+    createForm: function (formMode) {
         return isc.DynamicFormExt.create({
             ID: "formClubes",
             numCols: 4,
-            colWidths: ["150", "*"],
+            colWidths: ["150", "*", "*", "*"],
             fixedColWidths: false,
             padding: 2,
             dataSource: mdl_clubes,
@@ -27,21 +27,24 @@ isc.WinClubesForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'clubes_descripcion',
             fields: [
-                {name: "clubes_codigo", title: "Codigo", type: "text", width: "90", mask: ">AAAAAAAAAA", endRow: true},
-                {name: "clubes_descripcion", title: "Descripcion", length: 120, width: "300"},
-                {defaultValue: "Ubicacion/Contacto", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
+                {name: "clubes_codigo", title: "Codigo", type: "text", showPending: true, width: "90", mask: ">AAAAAAAAAA", endRow: true},
+                {name: "clubes_descripcion", title: "Descripcion", showPending: true, length: 120, width: "300"},
+                {name:"clubes_separator",defaultValue: "Ubicacion/Contacto", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
                     itemIds: ["clubes_persona_contacto", "clubes_direccion", "clubes_telefono_oficina", "clubes_telefono_celular", "clubes_email", "clubes_web_url"]
                 },
-                {name: "clubes_persona_contacto", length: 150, width: "*", colSpan: 4},
-                {name: "clubes_direccion", length: 250, width: "*", colSpan: 4},
-                {name: "clubes_telefono_oficina", lenght: 13},
-                {name: "clubes_telefono_celular", lenght: 13, endRow: true},
-                {name: "clubes_email", length: 100, width: "*", colSpan: 4, endRow: true},
-                {name: "clubes_web_url", length: 200, width: "*", colSpan: 4, endRow: true}
+                {name: "clubes_persona_contacto", showPending: true, length: 150, width: "*", colSpan: 4},
+                {name: "clubes_direccion", showPending: true, length: 250, width: "*", colSpan: 4},
+                {name: "clubes_telefono_oficina", showPending: true, lenght: 13},
+                {name: "clubes_telefono_celular", showPending: true, lenght: 13, endRow: true},
+                {name: "clubes_email", showPending: true, length: 100, width: "*", colSpan: 4, endRow: true},
+                {name: "clubes_web_url", showPending: true, length: 200, width: "*", colSpan: 4, endRow: true}
             ]
         });
     },
-    createDetailGridContainer: function(mode) {
+    canShowTheDetailGridAfterAdd: function () {
+        return true;
+    },
+    createDetailGridContainer: function (mode) {
         return isc.DetailGridContainer.create({
             height: '200',
             sectionTitle: 'Atletas asociados',
@@ -50,6 +53,7 @@ isc.WinClubesForm.addProperties({
                 fetchOperation: 'fetchJoined', // solicitado un resultset con el join a atletas resuelto por eficiencia
                 dataSource: 'mdl_clubesatletas',
                 sortField: "atletas_nombre_completo",
+                autoFetchData: false,
                 fields: [
                     // En este caso observese que no hay option datasource , y que la operacion es fetchJoined, eta tecnica
                     // hace que el servidor traiga los nombres del atleta joined con la tabla principal , pero aun asi
@@ -60,24 +64,24 @@ isc.WinClubesForm.addProperties({
                         pickListFields: [{name: "atletas_codigo", width: '20%'}, {name: "atletas_nombre_completo", width: '80%'}],
                         completeOnTab: true,
                         width: '90%',
+                        autoFetchData: false,
+                        // De no colocarse estas opciones dentro de editorProperties pero si afuera  curiosamente sucede
+                        // que el control de la grilla invoca inmediatamente modelo de este combo solicitando todos los registros.
+                        // Por ese motivo es necesario se coloque en esta seccion lo que corresponde al datasource.
                         editorProperties: {
-                            // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                            // en pickListProperties o afuera funciona de distinta manera.
-                            optionDataSource: mdl_atletas,
-                            minimumSearchLength: 3,
+                            showPending: true,
                             autoFetchData: false,
+                            optionDataSource: mdl_atletas,
                             textMatchStyle: 'substring',
-                            sortField: "atletas_nombre_completo"
-                                    //pickListProperties: {
-                                // showFilterEditor: true,
-                                // filterOnKeypress: false
-                                    //}
+                            sortField: "atletas_nombre_completo",
                         }
                     },
-                    {name: "clubesatletas_desde", title: "Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'}, showPickerIcon: false, width: 100},
-                    {name: "clubesatletas_hasta", title: "hasta", useTextField: true, textFieldProperties: {defaultValue: '01/01/2035'}, showPickerIcon: false, width: 100}
+                    {name: "clubesatletas_desde", title: "Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'},
+                        editorProperties: {showPending: true}, showPickerIcon: false, width: 100},
+                    {name: "clubesatletas_hasta", title: "hasta", useTextField: true, textFieldProperties: {defaultValue: '01/01/2035'},
+                        editorProperties: {showPending: true}, showPickerIcon: false, width: 100}
                 ],
-                editComplete: function(rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
+                editComplete: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
                     // Actualizamos el registro GRBADO no puedo usar setEditValue porque asumiria que el regisro recien grabado
                     // difiere de lo editado y lo tomaria como pendiente de grabar.d
                     // Tampoco puedo usar el record basado en el rowNum ya que si la lista esta ordenada al reposicionarse los registros
@@ -103,7 +107,7 @@ isc.WinClubesForm.addProperties({
                 },
             }});
     },
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
     }
 });

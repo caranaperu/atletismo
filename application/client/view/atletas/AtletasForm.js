@@ -14,7 +14,7 @@ isc.WinAtletasForm.addProperties({
     ID: "winAtletasForm",
     title: "Mantenimiento de Atletas",
     autoSize: false,
-    width: '800', height: '510',
+    width: '800', height: '525',
     createForm: function(formMode) {
         return isc.DynamicFormExt.create({
             ID: "formAtletas",
@@ -67,41 +67,41 @@ isc.WinAtletasForm.addProperties({
                     }
 
                 },
-                {name: "atletas_codigo", type: "text", width: "90"},
-                {name: "atletas_ap_paterno", title: 'Ap.Paterno', length: 60, width: 200, startRow: true},
-                {name: "atletas_ap_materno", title: 'Ap.Materno', length: 60, width: 200, startRow: true},
-                {name: "atletas_nombres", title: 'Nombres', length: 100, width: 250, startRow: true, endRow: true},
+                {name: "atletas_codigo", type: "text",showPending: true, width: "90"},
+                {name: "atletas_ap_paterno", title: 'Ap.Paterno', showPending: true,length: 60, width: 200, startRow: true},
+                {name: "atletas_ap_materno", title: 'Ap.Materno', showPending: true,length: 60, width: 200, startRow: true},
+                {name: "atletas_nombres", title: 'Nombres', showPending: true,length: 100, width: 250, startRow: true, endRow: true},
                 {name: "atletas_fecha_nacimiento", useTextField: true, width: 110, showPickerIcon: false,
                     changed: function(form, item, value) {
                         if (isc.isA.Date(value)) {
                             formAtletas._atletas_agno = value.getFullYear();
                         }
                     }, endRow: true},
-                {name: "atletas_nro_documento", length: 15, width: 140},
-                {name: "paises_codigo", editorType: "comboBoxExt", length: 50, width: "200",
+                {name: "atletas_nro_documento", showPending: true,length: 15, width: 140},
+                {name: "paises_codigo", editorType: "comboBoxExt", showPending: true,length: 50, width: "200",
                     valueField: "paises_codigo", displayField: "paises_descripcion",
                     optionDataSource: mdl_paises,
                     pickListFields: [{name: "paises_codigo", width: '20%'}, {name: "paises_descripcion", width: '80%'}],
                     pickListWidth: 240,
                     completeOnTab: true
                 },
-                {name: "atletas_nro_pasaporte", length: 15, width: 140, endRow: true},
-                {name: "atletas_sexo", type: "select", defaultValue: "M", width: 20, endRow: true},
-                {defaultValue: "Ubicacion/Contacto", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
+                {name: "atletas_nro_pasaporte", showPending: true,length: 15, width: 140, endRow: true},
+                {name: "atletas_sexo", type: "select", showPending: true,defaultValue: "M", width: 20, endRow: true},
+                {name: "atletas_separator_01",defaultValue: "Ubicacion/Contacto", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
                     itemIds: ["atletas_direccion", "atletas_telefono_casa", "atletas_telefono_celular", "atletas_email"]
                 },
-                {name: "atletas_direccion", type: "text", length: 150, width: "*", colSpan: 4},
-                {name: "atletas_telefono_casa", lenght: 13},
-                {name: "atletas_telefono_celular", lenght: 13, endRow: true},
-                {name: "atletas_email", lenght: 150, width: 250, colSpan: 3, endRow: true},
-                {defaultValue: "Complementarios", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
+                {name: "atletas_direccion", showPending: true,type: "text", length: 150, width: "*", colSpan: 4},
+                {name: "atletas_telefono_casa", showPending: true,length: 13},
+                {name: "atletas_telefono_celular", showPending: true,length: 13, endRow: true},
+                {name: "atletas_email", showPending: true,length: 150, width: 250, colSpan: 3, endRow: true},
+                {name: "atletas_separator_02",defaultValue: "Complementarios", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
                     itemIds: ["atletas_talla_ropa_buzo", "atletas_talla_ropa_poloshort", "atletas_talla_zapatillas", "atletas_norma_zapatillas", "atletas_observaciones"]
                 },
-                {name: "atletas_talla_ropa_buzo", lenght: 3, defaultValue: '??'},
-                {name: "atletas_talla_ropa_poloshort", lenght: 3, endRow: true, defaultValue: '??'},
-                {name: "atletas_talla_zapatillas", lenght: 3, keyPressFilter: "[0-9.]", textAlign: 'right'},
-                {name: "atletas_norma_zapatillas", lenght: 2, defaultValue: '??', endRow: true},
-                {name: "atletas_observaciones", length: 250, width: "*", colSpan: 4},
+                {name: "atletas_talla_ropa_buzo",showPending: true, length: 3, defaultValue: '??'},
+                {name: "atletas_talla_ropa_poloshort",showPending: true, length: 3, endRow: true, defaultValue: '??'},
+                {name: "atletas_talla_zapatillas",showPending: true, length: 3, keyPressFilter: "[0-9.]", textAlign: 'right'},
+                {name: "atletas_norma_zapatillas", showPending: true,length: 2, defaultValue: '??', endRow: true},
+                {name: "atletas_observaciones", showPending: true,length: 250, width: "*", colSpan: 4},
                 // No visible pero parte del registro
                 {name: "atletas_url_foto", type: 'hidden'}
             ],

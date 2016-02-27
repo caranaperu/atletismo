@@ -26,13 +26,13 @@ isc.WinRecordsTipoForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'records_tipo_descripcion',
             fields: [
-                {name: "records_tipo_codigo", type: "text", width: "100", mask: ">AAAAAAAAAA"},
-                {name: "records_tipo_descripcion", length: 100, width: "260"},
-                {name: "records_tipo_abreviatura", length: 2, width: "40"},
-                {name: "records_tipo_tipo"},
-                {name: "records_tipo_clasificacion"},
-                {name: "records_tipo_peso", length: 4, width: "60"},
-                {name: "records_tipo_protected", visible: false, defaultValue: false}
+                {name: "records_tipo_codigo", type: "text", showPending: true, width: "100", mask: ">AAAAAAAAAA"},
+                {name: "records_tipo_descripcion", showPending: true, length: 100, width: "260"},
+                {name: "records_tipo_abreviatura", showPending: true, length: 2, width: "40"},
+                {name: "records_tipo_tipo", showPending: true},
+                {name: "records_tipo_clasificacion", showPending: true},
+                {name: "records_tipo_peso", showPending: true, length: 4, width: "60"},
+                {name: "records_tipo_protected", showPending: true, visible: false, defaultValue: false}
             ],
             isAllowedToSave: function() {
                 var record = this.getValues();

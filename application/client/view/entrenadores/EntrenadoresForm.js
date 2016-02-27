@@ -15,7 +15,7 @@ isc.WinEntrenadoresForm.addProperties({
     title: "Mantenimiento de Entrenadores",
     width: 770, height: 180,
     joinKeyFields: [{fieldName: 'entrenadores_codigo', fieldValue: ''}],
-    createForm: function(formMode) {
+    createForm: function (formMode) {
         return isc.DynamicFormExt.create({
             ID: "formEntrenadores",
             numCols: 4,
@@ -29,21 +29,24 @@ isc.WinEntrenadoresForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'entrenadores_apellido_paterno',
             fields: [
-                {name: "entrenadores_codigo", type: "text", width: "60", mask: ">AAAAA"},
-                {name: "entrenadores_ap_paterno", title: "Nombres", hint: 'Apellido Paterno', showHintInField: true, length: 60, width: 200, startRow: true},
-                {name: "entrenadores_ap_materno", hint: 'Apellido Materno', showHintInField: true, showTitle: false, length: 60, width: 200},
-                {name: "entrenadores_nombres", hint: 'Nombres', showTitle: false, showHintInField: true, length: 100, width: 250, endRow: true},
-                {name: "entrenadores_nivel_codigo", editorType: "comboBoxExt", length: 50, width: "220",
+                {name: "entrenadores_codigo", type: "text", showPending: true, width: "60", mask: ">AAAAA"},
+                {name: "entrenadores_ap_paterno", title: "Nombres", showPending: true, hint: 'Apellido Paterno', showHintInField: true, length: 60, width: 200, startRow: true},
+                {name: "entrenadores_ap_materno", hint: 'Apellido Materno', showPending: true, showHintInField: true, showTitle: false, length: 60, width: 200},
+                {name: "entrenadores_nombres", hint: 'Nombres', showPending: true, showTitle: false, showHintInField: true, length: 100, width: 250, endRow: true},
+                {name: "entrenadores_nivel_codigo", editorType: "comboBoxExt", showPending: true, length: 50, width: "220",
                     valueField: "entrenadores_nivel_codigo", displayField: "entrenadores_nivel_descripcion",
                     optionDataSource: mdl_entrenadores_nivel,
                     pickListFields: [{name: "entrenadores_nivel_codigo", width: '20%'}, {name: "entrenadores_nivel_descripcion", width: '80%'}],
                     pickListWidth: 240
                 }
             ]//,
-                    // cellBorder: 1
+                // cellBorder: 1
         });
     },
-    createDetailGridContainer: function(mode) {
+    canShowTheDetailGridAfterAdd: function () {
+        return true;
+    },
+    createDetailGridContainer: function (mode) {
         return isc.DetailGridContainer.create({
             height: 200,
             sectionTitle: 'Atletas asociados',
@@ -66,16 +69,18 @@ isc.WinEntrenadoresForm.addProperties({
                             // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
                             // en pickListProperties o afuera funciona de distinta manera.
                             optionDataSource: mdl_atletas,
-                            minimumSearchLength: 3,
                             autoFetchData: false,
                             textMatchStyle: 'substring',
-                            sortField: "atletas_nombre_completo"
+                            sortField: "atletas_nombre_completo",
+                            showPending: true
                         }
                     },
-                    {name: "entrenadoresatletas_desde", title: "Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'}, showPickerIcon: false, width: 100},
-                    {name: "entrenadoresatletas_hasta", title: "hasta", useTextField: true, textFieldProperties: {defaultValue: '01/01/2035'}, showPickerIcon: false, width: 100}
+                    {name: "entrenadoresatletas_desde", title: "Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'},
+                        editorProperties: {showPending: true}, showPickerIcon: false, width: 100},
+                    {name: "entrenadoresatletas_hasta", title: "hasta", useTextField: true, textFieldProperties: {defaultValue: '01/01/2035'},
+                        editorProperties: {showPending: true}, showPickerIcon: false, width: 100}
                 ],
-                editComplete: function(rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
+                editComplete: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
                     // Actualizamos el registro GRBADO no puedo usar setEditValue porque asumiria que el regisro recien grabado
                     // difiere de lo editado y lo tomaria como pendiente de grabar.d
                     // Tampoco puedo usar el record basado en el rowNum ya que si la lista esta ordenada al reposicionarse los registros
@@ -102,7 +107,7 @@ isc.WinEntrenadoresForm.addProperties({
                 }
             }});
     },
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
         //  Date.setInputFormat({DateInputFormat: 'DMY'});
     }

@@ -12,13 +12,13 @@ isc.defineClass("WinLigasForm", "WindowBasicFormExt");
 isc.WinLigasForm.addProperties({
     ID: "winLigasForm",
     title: "Mantenimiento de Ligas",
-    width: 780, height: 300,
+    width: 780, height: 310,
     joinKeyFields: [{fieldName: 'ligas_codigo', fieldValue: ''}],
-    createForm: function(formMode) {
+    createForm: function (formMode) {
         return isc.DynamicFormExt.create({
             ID: "formLigas",
             numCols: 4,
-            colWidths: ["150", "*"],
+            colWidths: ["150", "*", "*", "*"],
             fixedColWidths: false,
             padding: 2,
             dataSource: mdl_ligas,
@@ -27,21 +27,24 @@ isc.WinLigasForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'ligas_descripcion',
             fields: [
-                {name: "ligas_codigo", title: "Codigo", type: "text", width: "90", mask: ">AAAAAAAAAA", endRow: true},
-                {name: "ligas_descripcion", title: "Descripcion", length: 120, width: "260"},
-                {defaultValue: "Ubicacion/Contacto", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
+                {name: "ligas_codigo", title: "Codigo", type: "text", showPending: true, width: "90", mask: ">AAAAAAAAAA", endRow: true},
+                {name: "ligas_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"},
+                {name: "ub_separator", defaultValue: "Ubicacion/Contacto", type: "section", colSpan: 4, width: "*", canCollapse: false, align: 'center',
                     itemIds: ["ligas_persona_contacto", "ligas_direccion", "ligas_telefono_oficina", "ligas_telefono_celular", "ligas_email", "ligas_web_url"]
                 },
-                {name: "ligas_persona_contacto", length: 150, width: "*", colSpan: 4},
-                {name: "ligas_direccion", length: 250, width: "*", colSpan: 4},
-                {name: "ligas_telefono_oficina", lenght: 13},
-                {name: "ligas_telefono_celular", lenght: 13, endRow: true},
-                {name: "ligas_email", length: 100, width: "*", colSpan: 4, endRow: true},
-                {name: "ligas_web_url", length: 200, width: "*", colSpan: 4, endRow: true}
+                {name: "ligas_persona_contacto", showPending: true, length: 150, width: "*", colSpan: 4},
+                {name: "ligas_direccion", showPending: true, length: 250, width: "*", colSpan: 4},
+                {name: "ligas_telefono_oficina", showPending: true, lenght: 13},
+                {name: "ligas_telefono_celular", showPending: true, lenght: 13, endRow: true},
+                {name: "ligas_email", showPending: true, length: 100, width: "*", colSpan: 4, endRow: true},
+                {name: "ligas_web_url", showPending: true, length: 200, width: "*", colSpan: 4, endRow: true}
             ]//, cellBorder: 1
         });
     },
-    createDetailGridContainer: function(mode) {
+    canShowTheDetailGridAfterAdd: function () {
+        return true;
+    },
+    createDetailGridContainer: function (mode) {
         return isc.DetailGridContainer.create({
             height: 200,
             sectionTitle: 'Clubes Asociados',
@@ -63,14 +66,15 @@ isc.WinLigasForm.addProperties({
                             minimumSearchLength: 3,
                             autoFetchData: false,
                             textMatchStyle: 'substring',
-                            sortField: "clubes_descripcion"
+                            sortField: "clubes_descripcion",
+                            showPending: true
                         }
                     },
-                    {name: "ligasclubes_desde", title: "Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'}, showPickerIcon: false, width: 100},
-                    {name: "ligasclubes_hasta", title: "Hasta", useTextField: true, textFieldProperties: {defaultValue: '01/01/2035'}, showPickerIcon: false, width: 100},
-                    {name: "activo", width: '10%', canToggle: false}
+                    {name: "ligasclubes_desde", title: "Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'}, editorProperties: {showPending: true}, showPickerIcon: false, width: 100},
+                    {name: "ligasclubes_hasta", title: "Hasta", useTextField: true, textFieldProperties: {defaultValue: '01/01/2035'}, editorProperties: {showPending: true}, showPickerIcon: false, width: 100},
+                    {name: "activo", editorProperties: {showPending: true}, width: '10%', canToggle: false}
                 ],
-                editComplete: function(rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
+                editComplete: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
                     // Actualizamos el registro GRBADO no puedo usar setEditValue porque asumiria que el regisro recien grabado
                     // difiere de lo editado y lo tomaria como pendiente de grabar.d
                     // Tampoco puedo usar el record basado en el rowNum ya que si la lista esta ordenada al reposicionarse los registros
@@ -96,7 +100,7 @@ isc.WinLigasForm.addProperties({
                 },
             }});
     },
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
     }
 });

@@ -57,7 +57,7 @@ isc.AtletasResultadosReportWindow.addProperties({
                         if (formReportAtletasResultados.getValue('formato_xls') == false) {
                             url += '&reportUnit=/reports/atletismo/rptResultadosAtleta';
                         } else {
-                            url += '&reportUnit=/reports/atletismo/rptResultadosAtleta_1&output=xls';
+                            url += '&reportUnit=/reports/atletismo/rptResultadosAtletasXLS&output=xls';
                         }
 
                         if (formReportAtletasResultados.getValue('categorias_codigo') !== undefined && formReportRecordsHist.getValue('categorias_codigo') != 'TOD') {
@@ -116,24 +116,14 @@ isc.AtletasResultadosReportWindow.addProperties({
                     pickListFields: [{name: "apppruebas_codigo", width: '30%'}, {name: "apppruebas_descripcion", width: '80%'}],
                     pickListWidth: 280,
                     optionOperationId: 'fetchJoined',
-                    editorProperties: {
+                  //  editorProperties: {
                         optionDataSource: mdl_apppruebas,
-                        minimumSearchLength: 3,
+                    //    minimumSearchLength: 3,
                         textMatchStyle: 'substring',
-                        sortField: "apppruebas_descripcion"
-                    },
+                        sortField: "apppruebas_descripcion",
+                  //  },
                     changed: function (form, item, value) {
-                        // si la prueba es cambiada debe limpiarse los atletas elegidos y ademas
-                        // dejar enabled solo el ingreso al primero de ellos.
-                        // var prueba = item.getSelectedRecord();
-                        /*  if (prueba) {
-                         formReportAtletasResultados.getItem('atletas_codigo').setDisabled(false);
-                         } else {
-                         formReportAtletasResultados.getItem('atletas_codigo').setDisabled(true);
-
-                         }*/
-                        //   formReportAtletasResultados.getItem('atletas_codigo').setDisabled(false);
-                        // item.getSelectedRecord();
+                        // si la prueba es cambiada debe limpiarse los atletas
                         var prueba = item.getSelectedRecord();
                         if (prueba) {
                             formReportAtletasResultados.getItem('atletas_codigo').forceRefresh();
@@ -157,14 +147,10 @@ isc.AtletasResultadosReportWindow.addProperties({
                     pickListWidth: 260,
                     completeOnTab: true,
                     required: true,
-                    // disabled: true,
                     optionOperationId: 'fetchForListByPrueba',
-                    editorProperties: {
-                        optionDataSource: mdl_atletas,
-                        minimumSearchLength: 3,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo"
-                    },
+                    optionDataSource: mdl_atletas,
+                    textMatchStyle: 'substring',
+                    sortField: "atletas_nombre_completo",
                     /**
                      * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                      * que dependen de la de la prueba y sexo seleccionados en caso se indique prueba
@@ -230,14 +216,14 @@ isc.AtletasResultadosReportWindow.addProperties({
                 if (filter == null) {
                     filter = {};
                 }
-                console.log(formReportAtletasResultados.getValue('apppruebas_codigo'))
+              //  console.log(formReportAtletasResultados.getValue('apppruebas_codigo'))
                 if (formReportAtletasResultados.getValue('apppruebas_codigo') != undefined) {
                     filter = {_constructor: "AdvancedCriteria",
                         operator: "and", criteria: [
                             {fieldName: "pruebas_generica_codigo", operator: "equals", value: formReportAtletasResultados.getValue('apppruebas_codigo')}
                         ]};
                 }
-                console.log(filter)
+              //  console.log(filter)
                 return filter;
             },
         });

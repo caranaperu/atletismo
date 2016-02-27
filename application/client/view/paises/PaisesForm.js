@@ -26,9 +26,9 @@ isc.WinPaisesForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'paises_descripcion',
             fields: [
-                {name: "paises_codigo", title: "Codigo", type: "text", width: "50", mask: "LLL"},
-                {name: "paises_descripcion", title: "Descripcion", length: 120, width: "260"},
-                {name: "paises_entidad", title: "De La Entidad?", defaultValue: false,
+                {name: "paises_codigo", title: "Codigo", type: "text", showPending: true, width: "50", mask: "LLL"},
+                {name: "paises_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"},
+                {name: "paises_entidad", title: "De La Entidad?", defaultValue: false, showPending: true,
                     change: function(form, item, value, oldValue) {
                         var ret = true;
                         if (value === true) {
@@ -51,7 +51,7 @@ isc.WinPaisesForm.addProperties({
 
                     }
                 },
-                {name: "regiones_codigo", title: "Region", editorType: "comboBoxExt", length: 80, width: "280",
+                {name: "regiones_codigo", title: "Region", editorType: "comboBoxExt", showPending: true, length: 80, width: "280",
                     valueField: "regiones_codigo", displayField: "regiones_descripcion",
                     optionDataSource: mdl_regiones,
                     pickListFields: [{name: "regiones_codigo", width: '35%'}, {name: "regiones_descripcion", width: '65%'}],

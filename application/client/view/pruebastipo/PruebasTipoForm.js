@@ -26,8 +26,8 @@ isc.WinPruebasTipoForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'pruebas_tipo_descripcion',
             fields: [
-                {name: "pruebas_tipo_codigo", title: "Codigo", type: "text", width: "50", mask: ">LLLLLLL"},
-                {name: "pruebas_tipo_descripcion", title: "Descripcion", length: 120, width: "260"}
+                {name: "pruebas_tipo_codigo", title: "Codigo", type: "text", showPending: true, width: "50", mask: ">LLLLLLL"},
+                {name: "pruebas_tipo_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"}
             ]
         });
     },

@@ -26,9 +26,9 @@ isc.WinCiudadesForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'ciudades_descripcion',
             fields: [
-                {name: "ciudades_codigo", title: "Codigo", type: "text", width: "50", mask: "LLLLL"},
-                {name: "ciudades_descripcion", title: "Descripcion", length: 120, width: "260"},
-                {name: "paises_codigo", title: "Pais", editorType: "comboBoxExt", length: 80, width: "280",
+                {name: "ciudades_codigo", title: "Codigo", showPending: true, type: "text", width: "50", mask: "LLLLL"},
+                {name: "ciudades_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"},
+                {name: "paises_codigo", title: "Pais", showPending: true, editorType: "comboBoxExt", length: 80, width: "280",
                     valueField: "paises_codigo", displayField: "paises_descripcion",
                     optionDataSource: mdl_paises,
                     pickListFields: [{name: "paises_codigo", width: '20%'}, {name: "paises_descripcion", width: '80%'}],
@@ -38,7 +38,7 @@ isc.WinCiudadesForm.addProperties({
                     // de lo contrario el sort se hace en el lado cliente.
                     initialSort: [{property: 'paises_descripcion'}]
                 },
-                {name: "ciudades_altura", title: 'Esta en Altura?'}
+                {name: "ciudades_altura", title: 'Esta en Altura?', showPending: true}
             ]
         });
     },

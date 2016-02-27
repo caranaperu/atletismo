@@ -26,8 +26,8 @@ isc.WinRegionesForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'regiones_descripcion',
             fields: [
-                {name: "regiones_codigo", title: "Codigo", type: "text", width: "75", mask: "LLLLLLLLLL"},
-                {name: "regiones_descripcion", title: "Descripcion", length: 120, width: "260"}
+                {name: "regiones_codigo", title: "Codigo", type: "text", showPending: true, width: "75", mask: "LLLLLLLLLL"},
+                {name: "regiones_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"}
             ]
         });
     },

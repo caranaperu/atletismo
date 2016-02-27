@@ -26,9 +26,9 @@ isc.WinCategoriasForm.addProperties({
             saveButton: this.getButton('save'),
             focusInEditFld: 'categorias_descripcion',
             fields: [
-                {name: "categorias_codigo", title: "Codigo", type: "text", width: "100", mask: ">AAAAAAAAAA"},
-                {name: "categorias_descripcion", title: "Descripcion", length: 120, width: "260"},
-                {name: "categorias_edad_inicial", title: "Edad Inicial", keyPressFilter: "[0-9]", length: 2, width: '50',
+                {name: "categorias_codigo", title: "Codigo", type: "text", showPending: true, width: "100", mask: ">AAAAAAAAAA"},
+                {name: "categorias_descripcion", title: "Descripcion", showPending: true, length: 120, width: "260"},
+                {name: "categorias_edad_inicial", title: "Edad Inicial", showPending: true, keyPressFilter: "[0-9]", length: 2, width: '50',
                     validators: [{type: "custom",
                             // Valida que la edad inicial no sea mayor que la final
                             condition: function(item, validator, value) {
@@ -41,7 +41,7 @@ isc.WinCategoriasForm.addProperties({
                                 return true;
                             }
                         }]},
-                {name: "categorias_edad_final", title: "Edad Final", keyPressFilter: "[0-9]", length: 2, width: '50',
+                {name: "categorias_edad_final", title: "Edad Final", showPending: true, keyPressFilter: "[0-9]", length: 2, width: '50',
                     validators: [{type: "custom",
                             // Valida que la edad final no sea mayor que la inicial
                             condition: function(item, validator, value) {
@@ -54,8 +54,8 @@ isc.WinCategoriasForm.addProperties({
                                 return true;
                             }
                         }]},
-                {name: "categorias_valido_desde", title: "Valido Desde", useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'}, width: 100},
-                {name: "categorias_validacion", editorType: "selectExt", width: "100",
+                {name: "categorias_valido_desde", title: "Valido Desde", showPending: true, useTextField: true, textFieldProperties: {defaultValue: '01/01/1940'}, width: 100},
+                {name: "categorias_validacion", editorType: "selectExt", showPending: true, width: "100",
                     valueField: "appcat_codigo", displayField: "appcat_codigo",
                     optionDataSource: mdl_appcategorias
                 },
