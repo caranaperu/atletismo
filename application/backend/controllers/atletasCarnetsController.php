@@ -4,177 +4,52 @@ if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
 /**
- * Controlador para la relacion entrenador-atleta.
+ * Controlador CRUD para el registro de carnets pagados para el registro
+ * de los atletas.
  *
+ * @author  Carlos Arana Reategui <aranape@gmail.com>
+ * @version 0.1
+ * @package SoftAthletics
+ * @copyright 2015-2016 Carlos Arana Reategui.
+ * @license GPL
  *
- * @author $Author: aranape $
- * @since 17-May-2012
- * @version $Id: atletasCarnetsController.php 85 2014-03-25 10:12:35Z aranape $
- *
- * $Date: 2014-03-25 05:12:35 -0500 (mar, 25 mar 2014) $
- * $Rev: 85 $
  */
-class atletasCarnetsController extends app\common\controller\TSLAppDefaultController {
+class atletasCarnetsController extends app\common\controller\TSLAppDefaultCRUDController {
 
     public function __construct() {
         parent::__construct();
     }
 
-    private function readAtletasCarnets() {
+    /**
+     * {@inheritDoc}
+     */
+    protected function setupData() {
 
-        try {
-            if ($this->validateInputData($this->DTO, 'atletascarnets', 'atletascarnets_validation', 'v_atletascarnets', 'getAtletasCarnets') === TRUE) {
-                $this->DTO->addParameter('id', $this->input->get_post('atletas_carnets_id'));
-                $this->DTO->addParameter('atletas_carnets_id', $this->input->get_post('atletas_carnets_id'));
-                $this->DTO->addParameter('verifyExist', $this->input->get_post('verifyExist'));
-
-                // Ir al Bussiness Object
-                $atletasCarnetsService = new AtletasCarnetsBussinessService();
-                $atletasCarnetsService->executeService('read', $this->DTO);
-            }
-        } catch (Exception $ex) {
-            $outMessage = &$this->DTO->getOutMessage();
-            // TODO: Internacionalizar.
-            $processError = new TSLProcessErrorMessage($ex->getCode(), 'Error Interno', $ex);
-            $outMessage->addProcessError($processError);
-        }
-    }
-
-    private function deleteAtletasCarnets() {
-        try {
-            if ($this->validateInputData($this->DTO, 'atletascarnets', 'atletascarnets_validation', 'v_atletascarnets', 'delAtletasCarnets') === TRUE) {
-                $this->DTO->addParameter('atletas_carnets_id', $this->input->get_post('atletas_carnets_id'));
-                $this->DTO->addParameter('versionId', $this->input->get_post('versionId'));
-
-                // Ir al Bussiness Object
-                $atletasCarnetsService = new AtletasCarnetsBussinessService();
-                $atletasCarnetsService->executeService('delete', $this->DTO);
-            }
-        } catch (Exception $ex) {
-            $outMessage = &$this->DTO->getOutMessage();
-            // TODO: Internacionalizar.
-            $processError = new TSLProcessErrorMessage($ex->getCode(), 'Error Interno', $ex);
-            $outMessage->addProcessError($processError);
-        }
+        $this->setupOpts = [
+            "validateOptions" => [
+                "fetch" => [],
+                "read" => ["langId" => 'atletascarnets', "validationId" => 'atletascarnets_validation', "validationGroupId" => 'v_atletascarnets', "validationRulesId" => 'getAtletasCarnets'],
+                "add" => ["langId" => 'atletascarnets', "validationId" => 'atletascarnets_validation', "validationGroupId" => 'v_atletascarnets', "validationRulesId" => 'addAtletasCarnets'],
+                "del" => ["langId" => 'atletascarnets', "validationId" => 'atletascarnets_validation', "validationGroupId" => 'v_atletascarnets', "validationRulesId" => 'delAtletasCarnets'],
+                "upd" => ["langId" => 'atletascarnets', "validationId" => 'atletascarnets_validation', "validationGroupId" => 'v_atletascarnets', "validationRulesId" => 'updAtletasCarnets']
+            ],
+            "paramsList" => [
+                "fetch" => [],
+                "read" => ['getAtletasCarnets', 'verifyExist'],
+                "add" => ['atletas_carnets_numero', 'atletas_codigo', 'atletas_carnets_agno', 'atletas_carnets_fecha', 'activo'],
+                "del" => ['atletas_carnets_id', 'versionId'],
+                "upd" => ['atletas_carnets_id','atletas_carnets_numero', 'atletas_codigo', 'atletas_carnets_agno', 'atletas_carnets_fecha', 'versionId', 'activo']],
+            "paramsFixableToNull" => ['atletas_carnets_', 'atletas_'],
+            "paramsFixableToValue" => ["atletas_carnets_id" => ["valueToFix" => 'null', "valueToReplace" => NULL, "isID" => true]],
+            "paramToMapId" => 'atletas_carnets_id'
+        ];
     }
 
     /**
-     * Leer la documentacion de la clase.
+     * {@inheritDoc}
      */
-    private function fetchAtletasCarnets() {
-        try {
-            // Ir al Bussiness Object
-            $atletasCarnetsService = new AtletasCarnetsBussinessService();
-
-            $constraints = &$this->DTO->getConstraints();
-
-            // Procesamos los constraints
-            $this->getConstraintProcessor()->process($_REQUEST, $constraints);
-
-            $atletasCarnetsService->executeService('list', $this->DTO);
-        } catch (Exception $ex) {
-            $outMessage = &$this->DTO->getOutMessage();
-            // TODO: Internacionalizar.
-            $processError = new TSLProcessErrorMessage($ex->getCode(), 'Error Interno', $ex);
-            $outMessage->addProcessError($processError);
-        }
-    }
-
-    private function addAtletasCarnets() {
-        try {
-            if ($this->validateInputData($this->DTO, 'atletascarnets', 'atletascarnets_validation', 'v_atletascarnets', 'addAtletasCarnets') === TRUE) {
-                // Seteamos parametros en el DTO
-                $this->DTO->addParameter('atletas_carnets_numero', $this->input->get_post('atletas_carnets_numero'));
-                $this->DTO->addParameter('atletas_codigo', $this->input->get_post('atletas_codigo'));
-                $this->DTO->addParameter('atletas_carnets_agno', $this->input->get_post('atletas_carnets_agno'));
-                $this->DTO->addParameter('atletas_carnets_fecha', $this->input->get_post('atletas_carnets_fecha'));
-                $this->DTO->addParameter('activo', $this->input->get_post('activo')); // Siempre se agrega
-                // Ir al Bussiness Object
-                $atletasCarnetsService = new AtletasCarnetsBussinessService();
-                $atletasCarnetsService->executeService('add', $this->DTO);
-            }
-        } catch (Exception $ex) {
-            $outMessage = &$this->DTO->getOutMessage();
-            // TODO: Internacionalizar.
-            $processError = new TSLProcessErrorMessage($ex->getCode(), 'Error Interno', $ex);
-            $outMessage->addProcessError($processError);
-        }
-    }
-
-    private function updAtletasCarnets() {
-        try {
-            if ($this->validateInputData($this->DTO, 'atletascarnets', 'atletascarnets_validation', 'v_atletascarnets', 'updAtletasCarnets') === TRUE) {
-                // Seteamos parametros en el DTO
-                $this->DTO->addParameter('atletas_carnets_id', $this->input->get_post('atletas_carnets_id'));
-                $this->DTO->addParameter('atletas_carnets_numero', $this->input->get_post('atletas_carnets_numero'));
-                $this->DTO->addParameter('atletas_codigo', $this->input->get_post('atletas_codigo'));
-                $this->DTO->addParameter('atletas_carnets_agno', $this->input->get_post('atletas_carnets_agno'));
-                $this->DTO->addParameter('atletas_carnets_fecha', $this->input->get_post('atletas_carnets_fecha'));
-                $this->DTO->addParameter('activo', $this->input->get_post('activo')); // Siempre se agrega
-                $this->DTO->addParameter('versionId', $this->input->get_post('versionId'));
-                // Ir al Bussiness Object
-                $atletasCarnetsService = new AtletasCarnetsBussinessService();
-                $atletasCarnetsService->executeService('update', $this->DTO);
-            }
-        } catch (Exception $ex) {
-            $outMessage = &$this->DTO->getOutMessage();
-            // TODO: Internacionalizar.
-            $processError = new TSLProcessErrorMessage($ex->getCode(), 'Error Interno', $ex);
-            $outMessage->addProcessError($processError);
-        }
-    }
-
-    /**
-     * Pagina index para este controlador , maneja todos los casos , lectura, lista
-     * etc.
-     */
-    public function index() {
-        $this->parseParameters(['atletas_carnets_', 'atletas_']);
-
-        // ya que podria no haberse enviado y estar no definido
-        $atletasCarnetsId = $this->fixParameter('atletas_carnets_id', 'null', NULL);
-
-        // Vemos si esta definido el tipo de suboperacion
-        $operationId = $this->input->get_post('_operationId');
-        if (isset($operationId) && is_string($operationId)) {
-            $this->DTO->setSubOperationId($operationId);
-        }
-
-
-        // Se setea el usuario
-        $this->DTO->setSessionUser($this->getUser());
-
-        $op = $_REQUEST['op'];
-        if (!isset($op) || $op == 'fetch') {
-            // Si la suboperacion es read o no esta definida y se ha definido la pk se busca un registro unico
-            // de lo contrario se busca en forma de resultset
-            if (isset($atletasCarnetsId) && ($operationId == 'read' || !isset($operationId) || $operationId === FALSE)) {
-                $this->DTO->setOperation(TSLIDataTransferObj::OP_READ);
-                $this->readAtletasCarnets();
-            } else {
-                $this->DTO->setOperation(TSLIDataTransferObj::OP_FETCH);
-                $this->fetchAtletasCarnets();
-            }
-        } else if ($op == 'add') {
-            $this->DTO->setOperation(TSLIDataTransferObj::OP_ADD);
-            $this->addAtletasCarnets();
-        } else if ($op == 'upd') {
-            $this->DTO->setOperation(TSLIDataTransferObj::OP_UPDATE);
-            $this->updAtletasCarnets();
-        } else if ($op == 'del') {
-            $this->DTO->setOperation(TSLIDataTransferObj::OP_DELETE);
-            $this->deleteAtletasCarnets();
-        } else {
-            $outMessage = &$this->DTO->getOutMessage();
-            // TODO: Internacionalizar.
-            $processError = new TSLProcessErrorMessage(70000, 'Operacion No Conocida', null);
-            $outMessage->addProcessError($processError);
-        }
-
-        // Envia los resultados a traves del DTO
-        //$this->responseProcessor->process($this->DTO);
-        $data['data'] = &$this->responseProcessor->process($this->DTO);
-        $this->load->view($this->getView(), $data);
+    protected function getBussinessService() {
+        return new AtletasCarnetsBussinessService();
     }
 
 }
