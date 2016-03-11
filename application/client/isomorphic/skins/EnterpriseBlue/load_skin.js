@@ -289,7 +289,7 @@ isc.loadSkin = function (theWindow) {
                     nodeIcon:"[SKIN]file.png",
                     normalBaseStyle:"treeCell",
                     applyRowNumberStyle:false,
-                    openerIconSize:22,
+                    openerIconWidth:22,
                     openerImage:"[SKIN]opener.png",
                     sortAscendingImage:{src:"[SKINIMG]ListGrid/sort_ascending.png", width:9, height:6},
                     sortDescendingImage:{src:"[SKINIMG]ListGrid/sort_descending.png", width:9, height:6},
@@ -1547,7 +1547,7 @@ isc.loadSkin = function (theWindow) {
                     folderIcon:"[SKIN]folder.png",
                     manyItemsImage:"[SKIN]folder_file.png",
                     nodeIcon:"[SKIN]file.png",
-                    openerIconSize:22
+                    openerIconWidth:22
                 });
             }
 

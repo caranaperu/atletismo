@@ -1,46 +1,22 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_Calendar){isc.module_Calendar=1;isc._moduleStart=isc._Calendar_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Calendar load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-01-21/LGPL Deployment") {
+if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-01-21/LGPL Deployment'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -6377,7 +6353,10 @@ isc.TimelineView.addProperties({
             } else if (unit == "month") {
                 title = startDate.getShortMonthName();
             } else if (unit == "week") {
-                title = this.creator.weekPrefix + " " + startDate.getWeek(this.firstDayOfWeek);
+                // use the week number for the Date.firstWeekIncludesDay'th day of the week - thursday
+                var midWeek = isc.DateUtil.getStartOf(startDate.duplicate(), "W", null, this.creator.firstDayOfWeek);
+                midWeek.setDate(midWeek.getDate() + (midWeek.firstWeekIncludesDay - this.creator.firstDayOfWeek));
+                title = this.creator.weekPrefix + " " + midWeek.getWeek(this.creator.firstDayOfWeek);
             } else if (unit == "day") {
                 title = startDate.getShortDayName();
             } else {
@@ -12222,10 +12201,10 @@ setChosenDate : function (newDate, fromTimelineView) {
         if (this.monthView) {
             if (this.monthViewSelected()) this.monthView._refreshEvents();
             else this.monthView._needsRefresh = true;
-        } else if (this.selectChosenDate) {
-            // month hasn't changed - just update the selection
-            this.monthView.selectChosenDateCells();
         }
+    } else if (this.selectChosenDate) {
+        // month hasn't changed - just update the selection
+        if (this.monthView) this.monthView.selectChosenDateCells();
     }
 
     // check if the week needs redrawn
@@ -13657,15 +13636,17 @@ addEventOrUpdateEventFields : function () {
             if (!cal.twentyFourHourTime) {
                 eAMPM = values["endAMPM"];
                 eHrs = cal._to24HourNotation(eHrs, eAMPM);
-                // handle the case where end date is 12am, which is valid, as this
-                // is considered the end of the current day
-                if (eHrs == 0) eHrs = 24;
             }
-            // check for invalid times
-            if (!(sHrs < eHrs || (sHrs == eHrs && sMins < eMins))) {
+            // check for invalid times - bail if
+            // - end hour < start hour and end time != 00:00
+            // - end hours == start hours and end mins is <= start mins
+            if ((eHrs < sHrs && eHrs+eMins != 0) || (eHrs == sHrs && eMins <= sMins)) {
                 form.showItem("invalidDate");
                 return false;
             }
+
+            // if the end time is 00;00, make it 24:00 - it will get rounded back to 11:59
+            if (eHrs == 0 && eMins == 0) eHrs = 24;
 
             // run validation so rules for custom fields added by the
             // developer are enforced
@@ -13676,6 +13657,12 @@ addEventOrUpdateEventFields : function () {
             endDate.setMinutes(eMins);
             if (endDate.getTime() > maxEndDate.getTime()) {
                 endDate = maxEndDate.duplicate();
+            }
+
+            // check for equal start and end times (specifically, midnight to midnight)
+            if (isc.Date.compareDates(startDate, endDate) == 0) {
+                form.showItem("invalidDate");
+                return false;
             }
 
             newEvent[cal.endDateField] = endDate;
@@ -17081,38 +17068,14 @@ eventDragGap: 0
 
 });
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('Calendar');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._Calendar_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Calendar module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'Calendar', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Calendar'.");}
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 

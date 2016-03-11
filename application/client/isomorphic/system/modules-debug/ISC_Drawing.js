@@ -1,46 +1,22 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_Drawing){isc.module_Drawing=1;isc._moduleStart=isc._Drawing_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Drawing load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-01-21/LGPL Deployment") {
+if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-01-21/LGPL Deployment'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -3017,18 +2993,39 @@ isc.defineClass("VMLStringConversionContext").addMethods({
 //     in which dimensional and positional values are interpreted.  For example, when a
 //     +link{DrawRect} is configured with left:20, top:30, width:200, and height:100, the
 //     DrawRect represents a rectangle from (20, 30) to (220, 130) in its local coordinate
-//     system.
+//     system.  For this same DrawRect, +link{DrawRect.top,top} is going to be 30 even if
+//     the shape is scaled by 3x, such that the (transformed) top coordinate in the drawing
+//     coordinate system actually lies outside the visible region of the DrawPane.  Similarly,
+//     no matter what rotation is applied, +link{DrawRect.top,top} will continue to be 30.
+//     <p>
+//     Use +link{DrawItem.getBoundingBox()} to obtain the bounding box of the item in local
+//     coordinates.  Subclass properties also typically provide data in the local coordinate
+//     system, such as +link{DrawRect.left}, +link{DrawRect.top}, +link{DrawRect.width},
+//     +link{DrawRect.height}, +link{DrawPath.points}, and +link{DrawTriangle.points}.
 //     <p>
 //     There is a local coordinate system for each DrawItem.</li>
 // <li>The "drawing coordinate system" refers to the Cartesian coordinate system shared by
 //     all DrawItems after their local transforms, such as +link{DrawItem.scale} or
 //     +link{DrawItem.rotation}, have been applied.
 //     <p>
+//     Since +link{DrawGroup}s pass through applied transforms to the underlying items,
+//     +link{DrawGroup} properties such as +link{DrawGroup.left}, +link{DrawGroup.top},
+//     +link{DrawGroup.width}, and +link{DrawGroup.height}, represent coordinates in the drawing
+//     coordinate system, as does therefore +link{DrawGroup.getBoundingBox()}.  The APIs
+//     +link{DrawPane.getDrawingPoint()}, +link{DrawPane.getDrawingX()}, and
+//     +link{DrawPane.getDrawingY()}, also return drawing coordinates.
+//     <p>
 //     For DrawItems with no local transforms, the drawing coordinate system is identical to
 //     the local coordinate system.</li>
 // <li>The "global coordinate system" refers to the drawing coordinate system with global
 //     DrawPane transforms +link{DrawPane.translate}, +link{DrawPane.zoomLevel} and
 //     +link{DrawPane.rotation} applied.
+//     <p>
+//     Use +link{DrawItem.getResizeBoundingBox()} to obtain the bounding box of a
+//     +link{DrawItem} in global coordinates.  The APIs +link{DrawItem.getPageLeft()} and
+//     +link{DrawItem.getPageTop()} reflect global coordinates rounded to the nearest pixel and
+//     offset by the page-relative coordinates of the +link{DrawPane}'s top left corner.
+//     (See for example +link{Canvas.getPageLeft()} and +link{Canvas.getPageTop()}.)
 //     <p>
 //     With the default global transforms, the global coordinate system is identical to the
 //     drawing coordinate system.</li>
@@ -3705,16 +3702,18 @@ erase : function (destroy, willRedraw) {
     }
     if (destroy) {
         isc.Log.logDebug("Destroying drawItems for DrawPane " + this.ID, "drawing");
-        var drawItems = this.drawItems,
-            numDrawItems = (drawItems == null ? 0 : drawItems.length);
-        for (var i = 0; i < numDrawItems; ++i) {
-            drawItems[i].destroy(true, willRedraw); // pass destroyingAll flag to prevent extra redraws
+
+        var drawItems = this.drawItems || [];
+        for (var i = 0; i < drawItems.length; ++i) {
+            // pass destroyingAll flag to prevent extra redraws
+            drawItems[i].destroy(true, willRedraw);
         }
     } else if (this.isDrawn()) {
-        var drawItems = this.drawItems,
-            numDrawItems = (drawItems == null ? 0 : drawItems.length);
-        for (var i = 0; i < numDrawItems; ++i) {
-            drawItems[i].erase(true, willRedraw); // pass erasingAll flag to prevent extra redraws
+
+        var drawItems = this.drawItems || [];
+        for (var i = 0; i < drawItems.length; ++i) {
+            // pass erasingAll flag to prevent extra redraws
+            drawItems[i].erase(true, willRedraw);
         }
     }
     if (willRedraw) this._erasedGradients = this._gradientMap;
@@ -3744,9 +3743,11 @@ destroyItems : function () {
 destroy : function () {
     var drawItems = this.drawItems;
     if (drawItems != null) {
+
         for (var i = 0; i < drawItems.length; ++i) {
-            drawItems[i].destroy();
+            drawItems[i].destroy(true);
         }
+        drawItems = null;
     }
     this.Super("destroy", arguments);
 },
@@ -6413,13 +6414,14 @@ isc.DrawPane.addClassProperties({
 // Base class for graphical elements drawn in a DrawPane.  All properties and methods
 // documented here are available on all DrawItems unless otherwise specified.
 // <P>
-// Each DrawItem has its own local transform that maps its local coordinate system to the
-// drawing coordinate system that is shared by all DrawItems in the same DrawPane (explained
-// +link{class:DrawPane,here}).  The local transform is a combination of rotation, scaling, and
-// other affine transformations.  The DrawItem is first +link{drawItem.translate,translated},
-// then +link{drawItem.scale,scaled}, then +link{drawItem.xShearFactor,sheared} in the direction
-// of the x-axis, then +link{drawItem.yShearFactor,sheared} in the directiton of the y-axis, and
-// then finally +link{drawItem.rotation,rotated}.
+// Each DrawItem has its own local transform that maps its
+// +link{DrawItem,local coordinate system} to the drawing coordinate system that is shared by
+// all DrawItems in the same DrawPane (explained +link{class:DrawPane,here}).  The local
+// transform is a combination of rotation, scaling, and other affine transformations.  The
+// DrawItem is first +link{drawItem.translate,translated}, then +link{drawItem.scale,scaled},
+// then +link{drawItem.xShearFactor,sheared} in the direction of the x-axis, then
+// +link{drawItem.yShearFactor,sheared} in the directiton of the y-axis, and then finally
+// +link{drawItem.rotation,rotated}.
 // <P>
 // Note that DrawItems as such should never be created, only concrete subclasses such as
 // +link{DrawGroup} and +link{DrawLine}.
@@ -6775,13 +6777,13 @@ isc.DrawItem.addProperties({
     //<
     yShearFactor: 0,
 
-    //> @attr drawItem.scale (Array[] of int : null : IRA)
+    //> @attr drawItem.scale (Array[] of float : null : IRA)
     // Array holds 2 values representing scaling along x and y dimensions.
     // @visibility drawing
     //<
     scale: null,
 
-    //> @attr drawItem.translate (Array[] of int : null : IRA)
+    //> @attr drawItem.translate (Array[] of float : null : IRA)
     // Array holds two values representing translation along the x and y dimensions.
     // @visibility drawing
     //<
@@ -6910,7 +6912,8 @@ isc.DrawItem.addProperties({
         // (#808080) because the default "normal" weight of the font makes the text color look
         // lighter, so this compensates for the lighter appearance.
         lineColor: "#707070",
-        fontSize: 12,
+        fontSize: 11,
+        fontFamily: "Arial",
         fontWeight: "normal",
 
         setContents : function (contents, fromUpdateTitleLabelAndBackground) {
@@ -7407,13 +7410,16 @@ getCenter : function () {
 },
 
 //> @method drawItem.getBoundingBox()
-// Calculates the bounding box of the shape in the local coordinate system.
+// Calculates the bounding box of the shape in the +link{DrawPane,local coordinate system}.
 // <p>
 // Note that the bounding box of the shape when transformed into the global coordinate system
 // is available from the method +link{getResizeBoundingBox()}.
+//
 // @return (Array[] of double) the x1, y1, x2, y2 coordinates. When the width and height are both positive,
 // point (x1, y1) is the top-left point of the bounding box and point (x2, y2) is the bottom-right
 // point of the bounding box.
+//
+// @see DrawPane
 // @visibility drawing
 //<
 
@@ -7460,7 +7466,7 @@ _adjustBoundingBox : function (forStroke, forHitTolerance, bbox) {
 // +link{showResizeOutline,resize outline} shown when dragging the
 // +link{resizeKnobPoints,resize knobs}.  This method is similar to +link{getBoundingBox()}
 // except that the coordinates returned by this method are in the global coordinate system
-// (described +link{class:DrawPane,here}).
+// (described +link{class:DrawPane,here}) rather than the local coordinate system.
 // @return (array) the x1, y1, x2, y2 coordinates. When the width and height are both positive,
 // point (x1, y1) is the top-left point of the bounding box and point (x2, y2) is the bottom-right
 // point of the bounding box.
@@ -7569,6 +7575,39 @@ _useExemptHack : function () {
 // not null then it takes precedence over the settings of these other properties.
 // @visibility customTransform
 //<
+
+
+
+//> @attr drawItem.shapeData (object : null : I)
+// An opaque object specifying the local transformation that should be applied to this
+// <code>DrawItem</code>, obtained through a call to +link{getShapeData()}.<p>
+// <b>Note:</b> if this property is specified, you should avoid also specifying a
+// +link{translate}, +link{scale}, +link{xShearFactor}, +link{yShearFactor}, or +link{rotation}.
+// @visibility drawing
+//<
+
+//> @method drawItem.getShapeData()
+// Returns an opaque JavaScript object representing the current local transformation applied to
+// the DrawItem's local coordinates, as defined by +link{translate}, +link{scale},
+// +link{xShearFactor}, +link{yShearFactor}, and +link{rotation}.  The object may be serialized
+// and deserialized as JSON, and passed into the constructor block as +link{shapeData} to
+// restore the local transformation.<p>
+// <b>Note:</b> this doesn't include any sepatate configuration, such as for a +link{DrawRect}
+// the current values of +link{DrawRect.left,left}, +link{DrawRect.top,top},
+// +link{DrawRect.width,width}, or +link{DrawRect.height,height}.
+//
+// @return (object) opaque tranformation data
+// @see JSON.encode()
+// @visibility drawing
+//<
+getShapeData : function () {
+    var transform = this.getTransform();
+    // change AffineTransform instance to a plain JSO to simplify serialization
+    return {
+        m00: transform.m00, m01: transform.m01, m02: transform.m02,
+        m10: transform.m10, m11: transform.m11, m12: transform.m12
+    };
+},
 
 //> @method drawItem.getTransform() [A]
 // Returns a copy of the current local transform being applied to this DrawItem.  This
@@ -8339,6 +8378,14 @@ init : function () {
         isc.ClassFactory.addGlobalID(this);
     }
     this.drawItemID = isc.DrawItem._IDCounter++;
+
+
+    if (this.shapeData) {
+        var shapeData = this.shapeData,
+            elements = [shapeData.m00, shapeData.m01, shapeData.m02,
+                        shapeData.m10, shapeData.m11, shapeData.m12].map(parseFloat);
+        this.setTransform(isc.AffineTransform.create.apply(isc.AffineTransform, elements));
+    }
 
 
     if (this.exemptFromGlobalTransform) {
@@ -9473,6 +9520,7 @@ _updateTitleLabelAndBackground : function () {
             }
 
             var titleLabelDynamicProps = {
+                drawPane: drawPane,
                 autoDraw: false,
                 eventProxy: this,
                 contents: title,
@@ -11777,29 +11825,33 @@ isc.defineClass("DrawGroup", "DrawItem").addProperties({
     //<
     useGroupRect:false,
 
-    //> @attr drawGroup.left      (int : 0 : IRW)
-    // Left coordinate of the +link{getGroupRect(),group rectangle} in pixels relative to the DrawPane.
+    //> @attr drawGroup.left (int : 0 : IRW)
+    // Left coordinate of the +link{getGroupRect(),group rectangle} in pixels relative to the
+    // +link{DrawPane} (the "drawing coordinate system").
     //
     // @visibility drawing
     //<
     left:0,
 
-    //> @attr drawGroup.top       (int : 0 : IRW)
-    // Top coordinate of the +link{getGroupRect(),group rectangle} in pixels relative to the DrawPane.
+    //> @attr drawGroup.top (int : 0 : IRW)
+    // Top coordinate of the +link{getGroupRect(),group rectangle} in pixels relative to the
+    // +link{DrawPane} (the "drawing coordinate system").
     //
     // @visibility drawing
     //<
     top:0,
 
-    //> @attr drawGroup.width      (int : 1 : IRW)
-    // Width of the +link{getGroupRect(),group rectangle} in pixels relative to the DrawPane.
+    //> @attr drawGroup.width (int : 1 : IRW)
+    // Width of the +link{getGroupRect(),group rectangle} in pixels relative to the
+    // +link{DrawPane} (the "drawing coordinate system").
     //
     // @visibility drawing
     //<
     width:1,
 
-    //> @attr drawGroup.height      (int : 1 : IRW)
-    // Height of the +link{getGroupRect(),group rectangle} in pixels relative to the DrawPane.
+    //> @attr drawGroup.height (int : 1 : IRW)
+    // Height of the +link{getGroupRect(),group rectangle} in pixels relative to the
+    // +link{DrawPane} (the "drawing coordinate system").
     //
     // @visibility drawing
     //<
@@ -13142,28 +13194,30 @@ updateControlKnobs : function () {
 //------------------------------------------------------------------------------------------
 
 isc.defineClass("DrawRect", "DrawItem").addProperties({
+    // NOTE: left|top|width|height @included elsewhere so should be phrased generically
+
     //> @attr drawRect.left (int : 0 : IRW)
-    // Left coordinate in pixels relative to the DrawPane.
+    // Left coordinate in pixels relative to the +link{DrawPane,local coordinate system}.
+    //
     // @visibility drawing
     //<
     left:0,
 
     //> @attr drawRect.top (int : 0 : IRW)
-    // Top coordinate in pixels relative to the DrawPane.
+    // Top coordinate in pixels relative to the +link{DrawPane,local coordinate system}.
+    //
     // @visibility drawing
     //<
     top:0,
 
-    // NOTE: width/height @included elsewhere so should be phrased generically
-
     //> @attr drawRect.width        (int : 100 : IRW)
-    // Width in pixels.
+    // Width in pixels relative to the +link{DrawPane,local coordinate system}.
     // @visibility drawing
     //<
     width:100,
 
     //> @attr drawRect.height       (int : 100 : IRW)
-    // Height in pixels.
+    // Height in pixels relative to the +link{DrawPane,local coordinate system}.
     // @visibility drawing
     //<
     height:100,
@@ -15897,7 +15951,8 @@ setHeight : function (height) {
 },
 
 //> @method drawImage.setRect()
-// Updates the drawImage to match the specified coordinates and size in local coordinates.
+// Updates the drawImage to match the specified coordinates and size in
+// +link{DrawPane,local coordinates}.
 // @param left (integer) new left coordinate
 // @param top (integer) new top coordinate
 // @param width (integer) new width
@@ -18514,7 +18569,7 @@ isc.DrawPath.addProperties({
     showTitleLabelBackground: true,
 
     //> @attr drawPath.points (Array of Point : [[0,0], [100,100]] : IRW)
-    // Array of Points for the line.
+    // Array of Points for the line, specified in the +link{DrawPane,local coordinate system}.
     // @visibility drawing
     //<
     points: [[0,0], [100,100]],
@@ -19252,7 +19307,7 @@ isc.defineClass("DrawPolygon", "DrawPath").addProperties({
     showTitleLabelBackground: false,
 
     //> @attr drawPolygon.points (Array of Point : [[0,0], [50,50], [100,0]] : IRW)
-    // Array of points of the polygon.
+    // Array of points of the polygon, specified in the +link{DrawPane,local coordinate system}.
     // @visibility drawing
     //<
     points: [[0,0], [50,50], [100,0]],
@@ -19369,7 +19424,8 @@ isc.DrawPolygon.markUnsupportedMethods(null, ["setStartArrow", "setEndArrow"]);
 isc.defineClass("DrawTriangle", "DrawPolygon");
 
 //> @attr drawTriangle.points
-// Array of points of the triangle.
+// Array of points of the triangle. specified in the
+// +link{DrawPane,local coordinate system}.
 // @include DrawPolygon.points
 //<
 
@@ -19377,7 +19433,7 @@ isc.DrawTriangle.addMethods({
 
 //> @method drawTriangle.getCenter()
 // Returns the +externalLink{http://en.wikipedia.org/wiki/Incenter#Cartesian_coordinates,incenter}
-// of the triangle in local coordinates.
+// of the triangle in +link{DrawPane,local coordinates}.
 // @return (Point) the incenter in local coordinates
 // @visibility drawing
 //<
@@ -22704,38 +22760,14 @@ _makePositionedLabel : function (contents, value) {
 }
 });
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('Drawing');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._Drawing_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Drawing module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'Drawing', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Drawing'.");}
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 

@@ -1,5 +1,5 @@
 /*============================================================
-    "Enterprise" theme programmatic settings
+    "Graphite" theme programmatic settings
     Copyright 2003 and beyond, Isomorphic Software
 ============================================================*/
 
@@ -277,7 +277,7 @@ with (theWindow) {
                 nodeIcon:"[SKIN]file.png",
                 normalBaseStyle:"treeCell",
                 applyRowNumberStyle:false,
-                openerIconSize:22,
+                openerIconWidth:22,
                 openerImage:"[SKIN]opener.png",
                 sortAscendingImage:{src:"[SKINIMG]ListGrid/sort_ascending.png", width:9, height:6},
                 sortDescendingImage:{src:"[SKINIMG]ListGrid/sort_descending.png", width:9, height:6},
@@ -1581,7 +1581,7 @@ with (theWindow) {
 //----------------------------------------
     if (isc.TreeGrid) {
         isc.TreeGrid.addProperties({
-			openerIconSize: 22,
+			openerIconWidth: 22,
             folderIcon:"[SKIN]folder.png",
             nodeIcon:"[SKIN]file.png",
             manyItemsImage:"[SKIN]folder_file.png"

@@ -1,46 +1,22 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_DataBinding){isc.module_DataBinding=1;isc._moduleStart=isc._DataBinding_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'DataBinding load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-01-21/LGPL Deployment") {
+if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-01-21/LGPL Deployment'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -15573,6 +15549,11 @@ isc.DataSource.addMethods({
                 if (field.type) {
                     var type = this.getType(field.type);
                     if (type && type.fieldProperties) {
+                        if (type.fieldProperties.editorProperties != null &&
+                            !isc.isA.Object(type.fieldProperties.editorProperties))
+                        {
+                           type.fieldProperties.editorProperties = {};
+                        }
                         field = fields[i] = isc.addProperties({}, type.fieldProperties, field);
                     }
                     if (!field.format && type && type.format) {
@@ -22349,6 +22330,8 @@ rawData=rpcResponse.results;
 // Note that for security reasons, an export initiated using dsRequest properties does not
 // provide support for JSON format (see
 // <a href="http://forums.smartclient.com/showthread.php?t=235">this post</a> for more detail).
+// However, you can use operationBinding.exportAs:"json" in a server-side .ds.xml file to force
+// JSON export to be allowed.
 // <P>
 // As well as setting dsRequest.exportResults and related properties, exports can be initiated
 // in two other ways, via +link{OperationBinding}s and via custom server code which sets
@@ -27382,7 +27365,8 @@ rawData=rpcResponse.results;
             this.addMethods({
                 _isServerRequest : function (dsRequest) {
 
-                    return dsRequest.cachingAllData ||
+                    return this.dataProtocol == "clientCustom" ||
+                        dsRequest.cachingAllData ||
                         (this.cacheAcrossOperationIds &&
                             (dsRequest.operationType && dsRequest.operationType != "fetch"))
                         ||
@@ -45911,7 +45895,7 @@ reorderAllRows : function () {
 // @see getRange()
 //<
 get : function (pos) {
-    if (pos < 0) {
+    if (!isc.isA.Number(pos) || pos < 0) {
         //>DEBUG
         this.logWarn("get: invalid index " + pos);
         //<DEBUG
@@ -50378,50 +50362,39 @@ setupProperties : function () {
     }
 },
 
+// extend the list of copied properties defined in isc.Tree
+_knownProperties : isc.Tree.getPrototype()._knownProperties.concat([
+    "fetchMode", "dataSource", "loadDataOnDemand", "childCountProperty", "defaultIsFolder",
+    "discardParentlessNodes", "defaultNewNodesToRoot", "updateCacheFromRequest",
+    "disableCacheSync", "keepParentsOnFilter", "serverFilterFields", "canReturnOpenFolders"]),
+
 
 duplicate : function (includeData, includeLoadState) {
-    if (!this.isPaged()) {
-        return this.invokeSuper(isc.ResultTree, "duplicate", includeData, includeLoadState);
-    }
-
     var serverFilterFields = this.serverFilterFields;
     if (isc.isAn.Array(serverFilterFields)) {
         serverFilterFields = serverFilterFields.duplicate();
     }
 
 
-    var newResultTreeConfig = {
-        fetchMode: this.fetchMode,
-        dataSource: this.dataSource,
-        loadDataOnDemand: this.loadDataOnDemand,
-        childCountProperty: this.childCountProperty,
-        defaultIsFolder: this.defaultIsFolder,
-        discardParentlessNodes: this.discardParentlessNodes,
-        defaultNewNodesToRoot: this.defaultNewNodesToRoot,
-        updateCacheFromRequest: this.updateCacheFromRequest,
-        disableCacheSync: this.disableCacheSync,
-        keepParentsOnFilter: this.keepParentsOnFilter,
-        serverFilterFields: serverFilterFields,
-        canReturnOpenFolders: this.canReturnOpenFolders
-    };
+    var newResultTreeConfig = {};
     this._copyKnownProperties(newResultTreeConfig);
 
 
     newResultTreeConfig.autoOpenRoot = false;
 
     var newResultTree = isc.ResultTree.create(newResultTreeConfig),
-        root = this.getRoot(),
-        rootIsOpen = this.isOpen(root),
-        rootIsFolder = this.isFolder(root),
-        rootCachedLength = root[this._cachedLengthProperty],
+        root               = this.getRoot(),
+        rootIsOpen         = this.isOpen(root),
+        rootIsFolder       = this.isFolder(root),
+        rootCachedLength   = root[this._cachedLengthProperty],
         rootRecursionCount = root[this._recursionCountProperty],
-        rootAllCached = root[this._visibleDescendantsCachedProperty],
+        rootAllCached      = root[this._visibleDescendantsCachedProperty],
         newRoot = this.getCleanNodeData(root, false, false, includeLoadState);
 
-    newRoot[newResultTree.openProperty] = rootIsOpen;
-    newRoot[newResultTree.isFolderProperty] = rootIsFolder;
-    newRoot[newResultTree._cachedLengthProperty] = rootCachedLength;
-    newRoot[newResultTree._recursionCountProperty] = rootRecursionCount;
+    newRoot[newResultTree.openProperty]                      = rootIsOpen;
+    newRoot[newResultTree.isFolderProperty]                  = rootIsFolder;
+    newRoot[newResultTree._cachedLengthProperty]             = rootCachedLength;
+    newRoot[newResultTree._recursionCountProperty]           = rootRecursionCount;
     newRoot[newResultTree._visibleDescendantsCachedProperty] = rootAllCached;
 
     this._duplicate(root, newResultTree, newRoot, includeLoadState);
@@ -53133,6 +53106,8 @@ filterLocalData : function (parentNode) {
                      + " records matched filter:" + this.echoFull(criteria));
         //<DEBUG
     } else {
+
+        if (!sourceTree) return;
         // No criteria anymore. Drop the complete tree as there is no need
         // to keep it updated.
         //>DEBUG
@@ -59138,6 +59113,10 @@ isc.Canvas.addProperties({
     // occurring - instead of updating <code>editNode.defaults</code> as the end user makes
     // changes.  This can be useful if constantly calculating changes to
     // <code>editNode.defaults</code> would slow down interactivity.
+    // <p>
+    // Note: best practice is to use +link{EditContext.setNodeProperties()} and
+    // +link{EditContext.removeNodeProperties()} to change properties, rather than directly
+    // modifying +link{EditNode.defaults}.
     //
     // @param editContext (EditContext) the EditContext
     // @param editNode (EditNode) the EditNode
@@ -60443,6 +60422,11 @@ isc._installDrawingEditMode = function () {
     };
 
     isc.DrawItem.addMethods({
+        //> @method DrawItem.updateEditNode()
+        // @include Canvas.updateEditNode
+        // @visibility internal
+        //<
+
         //> @attr drawItem.editProxyConstructor (SCClassName : "DrawItemEditProxy" : IR)
         // @include canvas.editProxyConstructor
         // @visibility external
@@ -60455,7 +60439,15 @@ isc._installDrawingEditMode = function () {
 
         // Override Class.setEditableProperties() to use DrawItem.setPropertyValue()
         // instead of `setProperty()`.
-        setEditableProperties : drawItemSetEditableProperties
+        setEditableProperties : drawItemSetEditableProperties,
+
+        // define base class method assumed by the subclasses
+        updateEditNode : function (editContext, editNode) {
+
+            editContext.setNodeProperties(editNode, {shapeData: this.getShapeData()});
+            editContext.removeNodeProperties(editNode, ["rotation", "translate", "scale",
+                                                        "xShearFactor", "yShearFactor"]);
+        }
     });
 
     isc.DrawLabel.addMethods({
@@ -61986,21 +61978,6 @@ isc.EditContext.addProperties({
     _serializeEditNodes : function (nodes, settings, format) {
         if (!isc.isAn.Array(nodes)) nodes = [nodes];
 
-        // add autoDraw to all non-hidden top-level components
-        for (var i = 0; i < nodes.length; i++) {
-            var node = nodes[i] = isc.addProperties({}, nodes[i]),
-                iscClass = isc.ClassFactory.getClass(node.type),
-                defaults = node.defaults = isc.addProperties({}, node.defaults);
-
-            //this.logWarn("considering node: " + this.echo(topNode) +
-            //             " with defaults: " + this.echo(defaults));
-            if (iscClass && iscClass.isA("Canvas") && defaults &&
-                defaults.visibility != isc.Canvas.HIDDEN && defaults.autoDraw !== false)
-            {
-                defaults.autoDraw = true;
-            }
-        }
-
         // if serverless is set we will actually output DataSources in their entirety.
         // Otherwise, we'll just output a special tag that causes the DataSource to be loaded
         // as the server processes the XML format.
@@ -62013,7 +61990,7 @@ isc.EditContext.addProperties({
                         settings.outputComponentsIndividually : true;
 
         var blocks = this.defaultsBlocks = [];
-        this.map("getSerializeableTree", nodes);
+        this.map("getSerializeableTree", nodes, null, true);
 
         this.outputComponentsIndividually = null;
         this.serverless = null;
@@ -62071,24 +62048,35 @@ isc.EditContext.addProperties({
     //   members/children arrays will contain references to these children
     // - ensure DataSources are only listed once since multiple components may refer to the
     //   same DataSource
-    getSerializeableTree : function (node, dontAddGlobally) {
+    getSerializeableTree : function (node, dontAddGlobally, topLevel) {
         // Give the liveObject a chance to update the editNode
         var liveObject = node.liveObject;
         if (liveObject && liveObject.updateEditNode && liveObject.editContext && liveObject.editNode) {
-            node.liveObject.updateEditNode(node.liveObject.editContext, node.liveObject.editNode);
+            liveObject.updateEditNode(node.liveObject.editContext, node.liveObject.editNode);
         }
 
         var type = node.type,
             // copy defaults for possible modification
             defaults = isc.addProperties({}, node.defaults)
         ;
+        // if this node is a DataSource (or subclass of DataSource)
+        var classObj = isc.ClassFactory.getClass(type);
+
+        // add autoDraw to non-hidden top-level components
+        if (topLevel) {
+            node = isc.addProperties({}, node, {defaults: defaults});
+            //this.logWarn("considering node: " + this.echo(topNode) +
+            //             " with defaults: " + this.echo(defaults));
+            if (classObj && classObj.isA("Canvas") && defaults &&
+                defaults.visibility != isc.Canvas.HIDDEN && defaults.autoDraw !== false)
+            {
+                defaults.autoDraw = true;
+            }
+        }
 
         // parentProperty is set in defaults to indicate in which field the
         // node belongs. It doesn't need to be serialized.
         if (defaults.parentProperty) delete defaults.parentProperty;
-
-        // if this node is a DataSource (or subclass of DataSource)
-        var classObj = isc.ClassFactory.getClass(type);
 
         this.logInfo("node: " + this.echoLeaf(node) + " with type: " + type, "editing");
 
@@ -65702,7 +65690,13 @@ isc.EditTree.addMethods({
                     var selection = this.editContext.getSelectedEditNodes();
                     if (!selection.contains(node)) {
                         isc.EditContext.selectCanvasOrFormItem(object, false);
-                        this.selectSingleRecord(selectedNode);
+                        // If a DS is clicked don't re-select it
+                        if (!isc.isA.DataSource(selectedObject)) {
+                            this.selectSingleRecord(selectedNode);
+                        }
+                    } else if (isc.isA.DataSource(selectedObject)) {
+                        // Make sure a DS node is not selected
+                        this.selectSingleRecord(node);
                     }
                 }
 
@@ -71967,9 +71961,29 @@ isc.defineClass("FormItemEditProxy", "EditProxy").addMethods({
                     // Push node update into another thread. Current thread is
                     // part of the DS node addition and needs to complete before
                     // updating the parent.
+                    var editContext = liveObject.editContext,
+                        tree = editContext.getEditNodeTree(),
+                        siblings = tree.getChildren(tree.getParent(editNode)),
+                        newName = pk,
+                        duplicate = false,
+                        counter = 1
+                    ;
+                    do {
+                        duplicate = false;
+                        for (var i = 0; i < siblings.length; i++) {
+                            if (siblings[i].name == newName) {
+                                duplicate = true;
+                                break;
+                            }
+                        }
+                        if (duplicate) {
+                            newName = pk + counter++;
+                        }
+                    } while (duplicate);
+
                     isc.Timer.setTimeout(function () {
                         liveObject.editContext.setNodeProperties(editNode, {
-                            name: pk,
+                            name: newName,
                             valueField: pk,
                             displayField: ds.getTitleField()
                         });
@@ -81351,20 +81365,28 @@ updateFields : function () {
     //    2) the new valueField has a valueMap and the current value doesn't appear in it
     //    3) either the old or new field has a valueMap or optionDataSource
     //    4) this.retainValuesAcrossFields is false
+    var valueItem = form.getItem("value");
     if (!typeChanged) {
-        var valueItem = form.getItem("value"),
-            shouldClear = (
-                (field.valueMap || field.optionDataSource) ||
-                (oldField && (oldField.valueMap || oldField.optionDataSource)) ||
-                !this.retainValuesAcrossFields
-            )
-        ;
+        var shouldClear = (
+            (field.valueMap || field.optionDataSource) ||
+            (oldField && (oldField.valueMap || oldField.optionDataSource)) ||
+            !this.retainValuesAcrossFields
+        );
 
         if (valueItem && shouldClear) valueItem.clearValue();
     }
-    // For now always clear out range fields
-    if (form.getItem("start")) form.setValue("start", null);
-    if (form.getItem("end")) form.setValue("end", null);
+
+    // validate the fields to update the error-icon
+    if (valueItem) valueItem.validate();
+    // For now always clear out range fields - also re-validate them
+    if (form.getItem("start")) {
+        form.setValue("start", null);
+        form.getItem("start").validate();
+    }
+    if (form.getItem("end")) {
+        form.setValue("end", null);
+        form.getItem("end").validate();
+    }
 
     // Show valuePath instead of value if set
     if (form.getValue("valuePath") != null) {
@@ -88206,38 +88228,14 @@ deriveFields : function (ds) {
 
 }
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('DataBinding');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._DataBinding_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('DataBinding module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'DataBinding', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'DataBinding'.");}
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 

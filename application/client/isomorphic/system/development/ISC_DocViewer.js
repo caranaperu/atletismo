@@ -1,37 +1,13 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Development Only (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_DocViewer){isc.module_DocViewer=1;isc._moduleStart=isc._DocViewer_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log&&isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={message:'DocViewer load/parse time: '+(isc._moduleStart-isc._moduleEnd)+'ms',category:'loadTime'};if(isc.Log&&isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.defineClass("DocCookieState").addProperties({init:function(){isc.ClassFactory.addGlobalID(this);if(!this.cookieName){this.logError("You must set the 'cookieName' property");return}
 if(!isc.Page.isLoaded()){isc.Page.setEvent("load",this.getID()+".pageLoaded()")}else{this.load();this.delayCall("processCallback")}},pageLoaded:function(){this.load();this.processCallback()},processCallback:function(){if(this.onload){this.fireCallback(this.onload,["state","data"],[this,this.data])}},load:function(){var _1=isc.Cookie.get(this.cookieName);this.logDebug("loaded: "+_1)
@@ -51,7 +27,7 @@ if(!_7){for(var i=0;i<_3-1;i++){var _9=_5.get(i);var _10=_9[this.shortcutField];
 {_7=_9;break}}}
 if(_7){if(_4)this.deselectRecord(_4);this.selectRecord(_7);this.scrollRecordIntoView(_5.indexOf(_7),"center");this.previewRecord(_7)}});isc.B._maxIndex=isc.C+5;isc.defineClass("DocTabSet","TabSet");isc.A=isc.DocTabSet.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.paneMargin=0;isc.A.tabBarControls=["tabScroller","tabPicker","versionString"];isc.B.push(isc.A.getControl=function isc_DocTabSet_getControl(_1){if(_1=="helpLauncher"){if(!this.helpLauncher){this.helpLauncher=isc.ImgButton.create({width:16,height:16,autoDraw:false,canHover:true,prompt:"<nobr>Show help</nobr>",hoverHeight:20,src:"[ISO_DOCS_SKIN]/images/DocTabSet/help.png",layoutAlign:"center",click:"isc.DocViewer.instance.showHelpDialog()"})}
 return this.helpLauncher}
-if(!isc.Browser.isHandset&&_1=="versionString"){if(!this.versionString){this.versionString=isc.Label.create({width:1,height:20,overflow:"visible",autoDraw:false,wrap:false,contents:"SmartClient LGPL API "+isc.scVersion+" (2016-01-21)"})}
+if(!isc.Browser.isHandset&&_1=="versionString"){if(!this.versionString){this.versionString=isc.Label.create({width:1,height:20,overflow:"visible",autoDraw:false,wrap:false,contents:"SmartClient LGPL API "+isc.scVersion+" (2016-03-10)"})}
 return this.versionString}
 return this.Super("getControl",arguments)});isc.B._maxIndex=isc.C+1;isc.ClassFactory.defineClass("DocUtils");isc.addGlobal("doc",isc.DocUtils);isc.A=isc.DocUtils;isc.A.nativeClasses=["Object","Boolean","RegEx"];isc.A.offsetMap={};isc.A.extraOffsetMap={};isc.A=isc.DocUtils;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.externalLink=function isc_c_DocUtils_externalLink(_1,_2){if(!_2)_2=_1;return"<a href='"+_1+"' onclick=\"window.open('"+_1+"');return false;\">"+_2+"</a>"},isc.A.linkForStandaloneExample=function isc_c_DocUtils_linkForStandaloneExample(_1,_2){if(!_2)_2=_1;var _3="<a href='"+_1+"' onclick=\"window.open('"+_1+"');return false;\">"+_2+"</a>";if(!_1.startsWith("http")){_3+="&nbsp;"+isc.Canvas.imgHTML("[ISO_DOCS_SKIN]/images/text_code.gif",16,16,null,"onclick='isc.DocUtils.showExampleSource(\""+_1+"\")' onmouseover='isc.Hover.setAction(isc.DocUtils, isc.DocUtils.doSourceHover,null,300)' onmouseout='isc.Hover.clear()' style='cursor:"+isc.Canvas.HAND+"'")}
 return _3},isc.A.doSourceHover=function isc_c_DocUtils_doSourceHover(){isc.Hover.show("<nobr>View example source</nobr>")},isc.A.showExampleSource=function isc_c_DocUtils_showExampleSource(_1){window.open("/isomorphic/Source.Viewer?file="+_1)},isc.A.buildTableHeader=function isc_c_DocUtils_buildTableHeader(_1,_2,_3){if(!this.$46r){this.$46r=["<table id='",null,"' BORDER='1' CELLPADDING='0' CELLSPACING='0' WIDTH='100%'>"]}
@@ -81,7 +57,8 @@ var _14=_12?this.$468:this.$469;for(var i=0;i<_14.length;i++){_6=_14[i];_4=this.
 if(_3&&_9!=null){var c=isc.ClassFactory.getClass(_9);if(c){var _16=c.getSuperClass();if(_16)return this.getDocItem(_16.getClassName(),_10,true)}}}
 this.logDebug("getDocItem: couldn't find docItem from params (container: "+_1+", item: "+_2+")");return null},isc.A.makeRef=function isc_c_JSDoc_makeRef(_1,_2,_3){var t;if(_3!=null){t=this.$47a;t[0]=_1;t[2]=_2;t[4]=_3}else{t=this.$47b;t[0]=_1;t[2]=_2}
 return t.join(isc.emptyString)},isc.A.getGroupForAttribute=function isc_c_JSDoc_getGroupForAttribute(_1,_2){var _3=this.getAttributeItem(_1,_2);if(_3!=null){var _4=this.getList(_3,"groups");return _4?_4[0]:"other"}
-var _5=isc.DS.get(_1);if(_5==null)return null;if(_5.inheritsFrom)return this.getGroupForAttribute(_5.inheritsFrom,_2);else return null},isc.A.getGroupItem=function isc_c_JSDoc_getGroupItem(_1){return this.getDocItem(this.makeRef(this.$46x,_1))},isc.A.getAttributeItem=function isc_c_JSDoc_getAttributeItem(_1,_2){return this.getDocItem(this.makeRef(this.$465,_1,_2))},isc.A.isAdvancedAttribute=function isc_c_JSDoc_isAdvancedAttribute(_1){return this.attributeContainsAllFlags(_1,"A")},isc.A.attributeContainsAllFlags=function isc_c_JSDoc_attributeContainsAllFlags(_1,_2){var _3=_1;if(_3==null)return false;if(_2==null||isc.isAn.emptyString(_2))return true;var _4=this.getAttribute(_3,"flags");if(_4==null||isc.isAn.emptyString(_4))return false;for(var i=0;i<_2.length;i++){if(_4.indexOf(_2.charAt(i))==-1)return false}
+var _5=isc.DS.get(_1);if(_5==null)return null;if(_5.inheritsFrom)return this.getGroupForAttribute(_5.inheritsFrom,_2);else return null},isc.A.getAllGroupsForAttribute=function isc_c_JSDoc_getAllGroupsForAttribute(_1,_2){var _3=this.getAttributeItem(_1,_2);if(_3!=null){var _4=this.getList(_3,"groups");return _4?_4:["other"]}
+var _5=isc.DS.get(_1);if(_5==null)return null;if(_5.inheritsFrom)return this.getAllGroupsForAttribute(_5.inheritsFrom,_2);else return null},isc.A.getGroupItem=function isc_c_JSDoc_getGroupItem(_1){return this.getDocItem(this.makeRef(this.$46x,_1))},isc.A.getAttributeItem=function isc_c_JSDoc_getAttributeItem(_1,_2){return this.getDocItem(this.makeRef(this.$465,_1,_2))},isc.A.isAdvancedAttribute=function isc_c_JSDoc_isAdvancedAttribute(_1){return this.attributeContainsAllFlags(_1,"A")},isc.A.attributeContainsAllFlags=function isc_c_JSDoc_attributeContainsAllFlags(_1,_2){var _3=_1;if(_3==null)return false;if(_2==null||isc.isAn.emptyString(_2))return true;var _4=this.getAttribute(_3,"flags");if(_4==null||isc.isAn.emptyString(_4))return false;for(var i=0;i<_2.length;i++){if(_4.indexOf(_2.charAt(i))==-1)return false}
 return true},isc.A.docItemForDSField=function isc_c_JSDoc_docItemForDSField(_1,_2){_1=isc.DS.get(_1);if(_1){var _3=_1.getField(_2);if(_3){var _4=isc.clone(_3);_4.definingClass=_1.Constructor?_1.Constructor:_1.ID;_4.ref="attr:"+_3.definitionClass+"."+_2;_4.valueType=_4.type;_4.type="attr";return _4}}
 return null},isc.A.docItemForDSMethod=function isc_c_JSDoc_docItemForDSMethod(_1,_2){_1=isc.DS.get(_1);if(_1){var _3=_1.methods.find("name",_2);if(_3){_3.definingClass=_1.Constructor?_1.Constructor:_1.ID;_3.ref="method:"+_3.definitionClass+"."+_2;return _3}}
 return null},isc.A.getSuperClassName=function isc_c_JSDoc_getSuperClassName(_1){var _2=_1.inheritsFrom;if(!_2){var _3=isc.ClassFactory.getClass(_1.name);if(_3){var _4=_3.getSuperClass();if(_4)_2=_4.getClassName()}}
@@ -111,7 +88,7 @@ var _9=_4.findAll({definingClass:"class:"+_3,type:"attr"});_9=_9||[];_9.addList(
 var _9=1;_6=_6.substring(0,_7);_7=_6.lastIndexOf("'");_8=_6.lastIndexOf('&apos;');var _10=_6.lastIndexOf(':');if(_7<_8){_7=_8;_9=6}
 if(_7<_10){_7=_10;_9=1}
 _6=_6.substring(_7+_9);_3=_3.substring(0,_4)+_6+_3.substring(_5+1)}}}
-return isc.DocUtils.stripHTML(_3.trim())});isc.B._maxIndex=isc.C+41;if(window.docItems)isc.jsdoc.init(window.docItems);isc.ClassFactory.defineClass("DetailFormatter");isc.A=isc.DetailFormatter.getPrototype();isc.A.detailItems=null;isc.A.summary=false;isc.A=isc.DetailFormatter.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.generateHTML=function isc_DetailFormatter_generateHTML(_1,_2){if(!_2)_2=isc.StringBuffer.create();for(var i=0;i<this.detailItems.length;i++){var _4=this.detailItems[i];var _5=_1[_4];if(_5&&(isc.isAn.Array(_5)?_5.length>0:1)){this["generate_"+_4](_1,_2);if(i+1<this.detailItems.length)_2.append("<br><br>")}}
+return isc.DocUtils.stripHTML(_3.trim())});isc.B._maxIndex=isc.C+42;if(window.docItems)isc.jsdoc.init(window.docItems);isc.ClassFactory.defineClass("DetailFormatter");isc.A=isc.DetailFormatter.getPrototype();isc.A.detailItems=null;isc.A.summary=false;isc.A=isc.DetailFormatter.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.generateHTML=function isc_DetailFormatter_generateHTML(_1,_2){if(!_2)_2=isc.StringBuffer.create();for(var i=0;i<this.detailItems.length;i++){var _4=this.detailItems[i];var _5=_1[_4];if(_5&&(isc.isAn.Array(_5)?_5.length>0:1)){this["generate_"+_4](_1,_2);if(i+1<this.detailItems.length)_2.append("<br><br>")}}
 return _2},isc.A.generate_examples=function isc_DetailFormatter_generate_examples(_1,_2){_2.append("<b>Examples:</b><br><ul>");if(!isc.isAn.Array(_1.examples))_1.examples=[_1.examples];for(var i=0;i<_1.examples.length;i++){_2.append("<li>",_1.examples[i])}
 _2.append("</ul>")},isc.A.generate_groups=function isc_DetailFormatter_generate_groups(_1,_2){if(!isc.isAn.Array(_1.groups))_1.groups=[_1.groups];_2.append("<b>Groups:&nbsp;</b>",_1.groups.join(", "))},isc.A.generate_seeAlso=function isc_DetailFormatter_generate_seeAlso(_1,_2){var _3=isc.DocViewer.docData;_2.append("<b>See Also:</b>");if(!isc.isAn.Array(_1.seeAlso))_1.seeAlso=[_1.seeAlso];for(var i=0;i<_1.seeAlso.length;i++){var _5=_1.seeAlso[i];if(isc.isA.String(_5)){_2.append("<br>&nbsp;&nbsp;",_5)}else{var _6=isc.DocUtils.linkForRef(_5.ref);if(_6){_2.append("<br>&nbsp;&nbsp;",_6," ",(_5.description?isc.DocUtils.stripHTML(_5.description):isc.emptyString))}}}},isc.A.generate_platformNotes=function isc_DetailFormatter_generate_platformNotes(_1,_2){_2.append("<b>Platform-Specific Notes:</b><br>",_1.platformNotes)},isc.A.generate_values=function isc_DetailFormatter_generate_values(_1,_2){_2.append("<b>Valid values:</b><p><table cellpadding=2 class='normal'>");if(!isc.isAn.Array(_1.values))_1.values=[_1.values];for(var i=0;i<_1.values.length;i++){var _4=_1.values[i];var _5=isc.DocUtils.lookupValue(_4.value);var _6=isc.DocUtils.stripHTML(_4.description);if(this.summary&&_6&&_6.indexOf(". ")!=-1){_6=_6.slice(0,_6.indexOf(". ")+1)}
 _2.append("<tr><td valign='top'><i>",_5,"</i></td><td>",_6,"</td></tr>")}

@@ -1,46 +1,22 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_Grids){isc.module_Grids=1;isc._moduleStart=isc._Grids_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Grids load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-01-21/LGPL Deployment") {
+if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-01-21/LGPL Deployment'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -7227,7 +7203,7 @@ selectList : function (list, newState, selectionChanged, caller) {
 
 
     var orig_suppressCaching = this._suppressCaching;
-    this._suppressCaching = true;
+    this._suppressCaching = (length > 1);
 
     // Set a flag indicating we're selecting a range of rows
 
@@ -8045,6 +8021,13 @@ isc.DetailViewer.addProperties({
     // +link{FormatString} used during exports for numeric or date formatting.  See
     // +link{dataSourceField.exportFormat}.
     // @group exportFormatting
+    // @visibility external
+    //<
+
+    //> @attr detailViewerField.exportRawValues (Boolean : null : IR)
+    //  Dictates whether the data in this field should be exported raw by
+    // +link{detailViewer.exportClientData, exportClientData()}.  If set to true for a
+    // field, the values in the field-formatters will not be executed for data in this field.
     // @visibility external
     //<
 
@@ -25322,7 +25305,10 @@ isc.ListGrid.addProperties( {
 
     // configures ResultSet.fetchDelay, delay in MS before fetches are triggered
 
-    dataFetchDelay : isc.useHighPerformanceGridTimings ? 0 : 300,
+    // NOTE: setting this value to 0 causes filterData() to fire its callback twice - at least
+    // in part because RS acts synchronously in this case and various LG/DBC logic expects to
+    // markForRedraw() which acts on a timer.
+    dataFetchDelay : isc.useHighPerformanceGridTimings ? 1 : 300,
 
     //> @attr listGrid.body (MultiAutoChild GridRenderer : null : R)
     // GridRenderer used to render the dataset.
@@ -29040,10 +29026,13 @@ isc.ListGrid.addProperties( {
     headerDefaults : {
 
         // immediately reposition headers during drag resizing, don't delay
-        instantRelayout:true,
+        instantRelayout: true,
         // when the user resizes buttons, don't try to fit them into the available space -
         // allow the user to introduce hscrolling
-        enforcePolicy:false,
+        enforcePolicy: false,
+
+        // force createButtonsOnInit to false in case a dev sets it to true globally
+        createButtonsOnInit: false,
 
         // when the header is clicked, have it call headerClick() on us
         itemClick : function (button, buttonNum) {
@@ -29293,7 +29282,7 @@ isc.ListGrid.addProperties( {
     // For any fields of +link{FieldType,type "binary"}, should sorting be performed
     // against the fileName of the value for the field? For SmartClient server backed
     // dataSources, this is applied to the record automatically as described in the
-    // +link{binaryFields} overview.
+    // +link{group:binaryFields} overview.
     // <P>
     // If set to false, binary fields will be sorted against the record value for the
     // field in question. Client-side sorting does not support this, so developers who
@@ -29957,6 +29946,10 @@ isc.ListGrid.addProperties( {
     // <P>
     // If this, +link{listGrid.booleanFalseImage} and +link{listGrid.booleanPartialImage}
     // are unset, this will be set to the default +link{CheckboxItem.checkedImage}.
+    // <P>
+    // When +link{group:skinning,spriting} is enabled, this property will not
+    // be used to locate an image, instead, the image is drawn via CSS based on the
+    // +link{ListGrid.booleanBaseStyle} property.
     // @see ListGrid.booleanFalseImage
     // @see ListGrid.booleanPartialImage
     // @see ListGrid.printBooleanTrueImage
@@ -29973,6 +29966,10 @@ isc.ListGrid.addProperties( {
     // <P>
     // If this, +link{listGrid.booleanTrueImage} and +link{listGrid.booleanPartialImage}
     // are unset, this will be set to the default +link{CheckboxItem.uncheckedImage}.
+    // <P>
+    // When +link{group:skinning,spriting} is enabled, this property will not
+    // be used to locate an image, instead, the image is drawn via CSS based on the
+    // +link{ListGrid.booleanBaseStyle} property.
     // @group imageColumns
     // @see ListGrid.booleanTrueImage
     // @see ListGrid.booleanPartialImage
@@ -29989,6 +29986,10 @@ isc.ListGrid.addProperties( {
     // <P>
     // If this, +link{listGrid.booleanTrueImage} and +link{listGrid.booleanFalseImage}
     // are unset, this will be set to the default +link{CheckboxItem.partialSelectedImage}.
+    // <P>
+    // When +link{group:skinning,spriting} is enabled, this property will not
+    // be used to locate an image, instead, the image is drawn via CSS based on the
+    // +link{ListGrid.booleanBaseStyle} property.
     // @see ListGrid.booleanTrueImage
     // @see ListGrid.booleanFalseImage
     // @see ListGrid.printBooleanPartialImage
@@ -30608,8 +30609,10 @@ isc.ListGrid.addProperties( {
     // @visibility external
     //<
     isExpansionField : function (field) {
-        if (!field || !field._isExpansionField) return false;
-        else return true;
+        if (!field) return false;
+        var fieldObj = this.getField(field);
+        if (fieldObj && fieldObj._isExpansionField) return true;
+        return false;
     },
 
     // helper function to get the expansion field position
@@ -33487,7 +33490,7 @@ dataChanged : function (type, originalRecord, rowNum, updateData, filterChanged,
 
         // Full regroup on filterChanged
 
-        } else if (type == "replace" || filterChanged) {
+        } else if (type == "replace" || filterChanged || !this.groupTree) {
             markForRegroup = true;
         }
 
@@ -36464,6 +36467,7 @@ handleGroupStateChanged : function () {
 
     this.groupStateChanged();
     this.handleViewStateChanged();
+    this._provideIsGroupedToRuleContext();
 },
 groupStateChanged : function () {},
 
@@ -37326,6 +37330,7 @@ _updateFieldWidths : function (reason, mustRefresh,c) {
             if (autoFitFieldWidths == null) {
                 this.fields.setProperty("_calculatedAutoFitWidth", null);
             } else {
+
                 for (var i = 0; i < this.fields.length; i++) {
                     var field = this.fields[i];
                     if (autoFitFieldWidths[i] == null) {
@@ -43617,8 +43622,11 @@ canSelectCell : function(rowNum, colNum) {
 // This method will be called for each record the user attempts to select. If it returns false, the
 // record will not be selected.
 // <P>
-// Default implementation will return true for any records where
-// +link{listGrid.recordCanSelectProperty} is not explicitly set to false.
+// The default implementation will return true for any records where
+// +link{listGrid.recordCanSelectProperty} is not explicitly set to false, and false
+// if this method was called by a click on the +link{listGrid.expansionField, expansion field}
+// and +link{listGrid.selectOnExpandRecord, selectOnExpandRecord} is set to false.
+//
 // <P>
 // Note this method will not be called at all if +link{canSelectCells} is true.
 //
@@ -43635,9 +43643,24 @@ canSelectCell : function(rowNum, colNum) {
 // group header nodes when  "canSelectGroups" is false, so "getGroupTreeSelection()"
 // can pick up selected header nodes.
 canSelectRecord : function(record) {
-    if (record && this.isGrouped && !this.canSelectGroups && record._isGroup) return false;
-    return (record != null && record[this.recordCanSelectProperty] !== false);
+    if (!record) return false;
+    if (this.isGrouped && !this.canSelectGroups && record._isGroup) return false;
+    if (this.selectOnExpandRecord == false) {
+        // return false if the mouse is over the expansionField
+        var field = this.getUnderlyingField(this.getEventColumn());
+        if (field) {
+            if (this.isExpansionField(field)) return false;
+        }
+    }
+    return record[this.recordCanSelectProperty] !== false;
 },
+
+//> @attr listGrid.selectOnExpandRecord (boolean : true : IRW)
+// When set to false, clicking a record's +link{listGrid.expansionField, expansion field} will
+// not add the record to the current selection.
+// @visibility external
+//<
+selectOnExpandRecord: true,
 
 // Keyboard Navigation
 // --------------------------------------------------------------------------------------------
@@ -50336,7 +50359,7 @@ getEditedRecord : function (rowNum, colNum, suppressUpdate) {
     // may well return null for some uses of this method, but it's OK because
     // DBC._duplicateValues() now copes with being passed a null component (it just performs a
     // straight schemaless dup)
-    isc.DynamicForm._duplicateValues(this.getEditForm(), record, baseRecordCopy);
+    isc.Canvas._duplicateValues(this.getEditForm(), record, baseRecordCopy);
     this.combineRecords(rtn, baseRecordCopy);
     this.combineRecords(rtn, editValues);
     if (rtn.__ref) rtn.__ref = null;
@@ -50658,7 +50681,8 @@ _storeEditValues : function (rowNum, colNum, editValues, editValuesId) {
                 pkArray = ds.getPrimaryKeyFieldNames();
 
             for (var i = 0; i < pkArray.length; i++) {
-                editValues[pkArray[i]] = record[pkArray[i]];
+                // do not overwrite primary key value in editValues with NULL value;
+                if (record[pkArray[i]] != null) editValues[pkArray[i]] = record[pkArray[i]];
             }
         }
     }
@@ -53530,8 +53554,10 @@ discardEdits : function (rowNum, colNum, dontHideEditor, editCompletionEvent) {
         // If marked as removed, explicitly refresh the row so we reset to normal styling
         if (markedAsRemoved) this.refreshRow(rowNum);
     }
-    // Refresh summaries
-    this.calculateRecordSummaries(this.data.get(rowNum), null, true, true, true);
+    // Refresh summaries if the edit session rowNum is valid (otherwise nothing to do)
+    if (rowNum != null) {
+        this.calculateRecordSummaries(this.data.get(rowNum), null, true, true, true);
+    }
 },
 
 // Saving Inline Edits
@@ -59842,10 +59868,18 @@ headerButtonResized : function (button) {
 
     if (this._dragResizingField) return;
 
+    // If we're being called directly from setFieldWidth/setFieldWidths, don't react
+    // to the resize. Upstream code should handle this
+    if (this._settingHeaderFieldWidths) return;
+
     // If we're doing an "autoFit" to the field content - this is similar to a drag-resize - no need to react.
     if (this._autoFittingField != null && this._autoFittingField == this.getField(button.name)) {
         return;
     }
+
+    // Clear the appliedInitialAutoFitWidth flag and run field width resize logic
+
+    this.fields._appliedInitialAutoFitWidth = false;
 
     this._updateFieldWidths("header button resized");
 },
@@ -61588,6 +61622,7 @@ _resizeFields : function (fieldNums, newWidths, storeWidths) {
         if (this.frozenHeader) this.frozenHeader.instantRelayout = false;
     }
 
+    this._settingHeaderFieldWidths = true;
     for (var i = 0; i < fieldNums.length; i++) {
         var fieldNum = fieldNums[i],
             newWidth = newWidths[i];
@@ -61611,6 +61646,7 @@ _resizeFields : function (fieldNums, newWidths, storeWidths) {
             this._fieldWidths[fieldNum] = newWidth;
         }
     }
+    delete this._settingFieldWidths;
 
     if (adjustHeader) {
 
@@ -62094,7 +62130,7 @@ _shouldGroupByField : function (field) {
               this.data.getLength() <= this.groupByMaxRecords);
 },
 _canGroupByField : function (field) {
-    var field = this.getField(field);
+    var field = this.getUnderlyingField(field);
     return !!(field &&
               ((this.canGroupBy == true && field.canGroupBy != false) ||
                (this.canGroupBy != false && field.canGroupBy == true) ||
@@ -62746,6 +62782,9 @@ headerContextMenuDefaults:{
             // if groupType is null, makeGroupSpecifier() will use the field/simpleType default
             var spec = grid.makeGroupSpecifier(item.fieldName, item.groupType,
                     item.groupGranularity, item.groupPrecision);
+
+            spec._oldGrouping = item.targetField.groupingMode || "none";
+            item.targetField.groupingMode = item.groupType;
             grid.setGroupSpecifiers([spec]);
         }
     },
@@ -63030,7 +63069,7 @@ resort : function () {
             sortDirection = this._getFieldSortDirection(field)
         ;
 
-        this.sort(sortFieldNum, sortDirection);
+        return this.sort(sortFieldNum, sortDirection);
     }
 },
 
@@ -63775,6 +63814,10 @@ setSort : function (sortSpecifiers) {
 
     this.displaySort(sortSpecifiers);
     this.applySortToData(sortSpecifiers);
+
+    // delete this flag once the sort operation finished - otherwise, a call to resort() will
+    // cause all future calls to setSort() to resort the data instead of applying a new spec
+    delete this._resortingFlagStored;
 
     return true;
 
@@ -64922,7 +64965,11 @@ regroup : function (fromSetData) {
             }
             if (field && field.displayField != null && field.optionDataSource == null) {
                 var fieldToDisplay = this.getField(field.displayField);
-                if (fieldToDisplay) { field = fieldToDisplay; fieldName = field.displayField; }
+                if (fieldToDisplay) {
+                    field = fieldToDisplay;
+                    if (field.displayField != null) fieldName = field.displayField;
+                    else fieldName = field.name;
+                }
             }
             groupByField.add(fieldName);
             var specifier;
@@ -66193,10 +66240,11 @@ setGroupSpecifiers : function (groupSpecifiers) {
             }
             groupSpecifiers = newSpec;
         }
-        this._groupSpecifiers = isc.shallowClone(groupSpecifiers);
+
+
         // groupBy() will now call this method if it gets passed strings - call it back now
         // with proper specifiers
-        this.groupBy(this._groupSpecifiers);
+        this.groupBy(groupSpecifiers);
     } else {
         delete this._groupSpecifiers;
         this._lastStoredSelectedState = this.getSelectedState(true);
@@ -66249,8 +66297,20 @@ clearGroupSpecifiers : function () {
 // +link{groupTree,grid.groupTree} and the original dataset is available as
 // +link{originalData,grid.originalData}.
 // <p>
-// Grouping is often performed +link{groupByAsyncThreshold,asynchronously} to work around
-// problems where browsers will incorrectly detect that a script is taking too long.  To be
+// Before grouping can be performed, all records that match current
+// +link{listGrid.fetchData,criteria} must be loaded.  If +link{dataFetchMode,data paging} is
+// in use, not all matching records are cached, and the
+// +link{resultSet.getLength,total rows available from the server} is less than
+// +link{groupByMaxRecords}, the grid will automatically request all unloaded records from the
+// server, then perform grouping once they arrive.
+// <p>
+// If the total number of rows available from the server exceeds +link{groupByMaxRecords},
+// calling <code>groupBy</code> will have no effect, and menu items for grouping will appear
+// disabled.
+// <p>
+// Grouping is often an asynchronous operation, both because of automatic loading of remaining
+// rows, and because asynchronous processing is required to work around bugs in some browsers
+// related to misdetection of "hung" scripts (see +link{groupByAsyncThreshold}).  To be
 // notified when grouping is complete, see +link{groupByComplete}.
 //
 // @param   [arguments 0-N] (Array of String) name of fields to group by
@@ -66259,17 +66319,20 @@ clearGroupSpecifiers : function () {
 // @example dynamicGrouping
 //<
 
-groupBy : function (groupFieldName) {
+groupBy : function (passedArray) {
     // support passing an Array instead of passing as a series of arguments
     var fields = [];
 
-    if (isc.isAn.Array(groupFieldName)) {
-        fields = isc.shallowClone(groupFieldName);
+    if (isc.isAn.Array(passedArray)) {
+        fields = isc.shallowClone(passedArray);
     } else {
         for (var i = 0; i < arguments.length; i++) {
             fields[i] = arguments[i];
         }
     }
+
+    // the GroupSpecifier objects to pass to handleGroupBy()
+    var specifiers = [];
 
     if (fields.length > 0) {
         if (isc.isA.String(fields[0])) {
@@ -66278,6 +66341,7 @@ groupBy : function (groupFieldName) {
             return;
         } else if (isc.isAn.Object(fields[0])) {
 
+            specifiers = fields.duplicate();
             fields = fields.getProperty("property");
         }
     }
@@ -66305,8 +66369,21 @@ groupBy : function (groupFieldName) {
 
     // fire handleGroupBy notification, and allow grouping to be cancelled if defined.
     if (this.handleGroupBy != null && this.handleGroupBy(fields) == false) {
+
+        for (var i=0; i<specifiers.length; i++) {
+            var spec = specifiers[i];
+            if (spec._oldGrouping) {
+                var specField = this.getFieldByName(spec.property);
+                if (spec._oldGrouping == "none") delete specField.groupingMode;
+                else specField.groupingMode = spec._oldGrouping;
+                delete spec._oldGrouping;
+            }
+        }
         return;
     }
+
+
+    this._groupSpecifiers = isc.shallowClone(specifiers);
 
     // if arguments are null, return to original grouping
     if (fields.length == 0) {
@@ -66380,6 +66457,8 @@ clearGroupBy : function () {
     }
 
     this.isGrouped = false;
+    // Should we Fire the group/viewStateChanged notification here.?
+    this._provideIsGroupedToRuleContext();
 
     if (this.originalData) {
 
@@ -67703,6 +67782,15 @@ _provideEditFocusToRuleContext : function (item) {
     this.provideRuleContext(this.ID + ".focusField", (item ? item.name : null));
 },
 
+_provideIsGroupedToRuleContext : function () {
+    if (!this.hasStableID() && this.editNode == null) return;
+    var path = this.ID + ".isGrouped",
+        value = this.isGrouped,
+        currentValue = this._getFromRuleContext(path)
+    ;
+    if (value != currentValue) this.provideRuleContext(path, value);
+},
+
 _observeRuleContextChanged : function () {
     var grid = this,
         ruleScopeComponent = this.getRuleScopeComponent();
@@ -68091,15 +68179,13 @@ isc.ListGrid.registerStringMethods({
     onHeaderClick:"fieldNum",
 
     //> @method listGrid.onRecordDrop()
-    // Handler fired when the user drops a record onto this listGrid before any other processing
-    // of the drop occurs.
-    // Return false to suppress the default record drop handling.
     // @param dropRecords (Array[] of ListGridRecord) records being dropped
     // @param targetRecord (ListGridRecord) record being dropped on.  May be null
     // @param index (int) index of record being dropped on
     // @param dropPosition (RecordDropPosition) position with respect to the target record
     // @param sourceWidget (Canvas) widget where dragging began
     // @return (boolean) return false to cancel the default record drop handling
+    // @include ListGrid.recordDrop
     // @visibility sgwt
     //<
 
@@ -68285,12 +68371,15 @@ isc.ListGrid.registerStringMethods({
     // This notification is fired before the +link{listGrid.groupTree,data} is updated to
     // reflect the grouping. See also +link{listGrid.groupByComplete()}.
     //
-    // @param fields (Array of String) ListGrid field names by which the grid is being grouped.
-    //   If the user is ungrouping the grid, this param will be an empty array.
-    // @return (boolean) return false to cancel groupBy change.
+    // @param fields (Array of String) the list of ListGrid field-names by which the grid is
+    //                 about to be grouped.  If the grid is being ungrouped, this param will be
+    //                 an empty array
+    // @param specifiers (Array of GroupSpecifier) list of GroupSpecifier objects detailing
+    //                 grouping specifics for each grouped field
+    // @return (boolean) return false to cancel grouping on the passed specification
     // @visibility external
     //<
-    handleGroupBy:"fields",
+    handleGroupBy:"fields,specifiers",
 
     //> @method listGrid.groupByComplete()
     // Callback fired when the listGrid is grouped or ungrouped.
@@ -72258,10 +72347,12 @@ getIndentHTML : function (level, record, treeCellTemplate, indentCellWidthOffset
                 var state = "ancestor";
                 if (this.isRTL()) state += "_rtl";
 
+
                 var connectorURL = isc.Img.urlForState(this.connectorImage, null, null,
                                                         state),
                                     connectorHTML = this.getIconHTML(connectorURL, null,
-                                                        this.cellHeight);
+                                                        this.getOpenerIconWidth(record), null,
+                                                        this.getOpenerIconHeight(record));
                 this._ancestorConnectorHTML = connectorHTML;
             }
             var singleIndent = this._indentHTML(indentWidth),
@@ -72275,11 +72366,10 @@ getIndentHTML : function (level, record, treeCellTemplate, indentCellWidthOffset
             for (var i = (this.showRoot ? 0 : 1); i < level; i ++) {
                 if (levels.contains(i)) {
                     indent.append(this._ancestorConnectorHTML);
-                    indentCellWidth += this.cellHeight;
                 } else {
                     indent.append(singleIndent);
-                    indentCellWidth += indentWidth;
                 }
+                indentCellWidth += indentWidth;
             }
             indent.append("</NOBR>");
             indent = indent.release(false);
@@ -72927,9 +73017,6 @@ isc.TreeGrid.registerStringMethods({
     dataArrived:"parentNode",
 
     //> @method treeGrid.onFolderDrop
-    // Notification method fired when treeNode(s) are dropped into a folder of this TreeGrid.
-    // This method fires before the standard +link{method:treeGrid.folderDrop} processing occurs
-    // and returning false will suppress that default behavior.
     // @param nodes (Array of TreeNode) List of nodes being dropped
     // @param folder (TreeNode) The folder being dropped on
     // @param index (integer) Within the folder being dropped on, the index at which the drop is
@@ -72938,6 +73025,7 @@ isc.TreeGrid.registerStringMethods({
     // @param sourceWidget (Canvas) The component that is the source of the nodes (where the nodes
     //                              were dragged from).
     // @return (boolean) return false to cancel standard folder drop processing
+    // @include TreeGrid.folderDrop
     // @visibility sgwt
     //<
     onFolderDrop:"nodes,folder,index,dropPosition,sourceWidget"
@@ -74017,10 +74105,13 @@ saveAndExecuteMethod : function (methodName, argument) {
     return true;
 },
 
-openEditor : function (methodName, argument) {
+openEditor : function (methodName, currentFieldsRecord) {
 
-    var dataBoundComponent = this.picker.dataBoundComponent;
-    dataBoundComponent[methodName](argument);
+
+    var dataBoundComponent = this.picker.dataBoundComponent,
+        fieldName = currentFieldsRecord ? currentFieldsRecord.name : null;
+
+    dataBoundComponent[methodName](fieldName ? dataBoundComponent.getField(fieldName) : null);
 
     var editBuilderField = true;
 
@@ -77111,6 +77202,10 @@ isc.Menu.addProperties({
     //<
     // This is an override - canvas.maxHeight is 10000
     maxHeight:null,
+
+    // override the 50px minHeight specified on ListGrid - use the padded height of one
+    // menuItem instead, to prevent a one-item menu from showing extra space at the bottom
+    minHeight: 14,
 
     //> @attr menu.cellHeight (number : 20 : IRW)
     // The height of each item in the menu, in pixels.
@@ -83069,7 +83164,7 @@ checkTileRecord : function (tile) {
         dbcRecord = this.data.get(dataIndex);
 
     // is tile record consistent with the DBC's record
-    return this._tileRecordsEqual(tileRecord, dbcRecord);
+    return this._tileRecordsEqual(tile, tileRecord, dbcRecord);
 },
 
 setData : function (newData) {
@@ -83231,6 +83326,7 @@ dataChanged : function (operationType, originalRecord, rowNum, updateData) {
             originalTile = originalTileID && window[originalTileID];
         if (originalTile) {
             originalTile.record = updateData;
+            delete originalTile._recordNeedsRefresh;
             // Calling markForRedraw() causes a visual flicker, so use redraw() instead.
             originalTile.redraw("tile record data changed");
         }
@@ -83244,7 +83340,7 @@ dataChanged : function (operationType, originalRecord, rowNum, updateData) {
         this.logDebug("filter or sort, new data same or longer", "TileGrid");
 
 
-        if (this.getDataSource()) this.tiles.clearProperty("record");
+        if (this.getDataSource()) this.tiles.setProperty("_recordNeedsRefresh", true);
 
         // only trigger animations if we had data before
         if (this._oldDataLength > 0) this._layoutAfterDataChange();
@@ -83459,10 +83555,12 @@ setHilites : function (hilites) {
 },
 
 // detect whether two tile records are the same
-_tileRecordsEqual : function (record1, record2) {
+_tileRecordsEqual : function (tile, record1, record2) {
 
     if (record1 == null) return record2 == null;
     if (record2 == null) return record1 == null;
+
+    if (tile._recordNeedsRefresh) return false;
 
     // use == for equality if there's no datasource
     var dataSource = this.getDataSource();
@@ -83534,7 +83632,7 @@ getTile : function (tile) {
 
 
     var cachedTile = tileID && window[tileID];
-    if (cachedTile && this._tileRecordsEqual(record, cachedTile.record)) {
+    if (cachedTile && this._tileRecordsEqual(cachedTile, record, cachedTile.record)) {
         if (cachedTile.tileNum != tileIndex) {
             this._updateTileIndex(tileIndex, cachedTile);
         }
@@ -83585,8 +83683,8 @@ getTile : function (tile) {
     // call any notification APIs that are present on tile
     if      (recTile.setValues) recTile.setValues(record);
     else if (recTile.setData)   recTile.setData([record]);
-
     recTile.record = record;
+    delete recTile._recordNeedsRefresh;
 
     if (isReclaimed) {
         if (recTile.isA("SimpleTile")) {
@@ -84584,6 +84682,10 @@ getPrintHTML : function () {
 // Empty and loading messages
 // --------------------------------------------------------------------------------------------
 
+// If a tile has no associated record, show this value
+
+emptyTileValue: "&nbsp;",
+
 //> @attr tileGrid.loadingMessage (HTMLString : null : IR)
 // If you have a databound tileGrid and you scroll out of the currently loaded dataset, by
 // default you will see blank tiles until the server returns the data for those rows.  The
@@ -84702,7 +84804,7 @@ isc.SimpleTile.addProperties({
 
 
         var tileRec = this.getRecord();
-        if (!tileRec) return null;
+        if (!tileRec) return tileGrid.emptyTileValue;
 
         if (tileGrid.loadingMessage != null && Array.isLoading(tileRec)) {
             return tileGrid.loadingMessage;
@@ -92726,6 +92828,9 @@ isc.AdvancedHiliteEditor.addMethods({
 // a grid with two columns, <code>Nationhood</code> and <code>Country</code>, you could group first
 // by <code>Nationhood</code> with its selected groupingMode and then by <code>Country</code> with its selected groupingMode.
 //
+// <i><b>Important Note:</b> this class should not be used directly - it is exposed purely for
+// +link{group:i18nMessages, i18n reasons.}</i>
+//
 // @treeLocation Client Reference/Data Binding
 // @visibility external
 //<
@@ -92735,7 +92840,7 @@ isc.MultiGroupPanel.addProperties({
     vertical: true,
     overflow: "visible",
 
-    //> @attr multiGroupPanel.fields (Array of Field : null : IR)
+    //> @attr multiGroupPanel.fields (Array of DataSourceField : null : IR)
     // The list of fields which the user can choose to group by.
     // @visibility external
     //<
@@ -92899,7 +93004,7 @@ isc.MultiGroupPanel.addProperties({
         showDown: false,
         showFocused: false,
         autoParent: "topLayout",
-        click: "this.creator.moveSelectedLevelUp()"
+        click: "this.creator.moveSelectedLevelUp();"
     },
 
     //> @attr multiGroupPanel.levelDownButtonTitle (String : "Move Level Down" : IR)
@@ -93043,7 +93148,7 @@ isc.MultiGroupPanel.addProperties({
     //<
     getGroup : function () {
         var grid = this.optionsGrid,
-            data = grid.data.duplicate(),
+            data = isc.shallowClone(grid.data),
             editRowNum = grid.getEditRow(),
             editValues = isc.isA.Number(editRowNum) ? grid.getEditValues(editRowNum) : null
         ;
@@ -93210,7 +93315,7 @@ isc.MultiGroupPanel.addProperties({
     },
 
     _getFieldGroupingModes : function (field) {
-        if (!field) return;
+        if (!field) return null;
         if (!this._fieldGroupingModes) this._fieldGroupingModes = {};
         var modes = this._fieldGroupingModes[field.name];
 
@@ -93218,8 +93323,8 @@ isc.MultiGroupPanel.addProperties({
             modes = field.groupingModes ? field.groupingModes :
                 (!field.getGroupValue ? ( field._simpleType ? (field._simpleType.getGroupingModes ?
                                                            field._simpleType.getGroupingModes() :
-                                                           field._simpleType.groupingModes) : false )
-                : false)
+                                                           field._simpleType.groupingModes) : null )
+                : null)
             ;
             this._fieldGroupingModes[field.name] = modes;
         }
@@ -93341,9 +93446,9 @@ isc.MultiGroupPanel.addProperties({
         ;
         if (selectedIndex>0) {
             grid.data.slide(selectedIndex, selectedIndex-1);
+            this.optionsGrid.selectSingleRecord(selectedIndex-1);
             this.setButtonStates();
             this.fireChangeEvent();
-            this.optionsGrid.selectSingleRecord(selectedIndex-1);
         }
     },
 
@@ -93353,9 +93458,9 @@ isc.MultiGroupPanel.addProperties({
         ;
         if (selectedIndex >= 0 && selectedIndex < grid.data.length-1) {
             grid.data.slide(selectedIndex, selectedIndex+1);
+            this.optionsGrid.selectSingleRecord(selectedIndex+1);
             this.setButtonStates();
             this.fireChangeEvent();
-            this.optionsGrid.selectSingleRecord(selectedIndex+1);
         }
     },
 
@@ -93409,7 +93514,7 @@ isc.MultiGroupDialog.addClassMethods({
     askForGrouping : function (fieldSource, initialGrouping, callback) {
         var fields = isc.isAn.Array(fieldSource) ? fieldSource :
                 isc.DataSource && isc.isA.DataSource(fieldSource) ? isc.getValues(fieldSource.getFields()) :
-                isc.isA.DataBoundComponent(fieldSource) ? fieldSource.getFields() : null
+                isc.isA.DataBoundComponent(fieldSource) ? fieldSource.getAllFields() : null
         ;
         if (!fields) return;
         var grouping = [];
@@ -93661,7 +93766,7 @@ isc.MultiGroupDialog.addProperties({
     // @include multiGroupPanel.levelDownButton
     //<
 
-    //> @attr multiGroupDialog.fields (Array of Field : null : IR)
+    //> @attr multiGroupDialog.fields (Array of DataSourceField : null : IR)
     // @include multiGroupPanel.fields
     //<
 
@@ -93795,38 +93900,14 @@ isc.MultiGroupDialog.addProperties({
 
 
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('Grids');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._Grids_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Grids module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'Grids', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Grids'.");}
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 

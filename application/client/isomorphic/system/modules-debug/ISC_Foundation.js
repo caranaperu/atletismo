@@ -1,46 +1,22 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_Foundation){isc.module_Foundation=1;isc._moduleStart=isc._Foundation_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Foundation load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-01-21/LGPL Deployment") {
+if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-01-21/LGPL Deployment'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -379,7 +355,7 @@ isc.Canvas.addProperties({
     // For each of these we need to support the method 'animate[Type]' (like animateMove()).
     // These method names can also be passed as parameters to finishAnimation()
 
-    _animations:["rect","fade","scroll","show","hide"],
+    _animations:["rect","fade","scroll","show","hide", "resize", "move"],
 
     //> @attr canvas.animateShowEffect (animateShowEffectId | animateShowEffect : "wipe" : IRWA)
     // Default animation effect to use if +link{Canvas.animateShow()} is called without an
@@ -686,7 +662,6 @@ isc.Canvas.addMethods({
         // If we're not currently performing an animation of this type no need to proceed
         var ID = this._getAnimationID(type);
         if (!this[ID]) return;
-
         // Call 'finishAnimation' directly on the Animation class. This will cancel further
         // animations and fire the animation action with a ratio of 1, passing in the
         // 'earlyFinish' parameter.
@@ -5580,6 +5555,13 @@ drawChildren : function () {
         // case is the *peers of our members*.  This also implies that we must draw members
         // before non-member children, since peers must draw after their masters.
         this._drawNonMemberChildren();
+
+        // Fix the zIndex / tab-index of masked children if we're showing the component mask
+        // Normally this happens when 'showComponentMask' is called, so this handles the case where a
+        // developer clears and re-draws the parent while the mask is still up.
+        if (this.componentMaskShowing) {
+            this._updateChildrenForComponentMask();
+        }
     }
     // if members aren't children, we don't draw ourselves, so we can't draw children
     return;
@@ -5645,6 +5627,9 @@ _drawNonMemberChildren : function () {
             child.autoDraw = false;
             child = isc.Canvas.create(child);
         }
+        // Skip any children that shouldn't draw automatically along with the parent
+        // EG: componentMask
+       if (!this.drawChildWithParent(child)) continue;
 
         if (!child.isDrawn()) child.draw();
     }
@@ -6910,25 +6895,19 @@ childResized : function (child, deltaX, deltaY, reason) {
     if (this.componentMask == child) return;
 
     //>Animation
+    var animatingShow = child.isAnimating(this._$show),
+        animatingHide = child.isAnimating(this._$hide),
+        animatingRect = child.isAnimating(this._$rect),
+        animatingResize = child.isAnimating(this._$resize),
+        animating = (animatingShow || animatingHide || animatingRect || animatingResize);
+
     // If this is an animated resize, and we have the flag to suppress member animation, just
     // finish the animation as it's too expensive to respond to every step.
-    if (this.suppressMemberAnimations) {
-        var animating = false;
-        if (child.isAnimating(this._$show)) {
-            animating = true;
-            child.finishAnimation(this._$show);
-        }
-        if (child.isAnimating(this._$hide)) {
-            animating = true;
-            child.finishAnimation(this._$hide);
-        }
-        // No need for explicit 'resize' animation - this falls through to setRect
-        if (child.isAnimating(this._$setRect)) {
-            animating = true;
-            child.finishAnimation(this._$setRect);
-        }
-
-        if (animating) return;
+    if (this.suppressMemberAnimations && animating) {
+        child.finishAnimation(animatingShow ? this._$show :
+                                (animatingHide ? this._$hide :
+                                    (animatingRect ? this._$rect : this._$resize)));
+        return;
     }
     //<Animation
 
@@ -12867,6 +12846,24 @@ isc.Toolbar.addProperties( {
 
 isc.Toolbar.addMethods({
 
+//> @attr toolbar.createButtonsOnInit (Boolean : null : [IR])
+// If set to true, causes child buttons to be created during initialization, instead of waiting until
+// draw().
+// <p>
+// This property principally exists for backwards compatibility; the default behavior of waiting
+// until draw makes certain pre-draw operations more efficient (such as adding, removing or
+// reordering buttons).  However, if you have code that assumes Buttons are created early
+// and crashes if they are not, <code>createButtonsOnInit</code> will allow that code to
+// continue working, with a minor performance penalty.
+// @visibility external
+//<
+//createButtonsOnInit: null,
+
+initWidget : function () {
+    this.Super("initWidget", arguments);
+    if (this.createButtonsOnInit) this.setButtons();
+},
+
 //>    @method    toolbar.draw()    (A)
 //    Override the draw method to set up the buttons first
 //        @group    drawing
@@ -15326,8 +15323,10 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     // @visibility external
     //<
 
-    //> @attr toolStripGroup.label (AutoChild HLayout : null : IR)
-    // Label autoChild that presents the title for this ToolStripGroup.
+    //> @attr toolStripGroup.labelLayout (AutoChild HLayout : null : IR)
+    // HLayout autoChild that houses the +link{toolStripGroup.label, label}
+    // in which the +link{toolStripGroup.title, title text} is displayed.
+    // <P>
     // This can be customized via the standard +link{type:AutoChild} pattern.
     // @visibility external
     //<
@@ -15339,11 +15338,25 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @attr toolStripGroup.labelConstructor (String : "Label" : IRA)
-    // SmartClient class for the title label.
+    // SmartClient class for the +link{toolStripGroup.label, title label} AutoChild.
     // @visibility external
     //<
     labelConstructor: "Label",
 
+    //> @attr toolStripGroup.label (AutoChild Label : null : IR)
+    // AutoChild +link{class:Label, Label} used to display the
+    // +link{toolStripGroup.title, title text} for this group.
+    // <P>
+    // Can be customized via the standard +link{type:AutoChild} pattern, and various
+    // convenience APIs exist for configuring it after initial draw: see
+    // +link{toolStripGroup.setShowTitle, setShowTitle},
+    // +link{toolStripGroup.setTitle, setTitle},
+    // +link{toolStripGroup.setTitleAlign, setTitleAlign},
+    // +link{toolStripGroup.setTitleHeight, setTitleHeight},
+    // +link{toolStripGroup.setTitleOrientation, setTitleOrientation} and
+    // +link{toolStripGroup.setTitleStyle, setTitleStyle}.
+    // @visibility external
+    //<
     labelDefaults: {
         width: "100%",
         height: 18,
@@ -15353,20 +15366,23 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @attr toolStripGroup.titleAlign (Alignment : "center" : IRW)
-    // Controls the horizontal alignment of the group-title in its label.  Setting this
+    // Controls the horizontal alignment of the group's
+    // +link{toolStripGroup.title, title-text}, within its
+    // +link{toolStripGroup.label, label}.  Setting this
     // attribute overrides the default specified by
     // +link{toolStrip.groupTitleAlign, groupTitleAlign} on the containing
     // +link{class:ToolStrip, ToolStrip}.
+    // @setter toolStripGroup.setTitleAlign
     // @visibility external
     //<
     //titleAlign: "center",
 
     //> @attr toolStripGroup.titleStyle (CSSClassName : "toolStripGroupTitle" : IRW)
-    // CSS class applied to this ToolStripGroup.
+    // CSS class applied to the +link{toolStripGroup.label, title label} in this group.
+    // @setter toolStripGroup.setTitleStyle
     // @visibility external
     //<
     titleStyle: "toolStripGroupTitle",
-
 
     //> @attr toolStripGroup.autoSizeToTitle (Boolean : true : IR)
     // By default, ToolStripGroups are assigned a minimum width that allows the entire title
@@ -15377,21 +15393,33 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     autoSizeToTitle: true,
 
     //> @attr toolStripGroup.titleOrientation (VerticalAlignment : "top" : IRW)
-    // Controls the horizontal alignment of the group-title in its label.  Setting this
+    // Controls the +link{toolStripGroup.titleOrientation, vertical orientation} of
+    // this group's +link{toolStripGroup.label, title label}.  Setting this
     // attribute overrides the default specified by
     // +link{toolStrip.groupTitleAlign, groupTitleOrientation} on the containing
     // +link{class:ToolStrip, ToolStrip}.
+    // @setter toolStripGroup.setTitleOrientation
     // @visibility external
     //<
     //titleOrientation: "top",
 
     //> @attr toolStripGroup.titleProperties (AutoChild Label : null : IRW)
-    // AutoChild properties for fine customization of the title label.
+    // AutoChild properties for fine customization of the
+    // +link{toolStripGroup.label, title label}.
     // @visibility external
+    // @deprecated set these properties directly via the +link{toolStripGroup.label, label autoChild}
     //<
 
+    //> @attr toolStripGroup.titleHeight (Number : 18 : IRW)
+    // Controls the height of the +link{toolStripGroup.label, title label} in this group.
+    // @setter toolStripGroup.setTitleHeight
+    // @visibility external
+    //<
+    titleHeight: 18,
+
     //> @attr toolStripGroup.body (AutoChild HLayout : null : IR)
-    // HLayout autoChild that manages multiple VLayouts containing controls.
+    // HLayout autoChild that manages multiple +link{toolStripGroup.columnLayout, VLayouts}
+    // containing controls.
     // @visibility external
     //<
 
@@ -15409,6 +15437,13 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
         autoDraw: false
     },
 
+    //> @attr toolStripGroup.columnLayout (MultiAutoChild VLayout : null : IR)
+    // AutoChild VLayouts created automatically by groups.  Each manages a single column of
+    // child controls in the group.  Child controls that support <code>rowSpan</code> may
+    // specify it in order to occupy more than one row in a single column.  See
+    // +link{toolStripGroup.numRows, numRows} for related information.
+    // @visibility external
+    //<
     // some autochild defaults for the individual VLayouts that represent columns
     columnLayoutDefaults: {
         _constructor: "VLayout",
@@ -15447,7 +15482,9 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @attr toolStripGroup.numRows (Number : 1 : IRW)
-    // The number of rows of controls to display in each column.
+    // The number of rows of controls to display in each column.  Each control will take one
+    // row in a +link{toolStripGroup.columnLayout, columnLayout} by default, but those that
+    // support the feature may specify <code>rowSpan</code> to override that.
     // @visibility external
     //<
     numRows: 1,
@@ -15459,12 +15496,6 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     rowHeight: 26,
 
     defaultColWidth: "*",
-
-    //> @attr toolStripGroup.titleHeight (Number : 18 : IRW)
-    // The height of the +link{toolStripGroup.label, title label} in this group.
-    // @visibility external
-    //<
-    titleHeight: 18,
 
     initWidget : function () {
         this.Super("initWidget", arguments);
@@ -15511,20 +15542,30 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
 
     },
 
+    //> @attr toolStripGroup.title (String : null : IRW)
+    // The title text to display in this group's
+    // +link{toolStripGroup.label, title label}.
+    // @setter toolStripGroup.setTitle
+    // @visibility external
+    //<
+
     //> @method toolStripGroup.setTitle()
-    // Sets the header-text for this group.
+    // Sets the +link{toolStripGroup.title, text} to display in this group's
+    // +link{toolStripGroup.label, title label} after initial draw.
     //
     // @param title (String) The new title for this group
     // @visibility external
     //<
     setTitle : function (title) {
-        if (this.label) this.label.setContents(title);
+        this.title = title;
+        if (this.label) this.label.setContents(this.title);
     },
 
     //> @method toolStripGroup.setShowTitle()
-    // This method forcibly shows or hides this group's title after initial draw.
+    // This method forcibly shows or hides this group's
+    // +link{toolStripGroup.label, title label} after initial draw.
     //
-    // @param showTitle (boolean) should be show the title be shown or hidden?
+    // @param showTitle (boolean) should the title be shown or hidden?
     // @visibility external
     //<
     setShowTitle : function (showTitle) {
@@ -15534,7 +15575,9 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @method toolStripGroup.setTitleAlign()
-    // This method forcibly sets the text-alignment of this group's title after initial draw.
+    // This method forcibly sets the horizontal alignment of the
+    // +link{toolStripGroup.title, title-text}, within the
+    // +link{toolStripGroup.label, title label}, after initial draw.
     //
     // @param align (Alignment) the new alignment for the text, left or right
     // @visibility external
@@ -15544,8 +15587,26 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
         if (this.label) this.label.setAlign(this.titleAlign);
     },
 
+    //> @method toolStripGroup.setTitleStyle()
+    // This method forcibly sets the +link{toolStripGroup.titleStyle, CSS class name}
+    // for this group's +link{toolStripGroup.label, title label} after initial draw.
+    //
+    // @param styleName (CSSClassName) the CSS class to apply to the
+    //                                 +link{toolStripGroup.label, title label}.
+    // @visibility external
+    //<
+    setTitleStyle : function (styleName) {
+        this.titleStyle = styleName;
+        if (this.label) {
+            this.label.setStyleName(this.titleStyle);
+            if (this.label.isDrawn()) this.label.redraw();
+        }
+    },
+
     //> @method toolStripGroup.setTitleOrientation()
-    // This method forcibly sets the orientation of this group's title after initial draw.
+    // This method forcibly sets the
+    // +link{toolStripGroup.titleOrientation, vertical orientation} of this group's
+    // +link{toolStripGroup.label, title label} after initial draw.
     //
     // @param orientation (VerticalAlignment) the new orientation for the title, either bottom or top
     // @visibility external
@@ -15561,6 +15622,18 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
                 this.addMember(this.labelLayout, 1);
             }
         }
+    },
+
+    //> @method toolStripGroup.setTitleHeight()
+    // This method forcibly sets the height of this group's
+    // +link{toolStripGroup.label, title label} after initial draw.
+    //
+    // @param titleHeight (Integer) the new height for the +link{toolStripGroup.label, title label}
+    // @visibility external
+    //<
+    setTitleHeight : function (titleHeight) {
+        this.titleHeight = titleHeight;
+        if (this.label) this.label.setHeight(this.titleHeight);
     },
 
     addColumn : function (index, controls) {
@@ -15598,7 +15671,8 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @method toolStripGroup.getControlColumn()
-    // Return the column widget that contains the passed control.
+    // Return the +link{toolStripGroup.columnLayout, column widget} that contains the passed
+    // control.
     //
     // @param control (Canvas) the control to find in this group
     // @return (Layout) the column widget containing the passed control
@@ -15618,8 +15692,9 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
 
     //> @method toolStripGroup.setControls()
     // Clears the array of controls and then adds the passed array to this toolStripGroup,
-    // creating new columns as necessary according to each control's rowSpan attribute and
-    // the group's +link{numRows} attribute.
+    // creating new +link{toolStripGroup.columnLayout, columns} as necessary, according to each
+    // control's <code>rowSpan</code> attribute and the group's
+    // +link{toolStripGroup.numRows, numRows} attribute.
     //
     // @param controls (Array of Canvas) an array of widgets to add to this group
     // @visibility external
@@ -15632,8 +15707,10 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @method toolStripGroup.addControls()
-    // Adds an array of controls to this group, creating new columns as necessary
-    // according to each control's rowSpan attribute and the group's numRows attribute.
+    // Adds an array of controls to this group, creating new
+    // +link{toolStripGroup.columnLayout, columns} as necessary, according to each control's
+    // <code>rowSpan</code> value and the group's
+    // +link{toolStripGroup.numRows, numRows} value.
     //
     // @param controls (Array of Canvas) an array of widgets to add to this group
     // @visibility external
@@ -15648,8 +15725,10 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @method toolStripGroup.addControl()
-    // Adds a control to this toolStripGroup, creating a new column if necessary,
-    // according to the control's rowSpan attribute and the group's +link{numRows} attribute.
+    // Adds a control to this toolStripGroup, creating a new
+    // +link{toolStripGroup.columnLayout, column} as necessary, according to the control's
+    // <code>rowSpan</code> value and the group's
+    // +link{toolStripGroup.numRows, numRows} value.
     //
     // @param control (Canvas) a widget to add to this group
     // @param [index] (Integer) optional insertion index for this control
@@ -15671,8 +15750,8 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     },
 
     //> @method toolStripGroup.removeControl()
-    // Removes a control from this toolStripGroup, destroying an existing column if this is the
-    // last widget in that column.
+    // Removes a control from this toolStripGroup, destroying an existing
+    // +link{toolStripGroup.columnLayout, column} if this is the last widget in that column.
     //
     // @param control (Canvas) a widget to remove from this group
     // @visibility external
@@ -15744,8 +15823,9 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
 
 
 //>    @class    IconButton
-// A Button subclass that displays an icon, title and optional menuIcon and is capable of
-// horizontal and vertical orientation.
+// A Button subclass that displays an +link{iconButton.icon, icon},
+// +link{iconButton.showButtonTitle, title} and optional +link{iconButton.menuIconSrc, menuIcon}
+// and is capable of horizontal and vertical +link{iconButton.orientation, orientation}.
 //
 // @treeLocation Client Reference/Layout
 // @visibility external
@@ -15763,22 +15843,24 @@ autoDraw: false,
 usePartEvents: true,
 
 //> @attr iconButton.orientation (String : "horizontal" : IRW)
-// The orientation of this IconButton.  The default value, "horizontal", renders icon, title
-// and potentially menuIcon from left to right: "vertical" does the same from top to bottom.
+// The orientation of this IconButton.  The default value, "horizontal", renders
+// +link{iconButton.icon, icon}, +link{iconButton.showButtonTitle, title} and potentially
+// +link{iconButton.menuIconSrc, menuIcon}, from left to right: "vertical" does the same from
+// top to bottom.
 //
 // @visibility external
 //<
 orientation: "horizontal",
 
 //> @attr iconButton.rowSpan (Number : 1 : IRW)
-// When used in a +link{class:RibbonBar}, the number of rows this button should consume.
-//
+// When used in a +link{class:RibbonBar}, the number of rows this button should occupy in a
+// single +link{toolStripGroup.columnLayout, column}.
 // @visibility external
 //<
 rowSpan: 1,
 
 //> @attr iconButton.baseStyle (CSSClassName : "iconButton" : IRW)
-// Default CSS class.
+// Default CSS class for this button.
 //
 // @visibility external
 //<
@@ -16287,14 +16369,15 @@ isc.defineClass("RibbonGroup", "ToolStripGroup").addProperties({
 
     //> @attr ribbonGroup.newControlConstructor (Class : "IconButton" : IR)
     // Widget class for controls +link{createControl, created automatically} by this
-    // RibbonGroup.  Since +link{newControlConstructor, such controls} are created via the autoChild
-    // system, they can be further customized via the newControlProperties property.
+    // RibbonGroup.  Since +link{newControlConstructor, such controls} are created via the
+    // autoChild system, they can be further customized via the newControlProperties property.
     //
     // @visibility external
     //<
     newControlConstructor: "IconButton",
     //> @attr ribbonGroup.newControlDefaults (MultiAutoChild IconButton : null : IR)
-    // Properties used by +link{createControl} when creating new controls.
+    // Properties used by +link{ribbonGroup.createControl, createControl} when creating new
+    // controls.
     //
     // @visibility external
     //<
@@ -16302,12 +16385,12 @@ isc.defineClass("RibbonGroup", "ToolStripGroup").addProperties({
     },
 
     //> @method ribbonGroup.createControl()
-    // Add a new control to this RibbonBar.  The control is created using the autoChild system,
-    // according to the +link{newControlConstructor, new control} You can either create your group and pass it in the
-    // first parameter, or you can pass a properties clock from which to automatically
-    // construct it.
+    // Creates a new control and adds it to this RibbonGroup.  The control is created using the
+    // autoChild system, according to the specified
+    // +link{ribbonGroup.newControlConstructor, constructor} and the passed properties are
+    // applied to it.
     //
-    // @param properties (Canvas Properties) properties from which to construct a new control
+    // @param properties (Canvas Properties) properties to apply to the new control
     // @param [position] (Integer) the index at which to insert the new control
     //
     // @visibility external
@@ -23772,7 +23855,7 @@ isc.NavigationBar.addProperties({
 
     //> @method navigationBar.setControls()
     // Setter to update the set of displayed +link{navigationBar.controls} at runtime.
-    // @param controls (Array of string or canvas)
+    // @param controls (Array of String | Array of Canvas)
     // @visibility internal
     //<
     setControls : function (controls, members) {
@@ -23863,7 +23946,7 @@ isc.NavigationBar.addProperties({
 
         var origShowLeftButton = this.showLeftButton;
         this.showLeftButton = true;
-        // For efficiency, we avoid destroying the the leftButton when `this.showLeftButton != false'
+        // For efficiency, we avoid destroying the leftButton when `this.showLeftButton != false'
         // changes from true to false; the leftButton is hidden instead. Otherwise, we would be destroying
         // the button each time the user navigated to the navigationPane of a SplitPane in certain
         // modes, and each time the user navigated to the first page of a NavStack.
@@ -26821,8 +26904,8 @@ isc.SplitPane.addProperties({
     //showNavigationBar: null,
 
     //> @attr splitPane.animateNavigationBarStateChanges (boolean : true : IR)
-    // Whether state changes of the +link{SplitPane.navigationBar,navigationBar} are enabled.
-    // This is enabled by default except when the browser is known to have poor animation
+    // Whether to animate state changes of the +link{SplitPane.navigationBar,navigationBar}.
+    // Enabled by default except when the browser is known to have poor animation
     // performance.
     // @see NavigationBar.animateStateChanges
     // @visibility external
@@ -26832,9 +26915,25 @@ isc.SplitPane.addProperties({
                                        isc.Browser.isMoz),
 
     //> @attr splitPane.backButton (AutoChild NavigationButton : null : IR)
-    // The back button shown in the +link{SplitPane.navigationBar,navigationBar} depending on
-    // the current UI configuration. The back button's +link{Button.title,title} is determined
-    // by the <code>SplitPane</code>.
+    // A +link{class:NavigationButton} shown to the left of the
+    // +link{splitPane.navigationTitle, title}
+    // in the +link{splitPane.navigationBar,navigationBar}.
+    // <P>
+    // In +link{SplitPane.deviceMode,deviceModes} other than "desktop", this button is
+    // automatically created and allows transitioning back to the
+    // +link{SplitPane.navigationPane,navigationPane} (in tablet and handset modes) or the
+    // +link{SplitPane.listPane,listPane} (in handset mode).  In these
+    // +link{splitPane.deviceMode, deviceModes}, setting
+    // +link{splitPane.showLeftButton, showLeftButton} to true shows the
+    // +link{splitPane.leftButton, leftButton} <em>in addition to</em> the
+    // automatically-created back button.
+    // <P>
+    // When +link{splitPane.deviceMode, deviceMode} is "desktop", this button is never shown.
+    // See +link{splitPane.showLeftButton, showLeftButton} for more information.
+    // <P>
+    // This button's +link{Button.title,title} is determined automatically by the
+    // <code>SplitPane</code>.  See +link{splitPane.listTitle, listTitle} and
+    // +link{splitPane.detailTitle, detailTitle}.
     //
     // @visibility external
     //<
@@ -26870,13 +26969,31 @@ isc.SplitPane.addProperties({
     },
 
     //> @attr splitPane.leftButton (AutoChild NavigationButton : null : IR)
-    // An additional +link{NavigationButton} that is shown within the navigation bar if
-    // +link{SplitPane.showLeftButton,showLeftButton} is <code>true</code>.
+    // An additional +link{NavigationButton} which may be shown to the left of the
+    // +link{SplitPane.navigationTitle, title} in the
+    // +link{SplitPane.navigationBar, navigation bar}.
+    // <P>
+    // <b>Important note:</b> by default, this button has no
+    // +link{navigationButton.direction, direction} and does not fire the
+    // +link{splitPane.navigationClick, navigationClick} notification.  You can provide a
+    // <code>direction</code> and apply a click handler via the autoChild system.
+    // @see splitPane.showLeftButton
+    // @see splitPane.backButton
     // @visibility external
     //<
     leftButtonDefaults: {
         _constructor: "NavigationButton",
-        direction: null
+        direction: null,
+        click : function () {
+
+            if (this.parentElement._animating) return;
+
+            // Always fire the navigationClick handler if defined
+            if (this.creator.navigationClick != null) {
+                this.creator.navigationClick(this.direction);
+            }
+            return false;
+        }
     },
 
     //> @attr splitPane.currentPane (CurrentPane : "navigation" : IRW)
@@ -27034,7 +27151,7 @@ isc.SplitPane.addProperties({
     // <code>detailToolButtons</code> allows you to specify a set of controls that are specially
     // placed based on the +link{SplitPane.deviceMode,deviceMode} and +link{SplitPane.pageOrientation,pageOrientation}.
     // This is generally useful for a compact strip of +link{ImgButton} controls, approximately
-    // 5 of which will fit comfortably using typical size icons and in the most space-constricted
+    // 5 of which will fit comfortably using typically-sized icons and in the most space-constricted
     // modes.
     // <p>
     // These controls are placed as follows:
@@ -27163,6 +27280,8 @@ isc.SplitPane.addProperties({
             leftButtonProperties: this.backButtonProperties,
 
             showRightButton: this.showRightButton,
+            // pass the rightButtonTitle through
+            rightButtonTitle: this.rightButtonTitle,
 
             showMiniNavControl: this.showMiniNav
 
@@ -27176,7 +27295,7 @@ isc.SplitPane.addProperties({
     },
 
     listToolStrip_autoMaker : function (dynamicProperties) {
-        dynamicProperties = isc.addProperties({}, dynamicProperties);
+        dynamicProperties = isc.addProperties({}, this.listToolStripProperties, dynamicProperties);
         if (!this.isTablet() && !this.isHandset()) {
 
             dynamicProperties.height = this.desktopNavigationBarHeight;
@@ -27185,7 +27304,7 @@ isc.SplitPane.addProperties({
     },
 
     detailToolStrip_autoMaker : function (dynamicProperties) {
-        dynamicProperties = isc.addProperties({}, dynamicProperties, {
+        dynamicProperties = isc.addProperties({}, this.detailToolStripProperties, dynamicProperties, {
             titleLabelConstructor: this.detailTitleLabelConstructor,
             titleLabelDefaults: this.detailTitleLabelDefaults,
             titleLabelProperties: this.detailTitleLabelProperties
@@ -27629,7 +27748,13 @@ isc.SplitPane.addProperties({
         if (this.currentUIConfig === "desktop") {
             this.updateListTitleLabel();
             var members = [];
+            if (this.listToolStrip.leftButton) {
+                members.add(this.listToolStrip.leftButton);
+            }
             if (this.listTitleLabel != null) members.add(this.listTitleLabel);
+            if (this.listToolStrip.rightButton) {
+                members.add(this.listToolStrip.rightButton);
+            }
             this.listToolStrip.setMembers(members);
         }
     },
@@ -27842,13 +27967,15 @@ isc.SplitPane.addProperties({
     },
 
     //> @attr splitPane.showLeftButton (boolean : false : IRW)
-    // Should the +link{SplitPane.leftButton} be shown in the navigation bar?
+    // Should the +link{splitPane.leftButton} be shown in the
+    // +link{splitPane.navigationBar, navigation bar}?
     // <p>
-    // The default behavior is to automatically create and show a +link{SplitPane.backButton,back button}
-    // as appropriate that allows transitioning back to the +link{SplitPane.navigationPane,navigationPane}
-    // (tablet and handset modes) or the +link{SplitPane.listPane,listPane} (handset mode). If
-    // <code>showLeftButton</code> is true, then the <code>leftButton</code> is shown <em>in addition</em>
-    // to the automatically-created back button.
+    // When set to true, the +link{splitPane.leftButton} is displayed to the left of the
+    // +link{splitPane.navigationTitle}, and to the right of the +link{splitPane.backButton},
+    // when +link{splitPane.deviceMode} is not "desktop".
+    // <P>
+    // @see splitPane.leftButton
+    // @see splitPane.backButton
     //
     // @visibility external
     //<
@@ -28258,7 +28385,7 @@ isc.SplitPane.addProperties({
     },
 
     //> @attr splitPane.autoNavigate (boolean : null : IR)
-    // If set, the <code>splitPane</code> will automatically monitor selection changes in the
+    // If set, the <code>SplitPane</code> will automatically monitor selection changes in the
     // +link{navigationPane} or +link{listPane}, and call +link{navigateListPane()} or
     // +link{navigateDetailPane()} when selections are changed.
     // <p>
@@ -29373,38 +29500,14 @@ isc.NavPanel.addProperties({
     //<EditMode
 });
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('Foundation');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._Foundation_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Foundation module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'Foundation', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Foundation'.");}
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 

@@ -1,37 +1,13 @@
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
 var isc = window.isc ? window.isc : {};if(window.isc&&!window.isc.module_Core){isc.module_Core=1;isc._moduleStart=isc._Core_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Core load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
@@ -89,9 +65,9 @@ isc._start = new Date().getTime();
 
 // versioning - values of the form ${value} are replaced with user-provided values at build time.
 // Valid values are: version, date, project (not currently used)
-isc.version = "v10.1p_2016-01-21/LGPL Deployment";
-isc.versionNumber = "v10.1p_2016-01-21";
-isc.buildDate = "2016-01-21";
+isc.version = "v10.1p_2016-03-10/LGPL Development Only";
+isc.versionNumber = "v10.1p_2016-03-10";
+isc.buildDate = "2016-03-10";
 isc.expirationDate = "";
 
 isc.scVersion = "10.1p";
@@ -4100,6 +4076,12 @@ isc.addMethods(isc.ClassFactory, {
 
             && className != "IButton"
             && overwrite != true
+            // don't warn if a framework component schema is overridden ("componentSchema" flag is
+            // automatically set by LoadSystemSchemaTag).  Without this check, we get warnings at VB
+            // startup when eg the VisualBuilder class clobbers the VisualBuilder component schema.
+            // Component Schema don't really need to be globals as framework code always looks them up
+            // with DataSource.get().
+            && !(isc.isA.DataSource(existingObject) && existingObject.componentSchema)
             )
         {
 
@@ -4465,8 +4447,9 @@ isc.addMethods(isc.ClassFactory, {
         // if the ID is already taken, log a warning
         var isKeyword, checkForKeyword;
         if (wd[object.ID] != null) {
-            var instance = isc.isA.Canvas(wd[object.ID]);
-            if (!(isc.isA.DataSource(wd[object.ID]) && wd[object.ID].componentSchema && isc.isA.DataSource(object))) {
+
+            var instance = isc.isA.Canvas(wd[object.ID]) || isc.DrawItem && isc.isA.DrawItem(wd[object.ID]);
+            if (!(isc.isA.DataSource(wd[object.ID]) && wd[object.ID].componentSchema)) {
 
                 if (!dontWarn) {
 
@@ -18851,6 +18834,28 @@ getShortYear : function () {
     return (year % 100).stringify(2);
 },
 
+
+firstWeekIncludesDay: 4,
+getYearStart : function (firstDayOfWeek) {
+    if (firstDayOfWeek == null) {
+        firstDayOfWeek = isc.DateChooser.getInstanceProperty("firstDayOfWeek");
+    }
+
+    var yearStart = Date.createLogicalDate(this.getFullYear(),0,1);
+
+    if (yearStart.getDay() > this.firstWeekIncludesDay && firstDayOfWeek <= this.firstWeekIncludesDay) {
+        // by default, jan 1 is friday or saturday and firstDayOfWeek <= Thursday
+        // - the first (thursday) in the year is next week
+        yearStart.setDate(yearStart.getDate() + 7);
+    } else if (yearStart.getDay() < firstDayOfWeek) {
+        // eg Jan 1 is Sunday but firstDayOfWeek is Monday - Jan 1 is last week
+        yearStart.setDate(yearStart.getDate() + 7);
+    }
+
+    yearStart = isc.DateUtil.getStartOf(yearStart, "W", true, firstDayOfWeek);
+    return yearStart;
+},
+
 //>    @method date.getWeek()
 // Returns an integer containing the week number
 // @group dateFormatting
@@ -18860,10 +18865,9 @@ getShortYear : function () {
 getWeek : function (firstDayOfWeek) {
     var logicalDate = this;
 
-    // Normalize to a logical date, and compare with the logical
-    // first day of the year - this will get rid of any oddities around time of day
-    // and custom timezones etc (any datetime within the logical day will round to the
-    // same logicalDate object)
+    // Normalize to a logical date, and compare with the logical yearStart - this will get rid
+    // of any oddities around time of day and custom timezones etc (any datetime within the
+    // logical day will round to the same logicalDate object)
     if (!this.logicalDate) {
         logicalDate = Date.getLogicalDateOnly(this);
     }
@@ -18872,34 +18876,20 @@ getWeek : function (firstDayOfWeek) {
         firstDayOfWeek = isc.DateChooser.getInstanceProperty("firstDayOfWeek");
     }
 
-    var jan1 = Date.createLogicalDate(this.getFullYear(),0,1);
+    // get the start of the week that contains the first (Thursday) after January 1
+    var yearStart = logicalDate.getYearStart(firstDayOfWeek);
 
-    // get the first thursday of the year
-    var firstThursday = jan1.duplicate();
-    var dayIndex = firstThursday.getDay();
-    firstThursday.setDate(firstThursday.getDate() + (4-dayIndex));
+    // make sure it's a logical date
+    if (!yearStart.logicalDate) yearStart = Date.getLogicalDateOnly(yearStart);
 
-    // the start of the week with the first thursday of the year in it - this is what will be
-    // passed to _getWeekOffset as the start-date
-    var thursWeekStart = isc.DateUtil.getStartOf(firstThursday, "W", true, firstDayOfWeek);
-
-    var weekStart = isc.DateUtil.getStartOf(logicalDate, "W", true, firstDayOfWeek);
-    var oStart = weekStart.duplicate();
-    weekStart.setDate(weekStart.getDate() + (4-firstDayOfWeek));
-    if (weekStart.getFullYear() != logicalDate.getFullYear()) {
-        // the thursday after the weekStart is in the previous year - tweak so that the week
-        // number returned is for the previous year
-        jan1 = Date.createLogicalDate(weekStart.getFullYear(),0,1);
-        firstThursday = jan1.duplicate();
-        dayIndex = firstThursday.getDay();
-        firstThursday.setDate(firstThursday.getDate() + (4-dayIndex));
-        thursWeekStart = isc.DateUtil.getStartOf(firstThursday, "W", true, firstDayOfWeek);
-        logicalDate = weekStart;
+    if (logicalDate.getTime() < yearStart.getTime()) {
+        // this date is before the calculated yearStart - return a week offset for this date
+        // into the previous year
+        return isc.DateUtil.getAbsoluteDate("-1w", logicalDate).getWeek(firstDayOfWeek);
     }
 
-    var result = Date._getWeekOffset(logicalDate, thursWeekStart, firstDayOfWeek);
-    // if jan1 is after thursday (so week 1 is the following week), take one from the result
-    if (jan1.getDay() > 4) result -=1;
+    // divide the day delta between this date and the yearStart by 7 and add 1
+    var result = Math.floor((logicalDate.getTime() - yearStart.getTime()) / (60000 * 60 * 24 * 7)) + 1;
     return result;
 },
 
@@ -20455,7 +20445,7 @@ isc.DateUtil.addClassMethods({
         var parts = relativeDateString.split("[");
         if (parts[1]) {
             // qualifier is the bit in the square brackets (another relative date string)
-            result.qualifier = parts[1].replace("]");
+            result.qualifier = parts[1].replace("]", "");
         }
 
         var value = parts[0];
@@ -20710,6 +20700,7 @@ isc.DateUtil.addClassMethods({
                 }
                 var delta = dayOfWeek - firstDayOfWeek;
                 if (delta < 0) delta += 7;
+                else if (delta > 0) delta += firstDayOfWeek;
                 newDate.setDate(newDate.getDate()-delta);
                 return newDate;
 
@@ -21666,6 +21657,7 @@ makeXMLSafe : function (string, amp, lt, gt, quot, apos, cr) {
     if (quot != false) string = string.replace(String._doubleQuoteRegex, this._$quot);
     if (apos != false) string = string.replace(String._singleQuoteRegex, this._$apos);
     if (cr != false) string = string.replace(this._RE_cr, this._$escapedCR);
+    string = string.replace(this._RE_restricted, isc.emptyString);
     return string;
 },
 xmlAttributeEscapeLF:true,
@@ -21701,6 +21693,8 @@ _RE_lt:/</g,
 _RE_gt:/>/g,
 _RE_cr:/\r/g,
 _RE_lf:/\n/g,
+// restricted chars: use discouraged per https://www.w3.org/TR/xml11/#NT-Char
+_RE_restricted:/[\u0001-\u0008\u000B-\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F]/g,
 
 makeCDATA : function (string) {
     return "<![CDATA["+string.replace(/\]\]>/, "]]<![CDATA[>")+"]]>";
@@ -22722,24 +22716,24 @@ isc.StackTrace.getPrototype().toString = function () {
 // The native stack trace for Mozilla has changed.  For FF14 and above, the arguments are
 // no longer supplied and the native stack trace looks like:
 //
-// isc_Canvas_editSummaryField@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:30870
-// isc_Canvas_addSummaryField@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:30865
-// anonymous@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:420
-// isc_Menu_selectMenuItem@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:28093
-// isc_Menu_rowClick@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:28059
-// anonymous@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:7836
-// isc_GridRenderer__rowClick@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:6199
-// isc_c_Class_invokeSuper@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:2263
-// isc_c_Class_Super@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:2198
-// isc_GridBody__rowClick@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:6793
-// isc_GridRenderer_click@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:6178
-// isc_Canvas_handleClick@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:25741
-// isc_c_EventHandler_bubbleEvent@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:15164
-// isc_c_EventHandler_handleClick@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:14083
-// isc_c_EventHandler__handleMouseUp@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:13973
-// isc_c_EventHandler_handleMouseUp@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:13916
-// isc_c_EventHandler_dispatch@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:15541
-// anonymous@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:420
+// isc_Canvas_editSummaryField@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:30870
+// isc_Canvas_addSummaryField@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:30865
+// anonymous@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:420
+// isc_Menu_selectMenuItem@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:28093
+// isc_Menu_rowClick@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:28059
+// anonymous@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:7836
+// isc_GridRenderer__rowClick@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:6199
+// isc_c_Class_invokeSuper@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:2263
+// isc_c_Class_Super@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:2198
+// isc_GridBody__rowClick@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:6793
+// isc_GridRenderer_click@http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:6178
+// isc_Canvas_handleClick@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:25741
+// isc_c_EventHandler_bubbleEvent@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:15164
+// isc_c_EventHandler_handleClick@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:14083
+// isc_c_EventHandler__handleMouseUp@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:13973
+// isc_c_EventHandler_handleMouseUp@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:13916
+// isc_c_EventHandler_dispatch@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:15541
+// anonymous@http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:420
 //
 // For FF13 and earlier, the lines from the native stack trace look something like this:
 //
@@ -23076,16 +23070,16 @@ isc.ChromeStackTrace.addClassMethods({
 // The error.stack from IE10 looks like:
 //
 // "TypeError: Unable to set property 'foo' of undefined or null reference
-//   at isc_Canvas_editSummaryField (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:30842:5)
-//   at sc_Canvas_addSummaryField (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:30837:5)
+//   at isc_Canvas_editSummaryField (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:30842:5)
+//   at sc_Canvas_addSummaryField (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:30837:5)
 //   at Function code (Function code:1:1)
-//   at isc_Menu_selectMenuItem (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:28093:9)
-//   at isc_Menu_rowClick (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:28059:5)
+//   at isc_Menu_selectMenuItem (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:28093:9)
+//   at isc_Menu_rowClick (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:28059:5)
 //   at Function code (Function code:1:142)
-//   at isc_GridRenderer__rowClick (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:6199:5)
-//   at isc_c_Class_invokeSuper (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:2262:17)
-//   at isc_c_Class_Super (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-01-21.js:2198:9)
-//   at isc_GridBody__rowClick (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-01-21.js:679[3:13)
+//   at isc_GridRenderer__rowClick (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:6199:5)
+//   at isc_c_Class_invokeSuper (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:2262:17)
+//   at isc_c_Class_Super (http://localhost:49011/isomorphic/system/modules/ISC_Core.js?isc_version=v10.1p_2016-03-10.js:2198:9)
+//   at isc_GridBody__rowClick (http://localhost:49011/isomorphic/system/modules/ISC_Grids.js?isc_version=v10.1p_2016-03-10.js:679[3:13)
 
 isc.defineClass("IEStackTrace", isc.StackTrace).addMethods({
     preambleLines:1,
@@ -25329,17 +25323,20 @@ isc.ClassFactory.defineClass("Log");
 // "Web Application" Run Configuration template (intended originally for Dev Mode) to launch
 // your Web Application.  You may deploy your Web Application manually outside of Eclipse.</td>
 // </tr><tr>
-// <td>While using the SDM Server in Eclipse with GWT 2.7.0+, the SGWT Application fails to
-// load, resource files are missing, or the browser reports that the basic SmartClient
-// JavaScript Framework files haven't been loaded properly.  Missing symbols may be rerpoted,
-// such as "isc is not defined".
-// </td><td>Your GWT project uses script tags, but you're not using or have not merged your
-// app's main page from the BuiltInDS Sample Project HTML.  The linkers used by GWT for SDM
-// don't support script tags, but SGWT generates code to load them for you automatically.
-// However, this requires that your app's HTML load the file loadScriptTagFiles.js as in the
-// BuiltInDS Sample Project.</td>
-// <td>Merge the line loading loadScriptTagFiles.js into your application's main HTML page
-// from the BuiltInDS Sample Project.  (If you hit this, please add your opinion to the
+// <td>When the SDM Server is launched in Eclipse, the SGWT Application fails to
+// load, resource or configuration files are reported missing, or browser errors are hit
+// because the core SmartClient JavaScript Framework files haven't been loaded properly.
+// Missing symbols may be reported, such as "isc is not defined".
+// </td><td>JavaScript Framework or linker-created files are missing from the war directory, or
+// your GWT project uses script tags, but you're not using or have not merged your app's main
+// page from the BuiltInDS Sample Project HTML.  The linkers used by GWT for SDM don't support
+// script tags, but SGWT generates code to load them for you automatically.  However, this
+// requires that your app's HTML load the file loadScriptTagFiles.js as in the BuiltInDS Sample
+// Project.</td>
+// <td>Make sure to run the GWT Plugin in <i>Classic Dev Mode</i> at least once, to install the
+// Framework resources and generate loadScriptTagFiles.js.  Then, if not already present, merge
+// the line loading loadScriptTagFiles.js into your application's main HTML page from the
+// BuiltInDS Sample Project.  (If you hit the latter issue, please add your opinion to the
 // +externalLink{https://github.com/gwtproject/gwt/issues/9149,GWT Issue report} to help
 // get it resolved.)<br>
 // Alternatively, you may run the Code Server Java app directly (even in GWT 2.7.0) rather than
@@ -27112,6 +27109,14 @@ setSort : function (sortSpecifiers) {
 
 
 sortByProperties : function () {
+    // bail out if nothing to sort (see IDoc below)
+    if (this.length == 0) return;
+
+
+    if (isc.Browser.isIE && isc.Browser.version >= 11) {
+        this._dummyIE = true;
+        delete this._dummyIE;
+    }
 
     // initialize per-array storage of normalized values for sorting when first call is made
 
@@ -29834,7 +29839,7 @@ isc.Page.addClassProperties({
     // The SmartClient framework supports all major browsers, and will always support the
     // current versions at release-time.
     // <P>
-    // The full list of SmartClient browser support (at the time of the initial v10.1p_2016-01-21/LGPL Deployment release)
+    // The full list of SmartClient browser support (at the time of the initial v10.1p_2016-03-10/LGPL Development Only release)
     // is listed below. Note that support for some framework features may be implemented using
     // different native approaches - or in rare cases, may be unavailable - in some older browser
     // versions. Such cases are covered in documentation where they occur. For example, see the
@@ -29858,7 +29863,7 @@ isc.Page.addClassProperties({
     // Every distributed SmartClient skin contains an "Unsupported Browser" page. This is an optional
     // placeholder for an application to state its browser support policies.
     // <P>
-    // <b>The following browser versions were supported as of the original v10.1p_2016-01-21/LGPL Deployment release</b>:
+    // <b>The following browser versions were supported as of the original v10.1p_2016-03-10/LGPL Development Only release</b>:
     //    <table class="normal" cellPadding=5>
     //
     //    <tr><td width=40></td><td width=200>
@@ -30756,6 +30761,7 @@ loadStyleSheet : function (styleSheetURL, wd, callback) {
 
     var html = "<link rel='stylesheet' type='text/css' href=\"" + url + "\"\/>";
     if (wd == null) wd = window;
+
     if (isc.Page.isLoaded() && wd == window) {
         if (isc.FileLoader) {
             // The FileLoader preemptively loads the css that load_skin.js loads via a call to
@@ -30764,9 +30770,19 @@ loadStyleSheet : function (styleSheetURL, wd, callback) {
 
             if (loadedSkins != null) {
                 for (var i = 0; i < loadedSkins.length; i++) {
-                    if (url.indexOf(loadedSkins[i]) != -1) {
-                        this.logDebug("skin "+loadedSkins[i]
-                                     +" already loaded by FileLoader - not loading css file");
+                    var loadedURL = loadedSkins[i];
+                    // FileLoader will keep whatever window.isomorphicDir was set to, including
+                    // relative paths like "../isomorphic", but Page transforms isomorphicDir
+                    // and other base URLs into fully qualified URLs by combining with
+                    // the page URL (appDir).  Fully qualify FileLoader URLs before comparing
+                    // (and update the FileLoader cache so we don't have to repeat this
+                    // conversion again each time)
+                    if (!loadedURL.startsWith("http")) {
+                        loadedURL = loadedSkins[i] = isc.Page.combineURLs(this.getAppDir(), loadedURL);
+                    }
+                    if (url.indexOf(loadedURL) != -1) {
+                        this.logDebug("CSS file " + loadedURL +
+                                      " already loaded by FileLoader - not loading again");
                         return;
                     }
                 }
@@ -33806,7 +33822,12 @@ handleKeyPress : function () {
         isc.Page.suppressBackspaceNavigation &&
         keyName == this._$Backspace)
     {
-        returnVal = false;
+        // Don't return false for backspace keypress on a RichTextCanvas as that suppresses
+        // native behavior (deleting content)
+        var target = isc.EH.lastEvent.keyTarget;
+        if (!target  || !(isc.RichTextCanvas && isc.isA.RichTextCanvas(target))) {
+            returnVal = false;
+        }
     }
 
     return returnVal;
@@ -37394,7 +37415,7 @@ _blurFocusCanvas : function (target, isNative) {
     }
 },
 
-focusInCanvas : function (target, isNative) {
+focusInCanvas : function (target, isNative, item) {
 
     //>DEBUG isNative indicates this call came from a focus handler on a native element (either
     // the handle or a focusProxy).
@@ -37419,12 +37440,12 @@ focusInCanvas : function (target, isNative) {
             if (target && target.showFocusOutline) target.setShowFocusOutline(true,true);
         }
     }
-    this._focusInCanvas(target, isNative);
+    this._focusInCanvas(target, isNative, item);
 
     //>DEBUG
     if (isNative) this._thread = oldThread; //<DEBUG
 },
-_focusInCanvas : function (target, isNative) {
+_focusInCanvas : function (target, isNative, item) {
     //this.logWarn("_focusInCanvas. Will set this._focusCanvas to target:"
     //             + target + ", current focus target:" + this._focusCanvas);
     // if no target, or target doesn't want focus, or target has focus already just bail
@@ -37437,7 +37458,7 @@ _focusInCanvas : function (target, isNative) {
     if (this._focusCanvas == target) return;
 
     // Handle the case of focus going to a masked widget
-    this.checkMaskedFocus(target);
+    this.checkMaskedFocus(target, item);
     // If the target is masked, update the topmask's 'maskedFocusCanvas'
 
     if (this.targetIsMasked(target) && !target._ignoreClickMaskFocus) {
@@ -37479,7 +37500,7 @@ getMaskedFocusCanvas : function (mask) {
 // fired when focus goes onto a widget which may be covered by a clickmask.
 // if the mask is soft, it automatically dismisses that clickMask and fires the click
 // action.
-checkMaskedFocus : function (target) {
+checkMaskedFocus : function (target, item) {
 
 
     if (isc.Browser.isIE || isc.Browser.seleniumPresent) {
@@ -37521,7 +37542,7 @@ checkMaskedFocus : function (target) {
         var mask = masks[i];
         // As soon as we hit a mask we know we're ABOVE we know we're above all remaining
         // masks so we can bail.
-        if (!this.targetIsMasked(target, mask)) return;
+        if (!this.targetIsMasked(target, mask, null, item)) return;
         else {
             // we should never be able to focus on a widget under an hard
             // clickmask - just return false if we do hit this case
@@ -42347,6 +42368,13 @@ showClickMask : function (clickAction, mode, unmaskedTargets, maskID) {
     var EH = this,
         registry = EH.clickMaskRegistry,
         focusCanvas = EH.getFocusCanvas();
+
+
+    if (focusCanvas == null && isc.Browser.isIE) {
+        focusCanvas = EH._unconfirmedFocus;
+        if (focusCanvas) this.focusInCanvas(focusCanvas);
+    }
+
     if (this.logIsInfoEnabled("clickMask")) {
         this.logInfo("showing click mask, action: " + clickAction +
                  (autoHide ? ", autoHide true " : ", autoHide false ") +
@@ -53619,9 +53647,8 @@ drawChildren : function () {
     for ( var i = 0; i < this.children.length; i++) {
         var child = this.children[i];
 
-        // if the child has a masterElement, it's a peer of another child
-        //  the other child will handle drawing it, so skip the draw here.
-        if (child.masterElement) continue;
+        // Allow certain children to be kept undrawn when their parent draws
+        if (!this.drawChildWithParent(child)) continue;
 
         // NOTE: the only legitimate way in which this child might already have been drawn
         // is via a custom override of layoutChildren() above.  Otherwise all children should be
@@ -53633,10 +53660,6 @@ drawChildren : function () {
         // - we're skipping elements that have been drawn as a peer
         if (!child.isDrawn()) child.draw();
 
-        // Don't show the componentMask if we've had it showing but it shouldn't be showing now
-        if (this.componentMask == child && !this.componentMaskShowing) {
-            continue;
-        }
     }
     // Fix the zIndex / tab-index of masked children if we're showing the component mask
     // Normally this happens when 'showComponentMask' is called, so this handles the case where a
@@ -53645,6 +53668,18 @@ drawChildren : function () {
         this._updateChildrenForComponentMask();
     }
 
+},
+
+drawChildWithParent : function (child) {
+
+    // if the child has a masterElement, it's a peer of another child
+    //  the other child will handle drawing it, so skip the draw here.
+    if (child.masterElement) return false;
+    // Don't show the componentMask if we've had it showing but it shouldn't be showing now
+    if (this.componentMask == child && !this.componentMaskShowing) {
+        return false;
+    }
+    return true;
 },
 
 
@@ -57622,13 +57657,56 @@ _isHardMasked : function () {
 // totally unused and may be removed in the future.
 showComponentMask : function (unmaskedChildren, maskProperties) {
 
-    // If a mask is already showing simply hide and re-show
-    if (this.componentMaskShowing) this.hideComponentMask();
+
+    if (this._showComponentMaskRunning) {
+        this.logWarn("Ignoring recursive call to 'showComponentMask'.",
+            "componentMask");
+        return;
+    }
+    this._showComponentMaskRunning = true;
 
     if (unmaskedChildren != null && !isc.isAn.Array(unmaskedChildren)) {
         unmaskedChildren = [unmaskedChildren];
     }
+    this.logInfo("showComponentMask running with unmaskedChildren:" + unmaskedChildren,
+                "componentMask");
+
+    if (this.componentMaskShowing) {
+        if (maskProperties != null && this.componentMask) {
+            this.componentMask.setProperties(maskProperties);
+        }
+        var childrenChanged = false;
+        if (unmaskedChildren != null) {
+            if (this._unmaskedChildren == null) {
+                childrenChanged = true;
+            } else {
+                if (this._unmaskedChildren.length != unmaskedChildren.length) {
+                    childrenChanged = true;
+                } else {
+                    for (var i = 0; i < unmaskedChildren.length; i++) {
+                        if (!this._unmaskedChildren.contains(unmaskedChildren[i])) {
+                            childrenChanged = true;
+                        }
+                    }
+                }
+            }
+        } else if (this._unmaskedChildren == null) {
+            childrenChanged = true;
+        }
+        this.logDebug("showComponentMask running with mask already up." +
+            (childrenChanged ? " No change to unmasked children - ignoring"
+                            : " Unmasked children changed - hiding and re-showing mask"),
+                            "componentMask");
+
+        if (!childrenChanged) return;
+        this.hideComponentMask(true);
+    }
+
     this._unmaskedChildren = unmaskedChildren;
+
+    // set the showing flag to true before adding mask as a child. This ensures
+    // it will draw
+    this.componentMaskShowing = true;
 
     if (!this.componentMask) {
         this.componentMask = this.addAutoChild(
@@ -57649,26 +57727,28 @@ showComponentMask : function (unmaskedChildren, maskProperties) {
                  }
              )
         );
-        this.addChild(this.componentMask);
     } else {
         if (maskProperties != null) this.componentMask.setProperties(maskProperties);
-        if (!this.componentMask.isDrawn()) {
-            this.componentMask.resizeTo(1,1);
-            this.componentMask.draw();
-        }
+        this.componentMask.resizeTo(1,1);
     }
+
+    if (this.isDrawn() && !this.componentMask.isDrawn()) {
+        this.componentMask.draw();
+    }
+
     this.componentMask.bringToFront();
 
     this._fixComponentMaskSize();
-
-    this.componentMaskShowing = true;
-
     this._updateChildrenForComponentMask();
+
+    delete this._showComponentMaskRunning;
 },
 
 
 _updateChildrenForComponentMask : function () {
     var unmaskedChildren = this._unmaskedChildren;
+
+    var currentFocusTarget = isc.EH.getFocusCanvas();
 
     var children = this.children;
     var maskZIndex = this.componentMask.getZIndex();
@@ -57679,9 +57759,19 @@ _updateChildrenForComponentMask : function () {
             if (this.children[i].getZIndex() < maskZIndex) {
                 this.children[i].moveAbove(this.componentMask);
             }
+            // If an unmasked child contains the focus target, we know we won't need
+            // to blur it.
+            if (currentFocusTarget && this.children[i].contains(currentFocusTarget, true)) {
+                currentFocusTarget = null;
+            }
         } else {
             if (this.children[i].getZIndex() > maskZIndex) {
                 this.children[i].moveBelow(this.componentMask);
+            }
+            // If a masked child contains the focus target, blur it now.
+            if (currentFocusTarget && this.children[i].contains(currentFocusTarget, true)) {
+                currentFocusTarget.blur();
+                currentFocusTarget = null;
             }
         }
     }
@@ -57715,19 +57805,43 @@ componentMaskDefaults:{
 // Hide the +link{showComponentMask,component level clickMask} for this widget
 // @visibility external
 //<
-hideComponentMask : function () {
+// Undocumented parameter indicates we're being called from 'showComponentMask' while
+// the mask is currently up.
+hideComponentMask : function (fromShowComponentMask) {
 
-    if (!this.componentMaskShowing) return;
+    this.logInfo("hideComponentMask()", "componentMask");
+
+    if (!this.componentMaskShowing) {
+        this.logDebug("hideComponentMask() called with no mask up. Ignoring", "componentMask");
+        return;
+    }
+    if (this._hideComponentMaskRunning) {
+        this.logWarn("recursive call to hideComponentMask() - ignoring", "componentMask");
+        return;
+    }
+
+    if (!fromShowComponentMask && this._showComponentMaskRunning) {
+        this.logWarn("hideComponentMask() called while showComponentMask() is running." +
+            "This is unsupported - ignoring",
+            "componentMask");
+        // could set a flag here to re-call this method when showCM completes
+        return;
+    }
+
+    this._hideComponentMaskRunning = true;
+
+    this.componentMaskShowing = false;
 
     if (this.componentMask) {
         this.componentMask.resizeTo(1,1);
-        this.componentMask.clear();
+        if (this.componentMask.isDrawn()) this.componentMask.clear();
     }
 
     this.disableKeyboardEvents(false, true, true, this._unmaskedChildren);
 
-    this.componentMaskShowing = false;
+    delete this._unmaskedChildren;
 
+    delete this._hideComponentMaskRunning;
 },
 
 
@@ -57920,6 +58034,12 @@ getTop : function (excludePageSpace) {
     if (handle == null) return this.top;
 
     var top = (isc.Browser.isIE ? handle.pixelTop : parseInt(handle.top, 10));
+
+    if (isc.Browser.isChrome) {
+
+        var numericTop = this._getNumericSize("top");
+        if (numericTop != null) top = numericTop;
+    }
 
     if (excludePageSpace) {
         var clipHandle = this.getClipHandle(),
@@ -63792,7 +63912,7 @@ canOverflowHeight : function (overflow) {
 },
 
 _shouldWriteClipDiv : function () {
-    return (this.useClipDiv &&
+    return (this.useClipDiv ||
             (!isc.Browser._useNewSingleDivSizing ||
 
              (this.overflow == isc.Canvas.VISIBLE && (!isc.Browser.isOpera || isc.Browser.minorVersion >= 11.1)))) ||
@@ -65948,11 +66068,27 @@ _assignSize : function (styleHandle, prop, size) {
         }
         var propVal = size + this._$px;
         styleHandle[prop] = propVal;
+
+        if (isc.Browser.isChrome && size > 999999) {
+
+            this._setNumericSize(prop, size);
+        }
+
         if (styleHandle.setAttribute != null) {
 
             styleHandle.setAttribute(prop, propVal);
         }
     }
+},
+
+_setNumericSize : function (prop, size) {
+
+    if (!this._numericSize) this._numericSize = {};
+    this._numericSize[prop] = size;
+},
+_getNumericSize : function (prop) {
+    if (!this._numericSize) this._numericSize = {};
+    return this._numericSize[prop];
 },
 
 _sizeBackMask : function () {
@@ -68128,7 +68264,7 @@ bringToFront : function (skipSoftUnmask) {
     // above the mask and unmask it.
 
     var parent = this.getParentCanvas();
-    if (parent && parent.componentMaskShowing) {
+    if (parent && parent.componentMaskShowing && parent.componentMask != this) {
         if (parent._unmaskedChildren == null) {
             parent._unmaskedChildren = [this];
         } else if (!parent._unmaskedChildren.contains(this)) {
@@ -78220,7 +78356,7 @@ addTypeFieldProperties : function (field, type) {
             // widget and don't want to pollute the version on the type object
 
             if (property == "editorProperties") {
-                finalField[property] = isc.addProperties({}, property);
+                finalField[property] = isc.addProperties({}, type.fieldProperties[property]);
             } else {
                 finalField[property] = type.fieldProperties[property];
             }
@@ -84148,11 +84284,15 @@ userFieldCallback : function (builder) {
         this.formulaUpdated(field, field.userFormula);
     }
 
+    if (this.summaryUpdated && builder.builderTypeText == "Summary") {
+        this.summaryUpdated(field, field.userSummary);
+    }
+
     if (this.hideField && builder.shouldHideUsedFields()) {
         var usedFields = builder.getUsedFields();
         for (var i = 0; i < usedFields.length; i++) {
             var item = usedFields.get(i);
-            this.hideField(item.name);
+            if (item.canHide != false) this.hideField(item.name);
         }
     }
 
@@ -84179,6 +84319,14 @@ userFieldCallback : function (builder) {
         if (type == "Formula") this.addFormulaField();
         else this.addSummaryField();
     }
+
+    // if the grid is grouped on this formula or summary field, regroup() it now
+    if (this.isGrouped && this.getGroupByFields && this.getGroupByFields().contains(field.name)) {
+        this.regroup();
+    }
+
+    // if the DBC supports resorting, do that now
+    if (this.resort) this.resort();
 },
 
 // for a field with a userSummary, get the function that will generate summary output for a
@@ -84254,7 +84402,7 @@ shouldIncludeHiliteInSummaryField : function (summaryFieldName, usedFieldName) {
     return this.includeHilitesInSummaryFields
 },
 
-//> @attr dataBoundComponent.includeHilitesInSummaryFields (boolean : false : IRWA)
+//> @attr dataBoundComponent.includeHilitesInSummaryFields (boolean : true : IRWA)
 // When assembling a value for a +link{canAddSummaryFields,summary field}, if a referenced
 // field is hilited, should the hilite HTML be included in the summary field value?
 // <P>
@@ -84596,6 +84744,16 @@ addDetailedExportFieldValue : function(exportObject, exportProp, record, exportF
     } else if (isc.isA.Date(record[exportField.name]) && !exportDatesAsFormattedString) {
         formatProperties = this.getDateFormattingProperties(exportField, record[exportField.name],
                                                                 exportObject[exportField.title]);
+    }
+
+    // server-side performs conversion of "strings that look like numbers" if unformatted numeric
+    // values are exported through POI (Excel), which may lead to rawValue (ID) replacing the
+    // displayValue (VALUE) in case of valueMap set on a field. Docs say, that exportClientData
+    // will always export displayValue for fields with valueMap despite any other settings.
+    // This "hasValueMap" flag is preventing these replacements (search ExcelDataExport.java).
+    // This code is executed only if exportClientData was called, so other exports are untouched.
+    if (exportField.valueMap) {
+        formatProperties.hasValueMap = true;
     }
 
     if (isc.isA.Number(record[exportField.name])) {
@@ -85361,6 +85519,16 @@ exportWidthScale : 0.12,
 // documentation for that method explains, this allows you more control on the server side.
 // This approach requires both the SmartClient server and server-side DataSource definitions.
 // <P>
+// If your ListGrid has custom formatters, formatted values will be exported by default, with
+// HTML normalized to text where possible.  Since some levels of HTML normalizing aren't
+// possible, this may result in missing or incorrect export values.  In this case, you have
+// two options:<ul>
+// <li>Set +link{listGridField.exportRawValues,exportRawValues} on the field.  This will export
+//     the raw underlying value of the field; your formatter will not be called</li>
+// <li>Have your formatter call +link{listGrid.isExportingClientData(),isExportingClientData()}
+//     and perform whatever alternative formatting you require if that method returns true</li>
+// </ul>
+// <P>
 // To export data from this component's dataSource,
 // see +link{dataBoundComponent.exportData, exportData}, which does not include client-side
 // formatters, but <b>does</b> include formatters declared in the <code>.ds.xml</code> file.
@@ -85376,10 +85544,25 @@ exportWidthScale : 0.12,
 // @visibility external
 //<
 exportClientData : function (requestProperties, callback) {
+    this._exportingClientData = true;
     if (callback) requestProperties.__callback = callback;
     this.getClientExportData(requestProperties,
         this.getID()+".exportClientDataReply(data,context)");
     return;
+},
+
+//>    @method listGrid.isExportingClientData()
+// Returns true if this component is currently
+// +link{listGrid.exportClientData(), exporting client data}.  This method can be called from
+// custom cell formatters if you need to return a different formatted value for an export
+// than for a live ListGrid
+// @return (boolean)  returns true if this component is currently exporting client data
+// @see listGrid.exportClientData
+// @visibility external
+//<
+_exportingClientData: false,
+isExportingClientData : function() {
+    return !!this._exportingClientData;
 },
 
 //>    @method treeGrid.exportClientData()
@@ -85395,6 +85578,16 @@ exportClientData : function (requestProperties, callback) {
 // <li>Tree nodes are exported as a flat list, in the same order they are displayed in the
 //     TreeGrid</li>
 // </ul>
+// <P>
+// If your TreeGrid has custom formatters, formatted values will be exported by default, with
+// HTML normalized to text where possible.  Since some levels of HTML normalizing aren't
+// possible, this may result in missing or incorrect export values.  In this case, you have
+// two possible approaches:<ul>
+// <li>Set +link{listGridField.exportRawValues,exportRawValues} on the field.  This will export
+//     the raw underlying value of the field; your formatter will not be called</li>
+// <li>Have your formatter call +link{treeGrid.isExportingClientData(),isExportingClientData()}
+//     and perform whatever alternative formatting you require if that method returns true</li>
+// </ul>
 // @param [requestProperties] (DSRequest Properties) Request properties for the export.
 //  Note that specifying +link{DSRequest.exportData,exportData} on the request properties
 //  allows the developer to pass in an explicit data set to export.
@@ -85403,6 +85596,16 @@ exportClientData : function (requestProperties, callback) {
 //  properties, this callback will fire after export completes.  Otherwise the callback will
 //  fire right before the download request is made to the server.
 // @see listGrid.exportClientData
+// @visibility external
+//<
+
+//>    @method treeGrid.isExportingClientData()
+// Returns true if this component is currently
+// +link{treeGrid.exportClientData(), exporting client data}.  This method can be called from
+// custom cell formatters if you need to return a different formatted value for an export
+// than for a live TreeGrid
+// @return (boolean)  returns true if this component is currently exporting client data
+// @see treeGrid.exportClientData
 // @visibility external
 //<
 
@@ -85416,6 +85619,16 @@ exportClientData : function (requestProperties, callback) {
 //     column representing a single field. This is quite different from the way DetailViewers
 //     display records in the browser</li>
 // </ul>
+// <P>
+// If your detailViewer has custom formatters, formatted values will be exported by default, with
+// HTML normalized to text where possible.  Since some levels of HTML normalizing aren't
+// possible, this may result in missing or incorrect export values.  In this case, you have
+// two possible approaches:<ul>
+// <li>Set +link{detailViewerField.exportRawValues,exportRawValues} on the field.  This will export
+//     the raw underlying value of the field; your formatter will not be called</li>
+// <li>Have your formatter call +link{detailViewer.isExportingClientData(),isExportingClientData()}
+//     and perform whatever alternative formatting you require if that method returns true</li>
+// </ul>
 // @param [requestProperties] (DSRequest Properties) Request properties for the export.
 //  Note that specifying +link{DSRequest.exportData,exportData} on the request properties
 //  allows the developer to pass in an explicit data set to export.
@@ -85427,6 +85640,16 @@ exportClientData : function (requestProperties, callback) {
 // @visibility external
 //<
 
+
+//>    @method detailViewer.isExportingClientData()
+// Returns true if this component is currently
+// +link{detailViewer.exportClientData(), exporting client data}.  This method can be called from
+// custom cell formatters if you need to return a different formatted value for an export
+// than for a live detailViewer
+// @return (boolean)  returns true if this component is currently exporting client data
+// @see listGrid.exportClientData
+// @visibility external
+//<
 
 //> @attr dataBoundComponent.emptyExportMessage (string : "You are attempting to export an empty dataset" : [IRW])
 // The message to display to the user if an export of a DataBoundComponent's data is attempted
@@ -85630,6 +85853,8 @@ exportClientDataReply : function (data, context) {
             callback: context.__callback
         });
     }
+
+    delete this._exportingClientData;
 
     // can't fire callback on the DMI response because it's a download - fire now instead
     if (context.__callback && serverProps.downloadResult) this.fireCallback(context.__callback);
@@ -96454,6 +96679,10 @@ isc.AutoTest.addClassMethods({
             }
         }
 
+        // in useHighPerformanceGridTimings mode, there is no modal prompt, but the grid sets
+        // this internal flag for when data is being fetched
+        if (grid.loadingData) return false;
+
         // at this point we're done iff the body and frozen body (if any) are done
         return this._isGridBodyDone(grid.body) && this._isGridBodyDone(grid.frozenBody);
     },
@@ -96802,38 +97031,14 @@ if (isc.Log.hasFireBug()) {
 }
 
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('Core');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._Core_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Core module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'Core', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Core'.");}
-
 /*
-
-  SmartClient Ajax RIA system
-  Version v10.1p_2016-01-21/LGPL Deployment (2016-01-21)
-
-  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
-  "SmartClient" is a trademark of Isomorphic Software, Inc.
-
-  LICENSE NOTICE
-     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
-     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
-     without an accompanying Isomorphic Software license file, please
-     contact licensing@isomorphic.com for details. Unauthorized copying and
-     use of this software is a violation of international copyright law.
-
-  DEVELOPMENT ONLY - DO NOT DEPLOY
-     This software is provided for evaluation, training, and development
-     purposes only. It may include supplementary components that are not
-     licensed for deployment. The separate DEPLOY package for this release
-     contains SmartClient components that are licensed for deployment.
-
-  PROPRIETARY & PROTECTED MATERIAL
-     This software contains proprietary materials that are protected by
-     contract and intellectual property law. You are expressly prohibited
-     from attempting to reverse engineer this software or modify this
-     software for human readability.
-
-  CONTACT ISOMORPHIC
-     For more information regarding license rights and restrictions, or to
-     report possible license violations, please contact Isomorphic Software
-     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
-
-*/
+ * Isomorphic SmartClient
+ * Version v10.1p_2016-03-10 (2016-03-10)
+ * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
+ * "SmartClient" is a trademark of Isomorphic Software, Inc.
+ *
+ * licensing@smartclient.com
+ *
+ * http://smartclient.com/license
+ */
 
