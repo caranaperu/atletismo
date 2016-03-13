@@ -3,13 +3,17 @@
  * basado en una ventana con una grilla que tienen los regisros a editar y una forma
  * que se abre para editar el registro ya sea para agregar o modificar.
  *
+ * Se ha agregado sopote para una forma de edicion en la grilla de detalle en la forma
+ * de edicion , esto es para ser usado en los casos complejos en que es mejor usar una
+ * forma por ser mas flexible.
+ *
  * @example
  *     var ctrlr = isc.DefaultController.create({mainWindowClass:'NombrClaseMainWindow',formWindowClass:'NombeClaseEditForm'});
  *     ctrl.doSetup();
  *
  * $Author: aranape $
  * @author Carlos Arana Reategui
- * @version 1.00
+ * @version 1.01
  * @since 1.00
  * $Date: 2016-01-26 04:55:44 -0500 (mar, 26 ene 2016) $
  */
@@ -57,11 +61,13 @@ isc.DefaultController.addProperties({
     /**
      * Abre la pantalla de edicion de datos , de no existir una instancia la crea de lo contrario
      * la muestra, en blanco si es para agregar registro y con el current record si es para editar.
+     * Crea la grilla de detalle de ser necesario y prepara los observe que se requieren.
+     *
      * @private
      *
      * @param {string} mode  'add','edit'
      */
-    _openMantForm: function(mode) {
+    _openMantForm: function (mode) {
         // Si no hay nada seleccionado regresamos sin hacer nada a menos que se vaya a agregar un registro
         if (this._mainWindow && this._mainWindow.getGridList().anySelected() === false && mode !== 'add') {
             return;
@@ -77,22 +83,36 @@ isc.DefaultController.addProperties({
             this._mantForm = this._formWindow.getForm();
 
             // atachamos los eventos a este controlador
-            this.observe(this._formWindow.getButton('save'), "click", "observer._saveRecord();");
-            this.observe(this._formWindow.getButton('exit'), "click", "observer._formWindow.hide();");
+            this.observe(this._formWindow.getFormButton('save'), "click", "observer._saveRecord();");
+            this.observe(this._formWindow.getFormButton('exit'), "click", "observer._formWindow.close();");
             this.observe(this._mantForm, "itemChanged",
-                    "observer._formWindow.getButton('save').setDisabled(!observer._mantForm.valuesAreValid(false));return true;"
-                    );
+                "observer._formWindow.getFormButton('save').setDisabled(!observer._mantForm.valuesAreValid(false));return true;"
+                );
             // Si debe observarse el dataSource de la forma , implementamos el observe
-            if (this._mantForm.observeDataSource == true) {
+            if (this._mantForm.observeDataSource === true) {
                 this.observe(this._mantForm.dataSource, "transformResponse", "observer._formTransformResponse(dsResponse, dsRequest, data)");
             }
             // Eventos de  grilla de detalle
             if (this._detailGrid !== undefined) {
-                this.observe(this._detailGrid, "rowEditorEnter", "observer._detailGridRowEditorEnter(record, editValues, rowNum);");
                 this.observe(this._detailGrid, "onFetchData", "observer._detailGridOnFetchData(criteria,requestProperties);");
-                this.observe(this._detailGrid, "editComplete", "observer._detailGridAfterGridRecordSaved(rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse);");
-                this.observe(this._formWindow.getDetailGridButton('add'), "click", "observer._detailGridAddItem();");
-                this.observe(this._formWindow.getDetailGridButton('refresh'), "click", "observer._detailGridRefresh();");
+
+                // Si la grilla es editable por linea
+                if (this._formWindow.getDetailGridForm() === undefined) {
+                    this.observe(this._detailGrid, "rowEditorEnter", "observer._detailGridRowEditorEnter(record, editValues, rowNum);");
+                    this.observe(this._detailGrid, "editComplete", "observer._detailGridAfterGridRecordSaved(rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse);");
+                    this.observe(this._formWindow.getDetailGridButton('add'), "click", "observer._detailGridAddItem();");
+                    this.observe(this._formWindow.getDetailGridButton('refresh'), "click", "observer._detailGridRefresh();");
+                } else {
+                    // Si la grilla es editable via un form
+                    this.observe(this._formWindow.getDetailGridButton('add'), "click", "observer._detailGridFormAdd(true);");
+                    this.observe(this._formWindow.getDetailGridButton('refresh'), "click", "observer._detailGridRefresh();");
+                    this.observe(this._detailGrid, "recordDoubleClick", "observer._detailGridFormEdit(viewer, record, recordNum, field, fieldNum, value, rawValue);");
+                    this.observe(this._formWindow.getDetailGridForm(), "itemChanged",
+                        "observer._formWindow.getDetailGridFormButton('save').setDisabled(!observer._formWindow.getDetailGridForm().valuesAreValid(false));return true;"
+                        );
+                    this.observe(this._formWindow.getDetailGridFormButton('exit'), "click", "observer._formWindow.detailGridFormClose();");
+                    this.observe(this._formWindow.getDetailGridFormButton('save'), "click", "observer._detailGridFormSave();");
+                }
             }
         } else {
             // De existir solo selecccionamos que siempre aparesca primero el primer tab.
@@ -108,7 +128,7 @@ isc.DefaultController.addProperties({
                 // pero que no son parte del modelo.
                 var list = this._mainWindow.getGridList();
 
-                this._mantForm.preSetFieldsToEdit(this._mainWindow.getRequiredFieldsToAddOrEdit(mode))
+                this._mantForm.preSetFieldsToEdit(this._mainWindow.getRequiredFieldsToAddOrEdit(mode));
                 this._mantForm.editSelectedData(list);
                 this._mantForm.postSetFieldsToEdit();
 
@@ -124,16 +144,17 @@ isc.DefaultController.addProperties({
                     // Actualizamos la ultima joinKey y fetch de datos , en el caso que haya cambio
                     // de llave de enlace o el falg de lectura eficiente este prendido,
                     //  de lo contrario reactualizamos datos incondicionalmente.
-                    if (this._formWindow.efficientDetailGrid == true || JSON.stringify(this._lastJoinKeys) !== JSON.stringify(this._formWindow.joinKeyFields)) {
+                    if (this._formWindow.efficientDetailGrid === true ||
+                        JSON.stringify(this._lastJoinKeys) !== JSON.stringify(this._formWindow.joinKeyFields)) {
                         this._lastJoinKeys = JSON.parse(JSON.stringify(this._formWindow.joinKeyFields));
 
-                        if (this._formWindow.isRequiredReadDetailGridData() == true) {
+                        if (this._formWindow.isRequiredReadDetailGridData() === true) {
                             this._detailGrid.fetchData(this._detailGridGetCriteria(this._formWindow.joinKeyFields));
                         }
                     } else {
                         // ultima oportunidad de no releer por gusto los datos
                         // de la grilla de detalle , no siempre es necesario hacerlo cuando el efficientDetailGrid es false.
-                        if (this._formWindow.isRequiredReadDetailGridData() == true) {
+                        if (this._formWindow.isRequiredReadDetailGridData() === true) {
                             // Releemos siempre , en la practica hay casos
                             this._detailGrid.invalidateCache();
                         }
@@ -172,14 +193,19 @@ isc.DefaultController.addProperties({
         // En el caso de agregar se da la oportunidad de setear algunos datos default para
         // los campos o inicializar campos que son solo visuales pero no parte del modelo.
         // Se consulta a la forma en el caso se requiera algunos valores desde alli.
-        if (mode == 'add') {
+        if (mode === 'add') {
             this._formWindow.getForm().setupFieldsToAdd(this._mainWindow.getRequiredFieldsToAddOrEdit(mode));
         }
     },
     /**
-     *  @private
+     * Elimina un registro de la grilla principal (no la de detalle).
+     * Verifica si se permite eliminaciones de registro y de poderse
+     * se procede a la eliminacion.
+     * Luego de eliminarse si se requiere actualizar la lista se procede a hacerlo.
+     *
+     * @private
      */
-    _deleteRecord: function() {
+    _deleteRecord: function () {
         var me = this;
         var glist = me._mainWindow.getGridList();
 
@@ -188,7 +214,7 @@ isc.DefaultController.addProperties({
         if (glist.anySelected() === true) {
             // Se consulta si es posible de grabarse el registro, siempre
             // que la funcion este definida en la grilla
-            if (typeof glist.isAllowedToDelete == 'function')
+            if (typeof glist.isAllowedToDelete === 'function')
             {
                 if (glist.isAllowedToDelete() === false) {
                     return;
@@ -196,29 +222,48 @@ isc.DefaultController.addProperties({
             }
 
             isc.ask("Esta seguro de eliminar el registro ?",
-                    function(value) {
-                        var recordToDelete = glist.getSelectedRecord();
-                        if (value && recordToDelete) {
-                            glist.removeData(recordToDelete, function(dsResponse, data, dsRequest) {
-                                if (dsResponse.status === 0) {
-                                    // Si la grilla implementa isPostRemoveDataRefreshMainListRequired
-                                    // consultamos si la grilla debe ser recargada.
-                                    if (typeof glist.isPostRemoveDataRefreshMainListRequired == 'function') {
-                                        if (glist.isPostRemoveDataRefreshMainListRequired(recordToDelete)) {
-                                            me._refreshMainList();
-                                        }
+                function (value) {
+                    var recordToDelete = glist.getSelectedRecord();
+                    if (value && recordToDelete) {
+                        glist.removeData(recordToDelete, function (dsResponse, data, dsRequest) {
+                            if (dsResponse.status === 0) {
+                                // Si la grilla implementa isPostRemoveDataRefreshMainListRequired
+                                // consultamos si la grilla debe ser recargada.
+                                if (typeof glist.isPostRemoveDataRefreshMainListRequired === 'function') {
+                                    if (glist.isPostRemoveDataRefreshMainListRequired(recordToDelete)) {
+                                        me._refreshMainList();
                                     }
                                 }
-                            });
+                            }
+                        });
 
-                        }
-                    });
+                    }
+                });
         }
     },
     /**
+     *  Metodo que efectua el update o agregar un nuevo registro a traves de la forma de edicion principal de
+     *  datos.
+     *
+     *  Efectua el flujo siguiente:
+     *
+     *  Prepara los parametros.
+     *  Llama antees de grabar a la forma con los valores a procesar por si requiere preparar algon en el registro.
+     *  Procede a grabar la informacion.
+     *  Si es exitoso llama a la forma con los datos grabados.
+     *  Actualiza la grilla de detalle de ser necesario (y existir)
+     *
+     *  Si el modo es agregar ,, actualiza los join keys de la grilla de existir, llama a la forma
+     *  para que prepare los datos antes de presentarlos, pas a mode edit pero de ser requerido
+     *  que la forma se cierre luego de agregar se procede a cerrar la forma. Se pone la grilla en blanco
+     *  ya que al ser un add esta debe quedar en blanco.
+     *
+     *  Si el modo es update se consulta si la forma puede cerrarse , de no ser asi ponemos la forma en modo edit.
+     *
+     *
      *  @private
      */
-    _saveRecord: function() {
+    _saveRecord: function () {
         // Se consulta si es posible de grabarse el registro.
         if (this._mantForm.isAllowedToSave() === false) {
             return;
@@ -236,7 +281,7 @@ isc.DefaultController.addProperties({
         me._mantForm.preSaveData(me._mantForm.getValues());
 
 
-        this._mantForm.saveData(function(dsResponse, data, dsRequest) {
+        this._mantForm.saveData(function (dsResponse, data, dsRequest) {
             if (dsResponse.status === 0) {
                 // Luego de grabar puede requerirse armar campos compuestos o virtuales
                 // osea campos como descripciones de codigos foreign.
@@ -253,7 +298,7 @@ isc.DefaultController.addProperties({
                     me._refreshMainList();
                 }
 
-                if (me._mantForm.formMode == 'add') {
+                if (me._mantForm.formMode === 'add') {
                     var needCloseForm = false;
                     // Si la grilla de detalle esta definida para la forma,
                     // conectamos la forma principal a la grilla de detalle.
@@ -276,8 +321,8 @@ isc.DefaultController.addProperties({
                         me._detailGrid.fetchData(me._detailGridGetCriteria(me._formWindow.joinKeyFields));
 
                         // Esta visible?
-                        if (me._formWindow.isDetailGridListVisible() == false) {
-                            if (me._formWindow.canShowTheDetailGridAfterAdd() == true) {
+                        if (me._formWindow.isDetailGridListVisible() === false) {
+                            if (me._formWindow.canShowTheDetailGridAfterAdd() === true) {
                                 me._formWindow.showDetailGridList();
                             } else {
                                 needCloseForm = true;
@@ -285,11 +330,12 @@ isc.DefaultController.addProperties({
                         }
                         // Dado que el add fue correcto y la pantalla queda abierta el boton de grabar lo
                         // desabilitamos hasta que haya cambios.
-                        me._formWindow.getButton('save').disable();
+                        me._formWindow.getFormButton('save').disable();
                         // Paso a mode edit
                         // e indico que de aqui en adelante el modo de grabacion sera update.
-                        me._mantForm.setSaveOperationType('update')
+                        me._mantForm.editRecord(me._mantForm.getValues());
                         me._mantForm.setEditMode('edit');
+
                         // En el caso de algun show if exista
                         me._mantForm.markForRedraw();
                         if (needCloseForm) {
@@ -308,11 +354,12 @@ isc.DefaultController.addProperties({
                 } else {
                     // Dado que el add fue correcto y la pantalla queda abierta el boton de grabar lo
                     // desabilitamos hasta que haya cambios.
-                    me._formWindow.getButton('save').disable();
+                    me._formWindow.getFormButton('save').disable();
                     // Paso a mode edit
                     // e indico que de aqui en adelante el modo de grabacion sera update.
-                    me._mantForm.setSaveOperationType('update')
+                    me._mantForm.editRecord(me._mantForm.getValues());
                     me._mantForm.setEditMode('edit');
+
                 }
             }
             reqParams = undefined;
@@ -329,9 +376,9 @@ isc.DefaultController.addProperties({
      * dicha forma , esto para evitar se efectue este codigo sobre
      * otros controles que compartan el DataSource.
      */
-    _formTransformResponse: function(dsResponse, dsRequest, data) {
-        if (dsResponse.status >= 0 && dsRequest.componentId == this._mantForm.ID) {           
-            if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
+    _formTransformResponse: function (dsResponse, dsRequest, data) {
+        if (dsResponse.status >= 0 && dsRequest.componentId === this._mantForm.ID) {
+            if (dsRequest.operationType === 'add' || dsRequest.operationType === 'update') {
                 // Se invoca usando la referencia a los datos que regresan del servidor,
                 // para que puedan ser modificados.
                 this._mantForm.prepareDataAfterSave(dsResponse.data[0]);
@@ -340,9 +387,11 @@ isc.DefaultController.addProperties({
         return dsResponse;
     },
     /**
+     * Refresca la grilla principal.
+     *
      * @private
      */
-    _refreshMainList: function() {
+    _refreshMainList: function () {
         var gridList = this._mainWindow.getGridList();
 
         var cacheAllDataCopy = gridList.dataSource.cacheAllData;
@@ -353,28 +402,40 @@ isc.DefaultController.addProperties({
         gridList.dataSource.setCacheAllData(cacheAllDataCopy);
 
     },
-    _printReport: function(format) {
+    _printReport: function (format) {
         var reportURL = this._mainWindow.getReportURL() + (format == 'XLS' ? '&format=XLS' : '&format=PDF');
 
         // Si hay reporte definido procedemos.
         if (reportURL !== undefined) {
             var criteria = this._mainWindow.getGridList().getFilterEditorCriteria();
-            RPCManager.sendRequest({params: criteria, actionURL: reportURL,
-                useSimpleHttp: true, downloadResult: true, downloadToNewWindow: true,
+            RPCManager.sendRequest({
+                params: criteria,
+                actionURL: reportURL,
+                useSimpleHttp: true,
+                downloadResult: true,
+                downloadToNewWindow: true,
                 showPrompt: true,
-                callback: function(data) {
-                    if (data.httpResponseCode != 200) {
-                        isc.say(((data.httpResponseText && data.httpResponseText.length > 2) ? data.httpResponseText : 'Error interno...'))
+                callback: function (data) {
+                    if (data.httpResponseCode !== 200) {
+                        isc.say(((data.httpResponseText && data.httpResponseText.length > 2) ? data.httpResponseText : 'Error interno...'));
                     } else {
                         window.location.href = data.httpResponseText;
                     }
-                }});
+                }
+            });
         }
     },
+    /******************************************************************************
+     ******************************************************************************
+     *
+     *  ZONA DE LA GRILLA DE DETALLE
+     *
+     *****************************************************************************
+     *****************************************************************************/
     /**
      * @private
      */
-    _detailGridGetCriteria: function(joinKeyFields) {
+    _detailGridGetCriteria: function (joinKeyFields) {
         var searchCriteria = {};
         var t = "searchCriteria ={\"";
         var fieldName;
@@ -386,7 +447,7 @@ isc.DefaultController.addProperties({
                 } else {
                     fieldName = joinKeyFields[i].fieldName;
                 }
-                if (i == size - 1) {
+                if (i === size - 1) {
                     t += fieldName + "\":\"" + joinKeyFields[i].fieldValue;
                 } else {
                     t += fieldName + "\":\"" + joinKeyFields[i].fieldValue + "\",\"";
@@ -398,7 +459,7 @@ isc.DefaultController.addProperties({
         isc.addProperties(searchCriteria, Class.evaluate(t));
         return searchCriteria;
     },
-    _detailGridRowEditorEnter: function(record, editValues, rowNum) {
+    _detailGridRowEditorEnter: function (record, editValues, rowNum) {
         this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'grid', this._detailGrid, rowNum);
     },
     /**
@@ -406,13 +467,13 @@ isc.DefaultController.addProperties({
      * Dado que la llave de detalle no es parte de la grilla se agrega a las propiedades
      * previo a la grabacion.
      */
-    _detailGridOnFetchData: function(criteria, requestProperties) {
+    _detailGridOnFetchData: function (criteria, requestProperties) {
         var data = isc.addProperties({}, requestProperties.data);
         this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'data', data, undefined);
         data['_textMatchStyle'] = 'exact';
         requestProperties.data = data;
     },
-    _detailGridAddItem: function() {
+    _detailGridAddItem: function () {
         if (this._detailGrid.canAdd === true) {
             this._detailGrid.startEditingNew();
         } else {
@@ -421,15 +482,21 @@ isc.DefaultController.addProperties({
 
         return false;
     },
-    _detailGridRefresh: function() {
-        // Se cancela cualquier pendiente de grabacion
-        this._detailGrid.cancelEditing();
+    _detailGridRefresh: function () {
+        var gridForm = this._formWindow.getDetailGridForm();
+        if (!gridForm || (gridForm && gridForm.isVisible() === false)) {
+            // Se cancela cualquier pendiente de grabacion
+            this._detailGrid.cancelEditing();
 
-        if (this._detailGrid.data != null) {
-            this._detailGrid.invalidateCache();  // Invalidate the cache, which causes an auto fetch based on criteria.
+            if (this._detailGrid.data !== null) {
+                this._detailGrid.invalidateCache();
+                // Invalidate the cache, which causes an auto fetch based on criteria.
+            } else {
+                var searchCriteria = this._detailGrid.getCriteria();
+                this._detailGrid.fetchData(searchCriteria);
+            }
         } else {
-            var searchCriteria = this._detailGrid.getCriteria();
-            this._detailGrid.fetchData(searchCriteria);
+            isc.say('Operacion no permitida mientras se edita o crea un registro');
         }
     },
     /**
@@ -437,11 +504,100 @@ isc.DefaultController.addProperties({
      * por ende es suficiente informar desde aqui los cambios en la grilla de detalles a laos otros componentes
      * del mantenimiento.
      */
-    _detailGridAfterGridRecordSaved: function(rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
+    _detailGridAfterGridRecordSaved: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
         this._mantForm.afterDetailGridRecordSaved(this._mainWindow.getGridList(), rowNum, colNum, newValues, oldValues);
         this._mainWindow.afterFormDetailGridRecordSaved(newValues, oldValues);
     },
-    _joinKeyFieldsCopyTo: function(joinKeyFields, type, obj, objId) {
+    /******************************************************************************
+     ******************************************************************************
+     *
+     *  ZONA DE FORMA DENTRO DE LA GRILLA DE DETALLE
+     *  
+     *****************************************************************************
+     *****************************************************************************/
+    /**
+     *
+     * Metodo llamado para poner la forma interna a la grilla de detalle en modo add
+     * haciendola visible , preparando los campos join de existir.
+     * Si la forma esta abierta y verifyIsOpen es true se indicara un error y no se tomara
+     * accion alguna.
+     * 
+     * @private
+     * @param {boolean} verifyisOpen si es false entraremos nuevamente a modo add este visible
+     *      o no la forma , de lo contrario solo se hara si la forma no es visible.
+     */
+    _detailGridFormAdd: function (verifyisOpen) {
+        var gridForm = this._formWindow.getDetailGridForm();
+        // Solo si la forma interna de la grilla es visible o se indica se proceda
+        // sin verificar su visibilidad procedemos a mostrar la forma.
+        if (gridForm.isVisible() === false || verifyisOpen === false) {
+            // Ponemos mode add , copiamos los key fields que se requieren para unir la forma
+            // principal al registro nuevo de la forma interna y finalmente mostramos.
+            gridForm.setEditMode('add');
+            this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'gridForm', gridForm ,null);
+            this._formWindow.detailGridFormShow();
+        } else {
+            // Indicamos esta abierta.
+            if (verifyisOpen === true) {
+                isc.say('La forma ya esta abierta');
+            }
+        }
+    },
+    /**
+     * 
+     * Metodo llamado para poner la forma interna de la grilla de detalle en modo de edicion.
+     * Muestra la forma y llama editSelectedData de la forma para indicar el egistro a editar.
+     * 
+     * @private
+     * 
+     * @param {isc.Grid} viewer La grilla que contiene el registro a editar. (Por ahora el unico usado)
+     * @param {Object} record Los actuales datos en el item de la grilla a editar
+     * @param {int} recordNum el numero de registro dentro de la grilla,
+     * @param {isc.FormItem} field El campo dentro del item donde se hizo el doble click.
+     * @param {int} fieldNum el numero de campo dentro del item.
+     * @param {mixed} value el valor del field no procesado
+     * @param {mixed} rawValue el valor del field procesado.
+     * 
+     */
+    _detailGridFormEdit: function (viewer, record, recordNum, field, fieldNum, value, rawValue) {
+        var gridForm = this._formWindow.getDetailGridForm();
+
+        // Ponemos modo update , mostramos la forma y seleccionamos el registor
+        // actual seleccionado en la grilla de detalle para su edicion.
+        gridForm.setSaveOperationType('update');
+        this._formWindow.detailGridFormShow();
+        gridForm.setEditMode('edit');
+        gridForm.editSelectedData(viewer);
+    },
+    /**
+     * Metodo llamado para grabar un registro editandose o agregandose.
+     * De no haber error procede a informar a la forma interna que los datos fueron procesados,
+     * Informa a la ventana contenedora principal que el registro fue grabado y dependiendo
+     * si el modo es add o update prepara la grilla para agregar un nuevo registro o cierra la forma,
+     *
+     * @private
+     */
+    _detailGridFormSave: function () {
+        var me = this;
+        // Grabamos
+        this._formWindow.getDetailGridForm().saveData(function (dsResponse, data, dsRequest) {
+            if (dsResponse.status === 0) {
+                // Si no hay error informamos a la forma interna y la pantalla que las contiene
+                // que el registro se ha grabado
+                var gridForm = me._formWindow.getDetailGridForm();
+                gridForm.postSaveData(data);
+                me._mainWindow.afterFormDetailGridRecordSaved(data, gridForm.getOldValues());
+                // Si estamos en mode add seguimos editando un nuevo registro
+                // de lo contrario cerramos la forma interna.
+                if (gridForm.formMode === 'add') {
+                    me._detailGridFormAdd(false);
+                } else {
+                    me._formWindow.detailGridFormHide();
+                }
+            }
+        });
+    },
+    _joinKeyFieldsCopyTo: function (joinKeyFields, type, obj, objId) {
         var fieldName;
 
         if (joinKeyFields.size() > 0) {
@@ -453,16 +609,21 @@ isc.DefaultController.addProperties({
                     fieldName = joinKeyFields[i].fieldName;
                 }
 
-                if (type == 'data') {
+                if (type === 'data') {
                     obj[fieldName] = joinKeyFields[i].fieldValue;
-                } else if (type == 'grid') {
+                } else if (type === 'grid') {
                     obj.setEditValue(objId, fieldName, joinKeyFields[i].fieldValue);
-                } else if (type == "form") {
+                } else if (type === "form") {
                     // Aqui el field name es de la forma ,
                     obj.setJoinKeyFieldValue(i, this._mantForm.getValue(joinKeyFields[i].fieldName));
-                } else if (type == 'clearForm') {
+                } else if (type === "gridForm") {
+                    // Aqui el field name es de la forma ,
+                    obj.getField(fieldName).setValue(this._mantForm.getValue(fieldName));
+                    obj.rememberValues();
+
+                } else if (type === 'clearForm') {
                     obj.setJoinKeyFieldValue(i, "?????");
-                } else if (type == 'clearCopy') {
+                } else if (type === 'clearCopy') {
                     obj[i].fieldValue = "?????";
                 }
             }
@@ -478,7 +639,7 @@ isc.DefaultController.addProperties({
      *
      * @param {boolean} onlyFormWindow true si se desea solo la forma y no la grilla.
      */
-    doSetup: function(onlyFormWindow) {
+    doSetup: function (onlyFormWindow) {
         // simulacion de parametro default
         if (typeof (onlyFormWindow) === 'undefined')
             onlyFormWindow = false;
@@ -514,9 +675,9 @@ isc.DefaultController.addProperties({
      *
      * @param {boolean} show true si la primera sera mostrada
      */
-    doSetupWithInstance: function(mainInstance, show) {
+    doSetupWithInstance: function (mainInstance, show) {
         // El setup solo puede hacerse cuando _mainWindow es todavia null , osea no ha sido inicializada.
-        if (this._mainWindow == null) {
+        if (this._mainWindow === null) {
             // Creacion dinamica de la forma
             this._mainWindow = mainInstance;
             // Se atachan los eventos a este controlador.

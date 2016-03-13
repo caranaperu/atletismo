@@ -24,9 +24,86 @@ isc.DetailGridContainer.addProperties({
     /**
      * @private
      * No debe manipularse externamente usar el getter
-     * @property {isc.isc.ListGrid} referencia a la grilla interna de items
+     * @property {isc.ListGrid} referencia a la grilla interna de items
      */
     _detailGrid: undefined,
+    /**
+     * @private
+     * No debe manipularse externamente usar el getter
+     * @property {isc.DynamicForm} referencia al form para editar la lineas de grillado
+     */
+    _childForm: undefined,
+     /**
+     * @private
+     * No debe manipularse externamente , sin uso externo
+     * @property {isc.VLayout} referencia al layout que contiene la grilla y su propio form para
+     * editar las lineas de esta.
+     */
+    _gridLayout: undefined,
+     /**
+     * @private
+     * No debe manipularse externamente
+     * @property {isc.HStack} referencia al container de los botones para la forma
+     * dentro de la grilla para la edicion de sus registros
+     * editar las lineas de esta.
+     */
+    _gridFormButtons: undefined,
+    /**
+     * @public
+     * Metodo helper el cual debe ser overloaded  para la creacion de la forma que editara o agregara
+     * registros a la grilla.
+     *
+     *
+     * @return {isc.DynamicForm} instancia a usarse para editar los items.
+     */
+    getFormComponent: function () {
+        return undefined;
+    },
+    /**
+     * Retorna la instancia de la interna a la forma que agrega o modifica registros de la grilla.
+     *
+     * @return {isc.DynamicForm} instancia en uso para editar los items.
+     */
+    getChildForm: function () {
+        return this._childForm;
+    },
+    /**
+     * Muestra la forma que agrega o modifica registros de la grilla.
+     * Ademas pone en disabled la grilla para evitar se manipule la misma
+     * mientras se edita o grega registros a la misma a traves de la forma.
+     */
+    childFormShow: function () {
+        if (this._gridLayout !== undefined) {
+            this._detailGrid.disable();
+            this._gridLayout.getMember(1).show();
+            this.adjustForContent(true);
+        }
+    },
+    /**
+     * Esconde la forma que agrega o modifica registros de la grilla.
+     * Ademas pone en enbled la grilla para permitir moverse a traves de la misma.
+     */
+    childFormHide: function () {
+        if (this._gridLayout !== undefined) {
+            this._detailGrid.enable();
+            this._gridLayout.getMember(1).hide();
+        }
+    },
+    /**
+     * Metodo hook llamado desde el container de la forma cuando un termina el fetch de un registro
+     * para un campo determinado campo de la forma, esta sera llamada solo si se invoca
+     * fetchFieldRecord en el container.
+     * Esto sera util cuando se requiera manipular algunos campos que son necesarios pero dependen
+     * de que un determinado registro de un campo este previamente cargado, dado que el ajax es asincronico
+     * este metodo garantiza que sera invocado cuando realmente el registro este leido.
+     *
+     * @param {String} nombre del campo en la forma principal  del cual depende esta grilla.
+     * @param {object} que representa el registro leido o null si no existe registro.
+     *
+     */
+    fieldDataFetched: function(formFieldName,record) {
+        return;
+    },
     /**
      * @private
      * Metodo helper de uso interno para la creacion de la grilla interna para el manejo
@@ -37,23 +114,38 @@ isc.DetailGridContainer.addProperties({
      *
      * @return {isc.ListGrid} instancia de la grilla para los items
      */
-    _createGrid: function(properties) {
+    _createGrid: function (properties) {
         var defProperties = {
-            canEdit: true,
+            // canEdit: false,
             autoDraw: false,
-            waitForSave: true,
-            validateByCell: true,
-            stopOnErrors: true,
+            //waitForSave: true,
+            //validateByCell: true,
+            //stopOnErrors: true,
             selectionType: 'single',
-            modalEditing: true,
-            rowEndEditAction: "same",
-            enterKeyEditAction: "nextCell",
+            // modalEditing: true,
+            //rowEndEditAction: "same",
+            // enterKeyEditAction: "nextCell",
             canRemoveRecords: true,
             warnOnRemoval: true,
-            //  editEvent: 'click',
-            // Esta propiedad es propia , si es false no agregara nuevos items.
-            // Util para los casos de treegrid donde no se agrega directamente
-            canAdd: true
+            /**
+            * Metodo hook llamado desde el container de la forma cuando un termina el fetch de un registro
+            * para un campo determinado campo de la forma, esta sera llamada solo si se invoca
+            * fetchFieldRecord en el container.
+            * Esto sera util cuando se requiera manipular algunos campos que son necesarios pero dependen
+            * de que un determinado registro de un campo este previamente cargado, dado que el ajax es asincronico
+            * este metodo garantiza que sera invocado cuando realmente el registro este leido.
+            *
+            * @param {String} nombre del campo en esta forma.
+            * @param {object} que representa el registro leido o null si no existe registro.
+            *
+            */
+           fieldDataFetched: function(formFieldName,record) {
+               return;
+           }
+                //  editEvent: 'click',
+                // Esta propiedad es propia , si es false no agregara nuevos items.
+                // Util para los casos de treegrid donde no se agrega directamente
+                // canAdd: true
         };
         var fullProperties = isc.addProperties(defProperties, properties);
         if (properties.gridType === undefined) {
@@ -69,7 +161,7 @@ isc.DetailGridContainer.addProperties({
      *
      * @return {isc.ListGrid} instancia de la grilla de items.
      */
-    getDetailGrid: function() {
+    getDetailGrid: function () {
         return this._detailGrid;
     },
     /**
@@ -80,7 +172,7 @@ isc.DetailGridContainer.addProperties({
      * @param {string} btn los valores aceptados son 'add' y 'refresh'
      * @return {isc.Button} instancia del boton.
      */
-    getButton: function(btn) {
+    getButton: function (btn) {
         if (btn === 'add') {
             return this.sections[0].controls[0];
         } else if (btn === 'refresh') {
@@ -88,7 +180,22 @@ isc.DetailGridContainer.addProperties({
         }
         return undefined;
     },
-    initWidget: function() {
+    /**
+     * Retorna la instancia de los botones que manipulan el agregar a los items
+     * o cancelar la accion , son usados basicamente desde el controlador.
+     *
+     * @param {string} btn los valores aceptados son 'save' y 'exit'
+     * @return {isc.Button} instancia del boton.
+     */
+    getGridFormButton: function (btn) {
+        if (btn === 'save') {
+            return this._gridFormButtons.members[1];
+        } else if (btn === 'exit') {
+            return this._gridFormButtons.members[0];
+        }
+        return undefined;
+    },
+    initWidget: function () {
         this.Super("initWidget", arguments);
 
         var abtn = isc.ImgButton.create({
@@ -108,8 +215,63 @@ isc.DetailGridContainer.addProperties({
 
         // Agregamos la seccion
         this.addSection({title: this.sectionTitle, expanded: true, controls: [abtn, rbtn]});
-        // agregamos la grilla a la seccion
-        this.addItem(0, this._createGrid(arguments[0].gridProperties), 0);
+
+        var grid = this._createGrid(arguments[0].gridProperties);
+
+        this._childForm = this.getFormComponent();
+
+        if (this._childForm !== undefined) {
+            var me = this;
+            // Botones principales del header
+            this._gridFormButtons = isc.HStack.create({
+                membersMargin: 10,
+                height: 24, // width: '100%',
+                layoutAlign: "center", padding: 5, autoDraw: false,
+                align: 'center',
+                members: [isc.Button.create({
+                        ID: "btnExit" + me.ID,
+                        width: '100',
+                        autoDraw: false,
+                        title: "Salir"
+                    }),
+                    isc.Button.create({
+                        ID: "btnSave" + me.ID,
+                        width: '100',
+                        autoDraw: false,
+                        title: "Grabar"
+                    })
+                ]
+            });
+            this._childForm.saveButton = this._gridFormButtons.members[1];
+
+            this._gridLayout = isc.VLayout.create({members: [
+                    grid,
+                    isc.VLayout.create({
+                        visibility: "hidden",
+                        //backgroundColor: "yellow",
+                        members: [this._childForm,this._gridFormButtons]
+                    })
+                ],
+                defaultLayoutAlign: "center",
+                styleName:"tabButtonTopSelected"});
+
+            // agregamos la grilla a la seccion
+            this.addItem(0, this._gridLayout, 0);
+        } else {
+            // Preparamos los atributos default requeridos
+            grid.canAdd= true;
+            grid.canEdit= true;
+            grid.waitForSave= true;
+            grid.validateByCell= true;
+            grid.stopOnErrors= true;
+            grid.modalEditing= true;
+            grid.rowEndEditAction= "same";
+            grid.enterKeyEditAction= "nextCell";
+            //grid.editEvent : 'click'
+
+            this.addItem(0,grid,0);
+        }
+
         // Iniciamos en forma no visible , se encendera segun el modo sea agregar
         // o editar.
         this.hide();

@@ -209,6 +209,21 @@ isc.DynamicFormExt.addProperties({
     canCloseWindow: function(mode) {
         return true;
     },
+    /**
+     * Metodo hook llamado desde el container de la forma cuando un termina el fetch de un registro
+     * para un campo determinado campo de la forma, esta sera llamada solo si se invoca
+     * fetchFieldRecord en el container.
+     * Esto sera util cuando se requiera manipular algunos campos que son necesarios pero dependen
+     * de que un determinado registro de un campo este previamente cargado, dado que el ajax es asincronico
+     * este metodo garantiza que sera invocado cuando realmente el registro este leido.
+     *
+     * @param {String} nombre del campo en esta forma.
+     * @param {object} que representa el registro leido o null si no existe registro.
+     *
+     */
+    fieldDataFetched: function(formFieldName,record) {
+        return;
+    },
     initWidget: function(parms) {
         this.Super("initWidget", arguments);
         this.setEditMode(this.formMode);

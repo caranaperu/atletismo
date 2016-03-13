@@ -4,6 +4,16 @@
  * maneja los botones e inserta la forma que manipula los registros
  * para poder exponer algunos metodos requeridos por el controller.
  *
+ * Basicamnete soporta una forma principal de ediciion de datos
+ * instancia de la clase isc.DynamicFormExt
+ *
+ * Una grilla opcional con el detalle del registro en edicion de la forma principal
+ * de la clase isc.DetailGridContainer la cual a su vez podra contener una
+ * forma interna para la edicion de los items.
+ *
+ * Asi mismo manipula mas de un tabulador si se requiere.
+ *
+ *
  * @version 1.00
  * @since 1.00
  * $Author: aranape $
@@ -97,7 +107,7 @@ isc.WindowBasicFormExt.addProperties({
      * @param {string} btnType  'exit','save'
      * @return {isc.Button} una instancia del boton
      */
-    getButton: function (btnType) {
+    getFormButton: function (btnType) {
         if (btnType === 'exit') {
             //return btnExit;
             return this._formButtons.getMember('btnExit' + this.ID);
@@ -130,39 +140,27 @@ isc.WindowBasicFormExt.addProperties({
         return this.canShowTheDetailGrid('add');
     },
     /**
-     * Solicita a la forma se indiquue si segun el modo puede o no puede
-     * mostrarse la grilla .
+     * Muestra la ventana de la forma colocando previamente a la DynamicFormExt
+     * en el mode de edicion indicado .
+     * De existir grilla de detalle la esconde o no dependiendo del modo.
      *
      * @param {string} mode 'add','edit'
      */
-    canShowTheDetailGrid: function (mode) {
-        if (mode == 'edit') {
-            return true;
-        }
-        return false;
-    },
-            /**
-             * Muestra la ventana de la forma colocando previamente a la DynamicFormExt
-             * en el mode de edicion indicado .
-             * De existir grilla de detalle la esconde o no dependiendo del modo.
-             *
-             * @param {string} mode 'add','edit'
-             */
-            showWithMode: function (mode) {
-                this._form.setEditMode(mode);
+    showWithMode: function (mode) {
+        this._form.setEditMode(mode);
 
-                // Si existe grilla de items se muestra o nodependiendo
-                // si esta permitido
-                if (this._detailGridContainer !== undefined) {
-                    if (this.canShowTheDetailGrid(mode) == true) {
-                        this.showDetailGridList();
-                    } else {
-                        // Escondemos la grilla
-                        this.hideDetailGridList();
-                    }
-                }
-                this.show();
-            },
+        // Si existe grilla de items se muestra o nodependiendo
+        // si esta permitido
+        if (this._detailGridContainer !== undefined) {
+            if (this.canShowTheDetailGrid(mode) == true) {
+                this.showDetailGridList();
+            } else {
+                // Escondemos la grilla
+                this.hideDetailGridList();
+            }
+        }
+        this.show();
+    },
     /**
      * Metodo QUE DEBERA Sobrescribirse en el cual se
      * creara y retornara la instancia al container de la grilla que manejara la edicion de
@@ -198,12 +196,19 @@ isc.WindowBasicFormExt.addProperties({
         if (this._detailGridContainer !== undefined) {
             this._detailGridContainer.show();
             this._detailGridContainer.showSection(0);
+
+            // Dado que en el caso que la grilla se mantenga via una forma interna a la sectionStack que lo contine
+            //en este caso showSection(0) invocara el show del vlayout container y no el de la grilla
+            // en ese caso forzamos la llamada a show a la misma grilla.
+            if (this.getDetailGridForm() !== undefined) {
+                this._detailGridContainer.getDetailGrid().show();
+            }
             // Se reajusta el tamaño de la ventana para que soporte la aparicion de la grilla
             this.resizeTo(this.getWidth(), this.minHeight + this._detailGridContainer.getHeight());
         }
     },
     /**
-     * Muestra la grilla de detalles.
+     * Esconde la grilla de detalles.
      */
     hideDetailGridList: function () {
         // Si existe grilla de items se muestra si el modo es edit
@@ -241,6 +246,208 @@ isc.WindowBasicFormExt.addProperties({
             return this._detailGridContainer.getButton(btn);
         } else {
             return undefined;
+        }
+    },
+    /**
+     * Si el container interno tiene una grilla con su propio form interno (no inline editor)
+     * aqui se retorna la instancia de dicha forma si existe.
+     * Dado que el container debe ser  DetailGridContainer para contener una forma en el
+     * layout que contiene la grilla verificamos a que instancia pertenece el container
+     * y de acuerdo a eso llamamos al metodo que nos devuelve la instancia de dicha forma
+     * si existe.
+     *
+     * @return {isc.DynamicForm} instancia de la grilla de detalles de existri , undefined
+     * de lo contrario.
+     */
+    getDetailGridForm: function () {
+        if (this._detailGridContainer !== undefined &&
+            this._detailGridContainer.isA(isc.DetailGridContainer)) {
+            return this._detailGridContainer.getChildForm();
+        }
+        return undefined;
+    },
+    /**
+     * Muestra la forma interna de edicion de items de grilla de existir,
+     * asi mismo disable la forma principal y esconde los botones de la misma
+     * de tal manera que no se pueda hacer edicion de nongun tipo sobre la forma
+     * principal mientras se edita un registro.
+     */
+    detailGridFormShow: function () {
+        if (this._detailGridContainer !== undefined &&
+            this._detailGridContainer.isA(isc.DetailGridContainer)) {
+            this._form.disable();
+            this._formButtons.hide();
+            this._detailGridContainer.childFormShow();
+        }
+    },
+    /**
+     * Esconde la forma interna de edicion de items de grilla de existir,
+     * asi mismo re enable la forma principal y muestra sus botones correspondientes
+     * de tal forma que se pueda editar sobre la forma principal.
+     */
+    detailGridFormHide: function () {
+        if (this._detailGridContainer !== undefined &&
+            this._detailGridContainer.isA(isc.DetailGridContainer)) {
+            this._form.enable();
+            this._formButtons.show();
+            this._detailGridContainer.childFormHide();
+        }
+    },
+    /**
+     * Retorna la instancia de los botones sea de save o exit
+     * @param {string} btnType puede ser 'save' o 'exit'
+     *
+     * @returns {isc.Button}
+     */
+    getDetailGridFormButton: function (btnType) {
+        if (this._detailGridContainer !== undefined &&
+            this._detailGridContainer.isA(isc.DetailGridContainer)) {
+            return this._detailGridContainer.getGridFormButton(btnType);
+        }
+        return undefined;
+    },
+    /**
+     * Cierra la forma principal pero verifica primero si hay cambios.
+     * @see _close(boolean,boolean)
+     */
+    detailGridFormClose: function () {
+        this._close(false, false);
+    },
+    /**
+     * Metodo de bajo nivel que efectua la real accion de close a la forma.
+     * Esta segun los parametros chequeara tanto si la forma principal tiene cambios
+     * o la forma interior de edicion de items tiene cambios , de haberlos consultara
+     * el cierre de la ventana.
+     * 
+     * @private
+     * 
+     * @param {boolean} checkMainForm , si es true se verificara si hay cambios en la forma principal.
+     * @param {boolean} doRealClose si es true la ventana se cerrara de lo contrario la forma interna solo
+     * se escondera,
+     *
+     */
+   _close: function (checkMainForm, doRealClose) {
+//        console.log('//////////////////////////////////////////////////////////')
+//        console.log(this._form.getOldValues())
+//        console.log(this._form.getValues())
+//        console.log(this._form.getChangedValues())
+
+        var me = this;
+        var existChanges = false;
+
+        if (this._form.valuesHaveChanged() === true && checkMainForm === true) {
+            existChanges = true;
+        } else {
+            if (this.getDetailGridForm() !== undefined && this.getDetailGridForm().isVisible()) {
+//                console.log('**********************************************************')
+//                console.log(this.getDetailGridForm().getOldValues())
+//                console.log(this.getDetailGridForm().getChangedValues())
+                if (this.getDetailGridForm().valuesHaveChanged() === true) {
+                    existChanges = true;
+                }
+            }
+        }
+
+        if (existChanges === true) {
+            isc.ask('Desea perder sus cambios ?', function (value) {
+                if (value === true) {
+                    me.detailGridFormHide();
+                    if (doRealClose === true) {
+                        me.Super('close', arguments);
+                    }
+                }
+            });
+        } else {
+            this.detailGridFormHide();
+            if (doRealClose === true) {
+                me.Super('close', arguments);
+            }
+        }
+
+
+    },
+    /**
+     * Hook metod llamado por Smartclient al presionarse el boton de cerrar la ventana,
+     * solicitara el cierre previa verificacion de cambios tanto en la forma principal
+     * como en la exterior.
+     *
+     */
+    close: function () {
+        this._close(true, true);
+    },
+    /**
+     *
+     * Funcion helper que al ser invocada hara un fetch al registro del que depende un campo  x
+     * de la forma a editar.
+     * La ventaja de invocar este metodo es que notificara a la forma y la grilla para que
+     * actualizen cmpos que podrian depender de este registo.
+     *
+     * IMPORTANTE : Estos campso solo deben ser selectItem o comboboxItem para otros casos no existe fetch data.
+     *
+     * Este metodo se invocara si se requiere:
+     * Garantizar que solo cuando realmente se ha leido el registro se notifique.
+     * Esto se debe a que por default al ser asincronico y autoleerse no se conoce el momento
+     * en que finalmente el registro fue leido , pero durante el setup a editarse de un registro
+     * otras partes de la pantalla requieren de esta informacion para mostrar,ocultar,calcular etc
+     * campos dependientes.
+     *
+     * Importante :
+     *
+     * Para que esto funcione ok es necesario que campo tenga :
+     *  fetchMissingValues: false,
+     *  autoFetchData: false
+     * De no ser asi este metodo podria obtener mas de un registro y solo devolvera el primero.solo devolvera el primer
+     * registro,  por esto durante el fetch se forzara dichos valores y al terminar la operacion se repondran a su estado anterior.
+     *
+     * Para evitar que se lean mas de un valor desde luego se tiene la criteria la cual forzara la lectura de un unico
+     * registro si esta correctamente definido, de no ser asi podra leer mas de uno y este metodo solo retornara el primer
+     * registro encontrado.
+     *
+     * @param {string} con el nombre del campo sobre el cual se fechara su data , debe ser  comboboxes o selects.
+     * @param {object} objeto json conteniendo la criteria a usar. La criteria debe tratar de obtener UN SOLO REGISTRO.
+     */
+    fetchFieldRecord: function (formFieldName, criteria) {
+        var item = this._form.getItem(formFieldName);
+
+        // Si implementa picklist entonces es un combo o un select.
+        if (item && item.isA('isc.PickList')) {
+            // Preservamos los valores de fetchMissingValues y autoFetchData
+            var fetchMissingValues = item.fetchMissingValues;
+            var autoFetchData = item.autoFetchData;
+            //var plCriteria;
+
+            item.fetchMissingValues = false;
+            item.autoFetchData = false;
+
+            // Si hay criteria enviada se agrega al picklist criteria.
+            if (criteria) {
+                item.pickListCriteria = isc.addProperties(criteria, {"filterSearchExact": true});
+            }
+
+            var me = this;
+            item.fetchData(function (it, resp, data, req) {
+                // Luego de la operacion la forma,la grilla y la forma interna seran notificadas.
+                if (resp.status >= 0) {
+                    me.getForm().fieldDataFetched(formFieldName, data[0]);
+                    me.getDetailGrid().fieldDataFetched(formFieldName, data[0]);
+                    me.getDetailGridForm().fieldDataFetched(formFieldName, data[0]);
+                } else {
+                    me.getForm().fieldDataFetched(formFieldName, null);
+                    me.getDetailGrid().fieldDataFetched(formFieldName, null);
+                    me.getDetailGridForm().fieldDataFetched(formFieldName, null);
+                }
+
+                // Al terminar el fetch la criteria sera puesta en blanco.
+                if (criteria) {
+                    item.pickListCriteria = {};
+                }
+                // Restauramos los valores de fetchMissingValues y autoFetchData
+                item.fetchMissingValues = fetchMissingValues;
+                item.autoFetchData = autoFetchData;
+
+            });
+        } else {
+            return null;
         }
     },
     /**
@@ -328,9 +535,12 @@ isc.WindowBasicFormExt.addProperties({
 
         // Se crea la grilla de detalle (siempre que se requiera
         var detailGridContainer = this.createDetailGridContainer(this.formMode);
+
         if (detailGridContainer !== undefined) {
             this._detailGridContainer = detailGridContainer;
         }
+
+        // this.getDetailGridForm();
 
         // Botones principales del header
         this._formButtons = isc.HStack.create({
