@@ -52,7 +52,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
             formMode: this.formMode,
             // parametro de inicializacion
             keyFields: ['competencias_codigo', 'atletas_codigo', 'pruebas_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'competencias_codigo',
             // Campo virtual o de cache de datos
             _categorias_codigo: undefined,
@@ -92,7 +92,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 optionDataSource: mdl_competencias,
                 sortField: "competencias_descripcion",
                 change: function (form, item, value, oldValue) {
-                    console.log('change competencias_codigo')
                     // Si se limpiado o esta en blanco la competencia
                     if (value == null || value == undefined) {
                         // Al cambiar la competencia se limpia la prueba ya que esa depende
@@ -106,7 +105,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     return true;
                 },
                 changed: function (form, item, value) {
-                    console.log('changed competencias_codigo')
                     var record = item.getSelectedRecord();
                     if (record) {
                         var newCategoria = record.categorias_codigo;
@@ -149,7 +147,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 textMatchStyle: 'substring',
                 sortField: "atletas_nombre_completo",
                 change: function (form, item, value, oldValue) {
-                    console.log('changed atletas_codigo')
                     // Si el campo esta en blanco se limpia la prueba ya que esa depende
                     // de la categoria de prueba (may,men,etc) y el sexo del atleta
                     // Actualizamos los datos de cache de los atletas blanqueandolos asi
@@ -163,7 +160,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     return true;
                 },
                 changed: function (form, item, value) {
-                    console.log('changed atletas_codigo')
                     var record = item.getSelectedRecord();
 
                     if (record) {
@@ -226,7 +222,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                  * de la competencia y el segundo del atleta.
                  */
                 getPickListFilterCriteria: function () {
-                    // console.log('getPickListFilterCriteria')
                     // Recogo primero el filtro si existe uno y luego le agrego
                     // la categoria y el sexo.
                     var filter = this.Super("getPickListFilterCriteria", arguments);
@@ -235,7 +230,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     }
                     // Si existe una  prueba en el filtro estamos en un edit por ende solo buscamos dicha prueba
                     // esto por eficiencia y no jalamaos todo innecesariamente.
-                    if (filter.pruebas_codigo) {
+                    if (filter.pruebas_codigo && this.formMode !== 'add' && !filter.pruebas_descripcion) {
                         filter = {
                             _constructor: "AdvancedCriteria",
                             operator: "and",
@@ -289,7 +284,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                             }]
                         };
                     }
-                    //console.log(filter)
                     return filter;
                 },
                 change: function (form, item, value, oldvalue) {
@@ -308,7 +302,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     return true;
                 },
                 changed: function (form, item, value) {
-                    console.log('changed pruebas_codigo')
                     formAtletasPruebasResultados._updateMarcasFieldsStatus(item.getSelectedRecord(), true, true);
                     formAtletasPruebasResultados._updateSeriesValues('FI');
                 }
@@ -558,7 +551,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
              * @param {ListGrid} component la grilla origen o fuente del registro a editar.
              */
             editSelectedData: function (component) {
-                //console.log('Edit selected data')
                 var record = component.getSelectedRecord();
 
                 // Conservamos primero que todo los campos que se requieren para la criteria
@@ -729,7 +721,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 // Para el caso de pruebas multiples no se requiere mostrar o editar los resultados de la
                 // prueba , ya que seran un summary de la grilla de detalle.
                 if (thisForm._apppruebas_multiple) {
-                    itResultado.setValue('00');
+//                    itResultado.setValue('00');
                     thisForm._setFieldStatus(itResultado, false, true, false);
                     thisForm._setFieldStatus(itMaterial, false, true, false);
                 }
@@ -766,7 +758,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 }
             },
             hide: function () {
-                console.log(hide)
                 this.Super("hide", arguments);
             }
             //  , cellBorder: 1
@@ -840,7 +831,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     summaryFunction: 'sum'
                 }],
                 rowEditorEnter: function (record, editValues, rowNum) {
-                    //  console.log('PASO ROW EDITOR ENTER');
                     g_atletaspruebas_resultados_detalle._setResultadoExpression(record, editValues.competencias_pruebas_manual);
                 },
                 /**
@@ -884,7 +874,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     // el rownum sera el que equivale al actual orden y no realmente al editado.
                     // En otras palabras este evento es llamado despues de grabar correctamente Y ORDENAR SI HAY UN ORDER EN LA GRILLA
                     // Para resolver esto actualizamos la data del response la cual luego sera usada por el framework SmartClient para actualizar el registro visual.
-                    //     console.log('editComplete');
                     dsResponse.data[0].unidad_medida_regex_e = oldValues.unidad_medida_regex_e;
                     dsResponse.data[0].unidad_medida_regex_m = oldValues.unidad_medida_regex_m;
                     // el registro es null si se ha eliminado

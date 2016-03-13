@@ -23,7 +23,7 @@ isc.WinRegionesForm.addProperties({
             dataSource: mdl_regiones,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['regiones_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'regiones_descripcion',
             fields: [
                 {name: "regiones_codigo", title: "Codigo", type: "text", showPending: true, width: "75", mask: "LLLLLLLLLL"},

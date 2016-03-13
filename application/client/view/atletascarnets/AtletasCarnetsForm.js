@@ -22,7 +22,7 @@ isc.WinAtletasCarnetsForm.addProperties({
             dataSource: mdl_atletascarnets,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['atletas_carnets_agno', 'atletas_carnets_numero'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'atletas_codigo',
             // Campos virtuales del vie de la lista , se usan para preservar los valores originales
             _atletas_nombre_completo: undefined,

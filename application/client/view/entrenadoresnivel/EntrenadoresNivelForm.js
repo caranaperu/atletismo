@@ -23,7 +23,7 @@ isc.WinEntrenadoresNivelForm.addProperties({
             dataSource: mdl_entrenadores_nivel,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['entrenadores_nivel_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'entrenadores_nivel_descripcion',
             fields: [
                 {name: "entrenadores_nivel_codigo", title: "Codigo", type: "text",showPending: true, width: "80", mask: "AAAAAAAAAA"},

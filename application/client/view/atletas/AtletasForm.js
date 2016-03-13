@@ -25,7 +25,7 @@ isc.WinAtletasForm.addProperties({
             dataSource: mdl_atletas,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['atletas_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'atletas_apellido_paterno',
             // Para saber si ya puede agregarse la foto o no.
             _canAddPhoto: false,

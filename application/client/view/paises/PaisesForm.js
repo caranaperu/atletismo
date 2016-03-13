@@ -23,7 +23,7 @@ isc.WinPaisesForm.addProperties({
             dataSource: mdl_paises,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['paises_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'paises_descripcion',
             fields: [
                 {name: "paises_codigo", title: "Codigo", type: "text", showPending: true, width: "50", mask: "LLL"},

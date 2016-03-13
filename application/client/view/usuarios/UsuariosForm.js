@@ -22,7 +22,7 @@ isc.WinUsuariosForm.addProperties({
             fixedColWidths: false,
             dataSource: mdl_usuarios,
             formMode: this.formMode, // parametro de inicializacion
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             keyFields: ['usuarios_code'],
             focusInEditFld: 'usuarios_password',
             fields: [

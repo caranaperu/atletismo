@@ -27,7 +27,7 @@ isc.WinEntidadForm.addProperties({
             autoFocus: true,
             formMode: 'edit', // parametro de inicializacion
             // keyFields: ['entidad_razon_social'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'entidad_razon_social',
             //disableValidation: true,
             fields: [

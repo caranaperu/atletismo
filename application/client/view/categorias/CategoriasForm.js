@@ -23,7 +23,7 @@ isc.WinCategoriasForm.addProperties({
             dataSource: mdl_categorias,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['categorias_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'categorias_descripcion',
             fields: [
                 {name: "categorias_codigo", title: "Codigo", type: "text", showPending: true, width: "100", mask: ">AAAAAAAAAA"},

@@ -23,7 +23,7 @@ isc.WinCiudadesForm.addProperties({
             dataSource: mdl_ciudades,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['ciudades_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'ciudades_descripcion',
             fields: [
                 {name: "ciudades_codigo", title: "Codigo", showPending: true, type: "text", width: "50", mask: "LLLLL"},

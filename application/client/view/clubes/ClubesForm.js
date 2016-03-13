@@ -24,7 +24,7 @@ isc.WinClubesForm.addProperties({
             dataSource: mdl_clubes,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['clubes_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'clubes_descripcion',
             fields: [
                 {name: "clubes_codigo", title: "Codigo", type: "text", showPending: true, width: "90", mask: ">AAAAAAAAAA", endRow: true},

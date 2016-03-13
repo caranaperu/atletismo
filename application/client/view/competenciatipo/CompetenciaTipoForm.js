@@ -23,7 +23,7 @@ isc.WinCompetenciaTipoForm.addProperties({
             dataSource: mdl_competencia_tipo,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['competencia_tipo_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'competencia_tipo_descripcion',
             fields: [
                 {name: "competencia_tipo_codigo", title: "Codigo", showPending: true,type: "text", width: "50", mask: ">LLLLL"},

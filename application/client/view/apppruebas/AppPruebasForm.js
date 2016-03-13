@@ -52,7 +52,7 @@ isc.WinAppPruebasForm.addProperties({
             dataSource: mdl_apppruebas,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['apppruebas_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'apppruebas_descripcion', // campos viruales
             _pruebas_clasificacion_descripcion: undefined,
             _unidad_medida_codigo: undefined,

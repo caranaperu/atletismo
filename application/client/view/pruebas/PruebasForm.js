@@ -25,7 +25,7 @@ isc.WinPruebasForm.addProperties({
             dataSource: mdl_pruebas,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['pruebas_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'pruebas_descripcion',
             // campos viruales
             _apppruebas_multiple: undefined,

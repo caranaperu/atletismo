@@ -23,7 +23,7 @@ isc.WinPruebasTipoForm.addProperties({
             dataSource: mdl_pruebas_tipo,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['pruebas_tipo_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'pruebas_tipo_descripcion',
             fields: [
                 {name: "pruebas_tipo_codigo", title: "Codigo", type: "text", showPending: true, width: "50", mask: ">LLLLLLL"},

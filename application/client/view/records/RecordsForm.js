@@ -23,7 +23,7 @@ isc.WinRecordsForm.addProperties({
             dataSource: mdl_records,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['records_id', 'records_tipo_codigo', 'apppruebas_codigo', 'atletas_codigo', 'atletas_resultados_id', 'categorias_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'records_tipo_codigo',
             fields: [
                 {name: "records_tipo_codigo", editorType: "comboBoxExt", length: 50, width: "200",

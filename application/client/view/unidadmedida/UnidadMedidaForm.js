@@ -23,7 +23,7 @@ isc.WinUnidadMedidaForm.addProperties({
             dataSource: mdl_unidadmedida,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['unidad_medida_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'unidad_medida_descripcion',
             fields: [
                 {name: "unidad_medida_codigo", title: "Codigo", type: "text", showPending: true, width: "90", mask: ">LLLLLLL"},

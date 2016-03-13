@@ -24,7 +24,7 @@ isc.WinPruebasClasificacionForm.addProperties({
             dataSource: mdl_pruebas_clasificacion,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['pruebas_clasificacion_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'pruebas_clasificacion_descripcion',
             fields: [
                 {name: "pruebas_clasificacion_codigo", title: "Codigo", type: "text", showPending: true, width: "80", mask: ">AAAAAAAA"},

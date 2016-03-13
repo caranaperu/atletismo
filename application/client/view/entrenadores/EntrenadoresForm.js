@@ -26,7 +26,7 @@ isc.WinEntrenadoresForm.addProperties({
             dataSource: mdl_entrenadores,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['entrenadores_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'entrenadores_apellido_paterno',
             fields: [
                 {name: "entrenadores_codigo", type: "text", showPending: true, width: "60", mask: ">AAAAA"},

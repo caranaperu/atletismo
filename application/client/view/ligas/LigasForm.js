@@ -24,7 +24,7 @@ isc.WinLigasForm.addProperties({
             dataSource: mdl_ligas,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['ligas_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'ligas_descripcion',
             fields: [
                 {name: "ligas_codigo", title: "Codigo", type: "text", showPending: true, width: "90", mask: ">AAAAAAAAAA", endRow: true},

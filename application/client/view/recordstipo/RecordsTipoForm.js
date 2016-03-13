@@ -23,7 +23,7 @@ isc.WinRecordsTipoForm.addProperties({
             dataSource: mdl_records_tipo,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['records_tipo_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'records_tipo_descripcion',
             fields: [
                 {name: "records_tipo_codigo", type: "text", showPending: true, width: "100", mask: ">AAAAAAAAAA"},
