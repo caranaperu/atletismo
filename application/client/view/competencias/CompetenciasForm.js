@@ -23,7 +23,7 @@ isc.WinCompetenciasForm.addProperties({
             dataSource: mdl_competencias,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['competencias_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'competencias_descripcion',
             // Campos virtuales del vie de la lista , se usan para preservar los valores originales
             _paises_descripcion: undefined,

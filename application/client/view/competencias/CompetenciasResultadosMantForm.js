@@ -47,7 +47,7 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
             formMode: this.formMode,
             // parametro de inicializacion
             keyFields: ['pruebas_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'competencias_pruebas_fecha',
             // Para cache solamente datos de la competencia para validar o presentacion
             // unicamente.
@@ -57,227 +57,233 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
             _vcache_pruebas_codigo: undefined,
             _apppruebas_multiple: undefined,
             fields: [{
-                name: "competencias_codigo",
-                type: 'staticText',
-                showPending: true,
-                endRow: true,
-                colSpan: 8,
-                width: "*",
-                formatValue: function (value, record, form, item) {
-                    return formCompetenciasPruebasResultadosMantForm._vcache_competencias_descripcion_visual;
-                }
+                    name: "competencias_codigo",
+                    type: 'staticText',
+                    showPending: true,
+                    endRow: true,
+                    colSpan: 8,
+                    width: "*",
+                    formatValue: function (value, record, form, item) {
+                        return formCompetenciasPruebasResultadosMantForm._vcache_competencias_descripcion_visual;
+                    }
             }, {
-                ID: "fcr_cb_pruebas",
-                name: "pruebas_codigo",
-                editorType: "comboBoxExt",
-                showPending: true,
-                width: "250",
-                valueField: "pruebas_codigo",
-                displayField: "pruebas_descripcion",
-                pickListFields: [{
-                    name: "pruebas_descripcion",
-                    width: '60%'
+                    ID: "fcr_cb_pruebas",
+                    name: "pruebas_codigo",
+                    editorType: "comboBoxExt",
+                    showPending: true,
+                    width: "250",
+                    valueField: "pruebas_codigo",
+                    displayField: "pruebas_descripcion",
+                    pickListFields: [{
+                        name: "pruebas_descripcion",
+                        width: '60%'
                 }, {
-                    name: "pruebas_sexo",
-                    width: '10%'
+                        name: "pruebas_sexo",
+                        width: '10%'
                 }, {
-                    name: "apppruebas_multiple",
-                    width: '10%'
+                        name: "apppruebas_multiple",
+                        width: '10%'
                 }],
-                pickListWidth: 360,
-                completeOnTab: true,
-                optionOperationId: 'fetchPruebasValidasForCompetencia',
-                // En este combo es vital ya que yo mismo hago el fetchData , ver explicacion en la clase
-                fetchMissingValues: false,
-                optionDataSource: mdl_competencias_pruebas_list,
-                autoFetchData: false,
-                textMatchStyle: 'substring',
-                sortField: "pruebas_descripcion",
-                /**
-                 * Se hace el override ya que este campo requiere que solo obtenga las pruebas
-                 * que dependen de la de la categoria y el sexo del atleta,el primero proviene
-                 * de la competencia y el segundo del atleta.
-                 */
-                getPickListFilterCriteria: function () {
-                    var competenciaCodigo = formCompetenciasPruebasResultadosMantForm.getValue('competencias_codigo');
-                    // Recogo primero el filtro si existe uno y luego le agrego
-                    // la categoria y el sexo.
-                    var filter = this.Super("getPickListFilterCriteria", arguments);
-                    if (filter == null) {
-                        filter = {};
-                    }
+                    pickListWidth: 360,
+                    completeOnTab: true,
+                    optionOperationId: 'fetchPruebasValidasForCompetencia',
+                    // En este combo es vital ya que yo mismo hago el fetchData , ver explicacion en la clase
+                    fetchMissingValues: false,
+                    optionDataSource: mdl_competencias_pruebas_list,
+                    autoFetchData: false,
+                    textMatchStyle: 'substring',
+                    sortField: "pruebas_descripcion",
+                    /**
+                     * Se hace el override ya que este campo requiere que solo obtenga las pruebas
+                     * que dependen de la de la categoria y el sexo del atleta,el primero proviene
+                     * de la competencia y el segundo del atleta.
+                     */
+                    getPickListFilterCriteria: function () {
+                        var competenciaCodigo = formCompetenciasPruebasResultadosMantForm.getValue('competencias_codigo');
+                        // Recogo primero el filtro si existe uno y luego le agrego
+                        // la categoria y el sexo.
+                    //    var filter = this.Super("getPickListFilterCriteria", arguments);
+                        var filter = this.pickListCriteria;
+                        if (filter == null) {
+                            filter = {};
+                        }
+                        
+                        var filterSearchExact =  (filter.filterSearchExact ? filter.filterSearchExact : false);
+                        if (filterSearchExact === false) {
+                            filter = this.Super("getPickListFilterCriteria", arguments);
+                        }
+                        if (filter == null) {
+                            filter = {};
+                        }
 
-                    // Si existe una  prueba en el filtro estamos en un edit por ende solo buscamos dicha prueba
-                    // esto por eficiencia y no jalamaos todo innecesariamente.
-                    if (filter.pruebas_codigo) {
-                        filter = {
-                            _constructor: "AdvancedCriteria",
-                            operator: "and",
-                            criteria: [{
-                                fieldName: "pruebas_codigo",
-                                operator: "equals",
-                                value: filter.pruebas_codigo
+                        // 
+                        // Si existe una  prueba en el filtro estamos en un edit por ende solo buscamos dicha prueba
+                        // esto por eficiencia y no jalamaos todo innecesariamente.
+                        if ((filter.pruebas_codigo  && !filter.pruebas_descripcion) || filterSearchExact === true) {
+                            filter = {
+                                _constructor: "AdvancedCriteria",
+                                operator: "and",
+                                criteria: [{
+                                    fieldName: "pruebas_codigo",
+                                    operator: "equals",
+                                    value: filter.pruebas_codigo
                             }, {
-                                fieldName: "competencias_codigo",
-                                operator: "equals",
-                                value: competenciaCodigo
+                                    fieldName: "competencias_codigo",
+                                    operator: "equals",
+                                    value: competenciaCodigo
                             }]
-                        };
-                    }
-                    else if (filter.pruebas_descripcion) {
-                        filter = {
-                            _constructor: "AdvancedCriteria",
-                            operator: "and",
-                            criteria: [{
-                                fieldName: "pruebas_descripcion",
-                                operator: "iContains",
-                                value: filter.pruebas_descripcion
+                            };
+                        } else if (filter.pruebas_descripcion) {
+                            filter = {
+                                _constructor: "AdvancedCriteria",
+                                operator: "and",
+                                criteria: [{
+                                    fieldName: "pruebas_descripcion",
+                                    operator: "iContains",
+                                    value: filter.pruebas_descripcion
                             }, {
-                                fieldName: 'competencias_codigo',
-                                operator: 'equals',
-                                value: competenciaCodigo
+                                    fieldName: 'competencias_codigo',
+                                    operator: 'equals',
+                                    value: competenciaCodigo
                             }]
-                        };
-
-                    }
-                    else {
-                        filter = {
-                            _constructor: "AdvancedCriteria",
-                            operator: "and",
-                            criteria: [{
-                                fieldName: 'competencias_codigo',
-                                operator: 'equals',
-                                value: competenciaCodigo
+                            };
+                        } else {
+                            filter = {
+                                _constructor: "AdvancedCriteria",
+                                operator: "and",
+                                criteria: [{
+                                    fieldName: 'competencias_codigo',
+                                    operator: 'equals',
+                                    value: competenciaCodigo
                             }]
-                        };
+                            };
+                        }
+                        return filter;
+                    },
+                    change: function (form, item, value, oldvalue) {
+                        // Si el campo esta en blaco limipamos el estado de los campos
+                        // asoicados y los ponemos en su default.
+                        if (value == null || value == undefined) {
+                            form._updateMarcasFieldsStatus(null, true, true);
+                            form.setValue('competencias_pruebas_origen_id', null);
+                            form.setValue('competencias_pruebas_origen_combinada', false);
+                        }
+                        return true;
+                    },
+                    changed: function (form, item, value) {
+                        var record = item.getSelectedRecord();
+                        // En el caso que se agregue una prueba que es parte de una combinada , tomaremos el origen de los resultados
+                        // obtenidos en la lista , LOS CUALES DEBEN TRAER ESE VALOR DE SER EL CASO, sino sera null
+                        if (record) {
+                            form.setValue('competencias_pruebas_origen_id', record.competencias_pruebas_origen_id);
+                            form.setValue('competencias_pruebas_origen_combinada', (record.competencias_pruebas_origen_id ? true : false));
+                        }
+                        // Actualizamos otros valores que dependen de la prueba seleccionad
+                        form._updateMarcasFieldsStatus(record, true, true);
+                        form._updateSeriesValues('FI');
                     }
-                    return filter;
-                },
-                change: function (form, item, value, oldvalue) {
-                    // Si el campo esta en blaco limipamos el estado de los campos
-                    // asoicados y los ponemos en su default.
-                    if (value == null || value == undefined) {
-                        form._updateMarcasFieldsStatus(null, true, true);
-                        form.setValue('competencias_pruebas_origen_id', null);
-                        form.setValue('competencias_pruebas_origen_combinada', false);
-                    }
-
-                    return true;
-                },
-                changed: function (form, item, value) {
-                    var record = item.getSelectedRecord();
-                    // En el caso que se agregue una prueba que es parte de una combinada , tomaremos el origen de los resultados
-                    // obtenidos en la lista , LOS CUALES DEBEN TRAER ESE VALOR DE SER EL CASO, sino sera null
-                    if (record) {
-                        form.setValue('competencias_pruebas_origen_id', record.competencias_pruebas_origen_id);
-                        form.setValue('competencias_pruebas_origen_combinada', (record.competencias_pruebas_origen_id ? true : false));
-                    }
-                    // Actualizamos otros valores que dependen de la prueba seleccionad
-                    form._updateMarcasFieldsStatus(record, true, true);
-                    form._updateSeriesValues('FI');
-                }
-
             }, {
-                name: "competencias_pruebas_fecha",
-                useTextField: true,
-                showPickerIcon: false,
-                showPending: true,
-                width: 100,
-                endRow: true,
-                change: function (form, item, value, oldValue) {
-                    // Verificamos que la fecha seleccionada este en el rango en que la competencia seleccionada
-                    // se realizo.
-                    if (value.getTime() > formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_final.getTime() || value.getTime() < formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_inicio.getTime()) {
-                        isc.say('La fecha debe estar dentro de las fechas en que se realizo la competencia, <br>Del ' + formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_inicio.toLocaleDateString() + ' al ' + formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_final.toLocaleDateString());
-                        return false;
+                    name: "competencias_pruebas_fecha",
+                    useTextField: true,
+                    showPickerIcon: false,
+                    showPending: true,
+                    width: 100,
+                    endRow: true,
+                    change: function (form, item, value, oldValue) {
+                        // Verificamos que la fecha seleccionada este en el rango en que la competencia seleccionada
+                        // se realizo.
+                        if (value.getTime() > formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_final.getTime() ||
+                            value.getTime() < formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_inicio.getTime()) {
+                            isc.say('La fecha debe estar dentro de las fechas en que se realizo la competencia, <br>Del ' + formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_inicio.toLocaleDateString() +
+                                ' al ' + formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_final.toLocaleDateString());
+                            return false;
+                        }
+                        return true;
                     }
-                    return true;
-                }
             }, {
-                name: "competencias_pruebas_tipo_serie",
-                type: "select",
-                showPending: true,
-                defaultValue: "FI",
-                redrawOnChange: true,
-                changed: function (form, item, value) {
-                    formCompetenciasPruebasResultadosMantForm._updateSeriesValues(value);
-                }
+                    name: "competencias_pruebas_tipo_serie",
+                    type: "select",
+                    showPending: true,
+                    defaultValue: "FI",
+                    redrawOnChange: true,
+                    changed: function (form, item, value) {
+                        formCompetenciasPruebasResultadosMantForm._updateSeriesValues(value);
+                    }
             }, {
-                name: "competencias_pruebas_nro_serie",
-                showPending: true,
-                width: 50,
-                endRow: true,
-                textAlign: 'right',
-                validators: [{
-                    type: "requiredIf",
-                    expression: "formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie') != 'SU' && formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie') != 'FI'",
-                    errorMessage: "Indique el nro de hit,serie,etc"
+                    name: "competencias_pruebas_nro_serie",
+                    showPending: true,
+                    width: 50,
+                    endRow: true,
+                    textAlign: 'right',
+                    validators: [{
+                        type: "requiredIf",
+                        expression: "formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie') != 'SU' && formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie') != 'FI'",
+                        errorMessage: "Indique el nro de hit,serie,etc"
                 }]
             }, {
-                defaultValue: "Datos y Observaciones",
-                type: "section",
-                colSpan: 8,
-                width: "*",
-                canCollapse: false,
-                align: 'center',
-                itemIds: ["competencias_pruebas_manual", "competencias_pruebas_viento", "competencias_pruebas_anemometro", "competencias_pruebas_material_reglamentario", "competencias_pruebas_observaciones"]
+                    defaultValue: "Datos y Observaciones",
+                    type: "section",
+                    colSpan: 8,
+                    width: "*",
+                    canCollapse: false,
+                    align: 'center',
+                    itemIds: ["competencias_pruebas_manual", "competencias_pruebas_viento", "competencias_pruebas_anemometro", "competencias_pruebas_material_reglamentario", "competencias_pruebas_observaciones"]
             }, {
-                name: "competencias_pruebas_manual",
-                defaultValue: false,
-                showPending: true,
-                labelAsTitle: true,
-                changed: function (form, item, value) {
-                    // Si es cambiado de manual a electronico o viceversa , actualizamos los campos
-                    // asociados al resultado ya que el formato del input depende de este valor.
-                    formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord(), true, false);
-                }
+                    name: "competencias_pruebas_manual",
+                    defaultValue: false,
+                    showPending: true,
+                    labelAsTitle: true,
+                    changed: function (form, item, value) {
+                        // Si es cambiado de manual a electronico o viceversa , actualizamos los campos
+                        // asociados al resultado ya que el formato del input depende de este valor.
+                        formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord(), true, false);
+                    }
             }, {
-                name: "competencias_pruebas_viento",
-                showPending: true,
-                length: 12,
-                width: '50',
-                textAlign: 'right',
-                endRow: true
+                    name: "competencias_pruebas_viento",
+                    showPending: true,
+                    length: 12,
+                    width: '50',
+                    textAlign: 'right',
+                    defaultValue: '-100', // si no tiene default no es creado en el registro de current values
+                    endRow: true
             }, {
-                name: "competencias_pruebas_anemometro",
-                showPending: true,
-                width: '50',
-                defaultValue: true,
-                labelAsTitle: true
+                    name: "competencias_pruebas_anemometro",
+                    showPending: true,
+                    width: '50',
+                    defaultValue: true,
+                    labelAsTitle: true
             }, {
-                name: "competencias_pruebas_material_reglamentario",
-                showPending: true,
-                width: '50',
-                defaultValue: true,
-                labelAsTitle: true,
-                endRow: true
+                    name: "competencias_pruebas_material_reglamentario",
+                    showPending: true,
+                    width: '50',
+                    defaultValue: true,
+                    labelAsTitle: true,
+                    endRow: true
             }, {
-                name: "competencias_pruebas_observaciones",
-                showPending: true,
-                colSpan: '8',
-                width: '*',
-                endRow: true
+                    name: "competencias_pruebas_observaciones",
+                    showPending: true,
+                    colSpan: '8',
+                    width: '*',
+                    endRow: true
             }, {
-                name: "competencias_pruebas_origen_combinada",
-                visible: false,
-                defaultValue: false
+                    name: "competencias_pruebas_origen_combinada",
+                    visible: false,
+                    defaultValue: false
             },
             // Para join con detalles , no es visible
-            {
-                name: "competencias_pruebas_id",
-                visible: false,
-                defaultValue: null
+                {
+                    name: "competencias_pruebas_id",
+                    visible: false,
+                    defaultValue: null
             }, {
-                name: "competencias_pruebas_origen_id",
-                visible: false,
-                defaultValue: null
+                    name: "competencias_pruebas_origen_id",
+                    visible: false,
+                    defaultValue: null
             }],
             setupFieldsToAdd: function (fieldsToAdd) {
                 formCompetenciasPruebasResultadosMantForm._vcache_competencias_descripcion_visual = fieldsToAdd.competencias_descripcion_visual;
                 formCompetenciasPruebasResultadosMantForm.setValue('competencias_codigo', fieldsToAdd.competencias_codigo);
                 formCompetenciasPruebasResultadosMantForm.setValue('competencias_pruebas_fecha', fieldsToAdd.competencias_fecha_inicio);
-
-
                 // Para validar fecha de la prueba a crear.
                 formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_inicio = fieldsToAdd.competencias_fecha_inicio;
                 formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_final = fieldsToAdd.competencias_fecha_final;
@@ -290,13 +296,11 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 record.pruebas_generica_codigo = record_values.pruebas_generica_codigo;
                 record.apppruebas_descripcion = record_values.apppruebas_descripcion;
                 record.pruebas_sexo = record_values.pruebas_sexo;
-
                 // Serie
                 var tipo_serie = formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie');
                 if (tipo_serie == 'SU' || tipo_serie == 'FI') {
                     record.serie = tipo_serie;
-                }
-                else {
+                } else {
                     record.serie = tipo_serie + "-" + formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_nro_serie');
                 }
             },
@@ -317,12 +321,11 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 if (mode == 'add') {
                     formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(null, null, null);
                     formCompetenciasPruebasResultadosMantForm._updateSeriesValues('FI');
-                }
-                else {
+                } else {
                     formCompetenciasPruebasResultadosMantForm._updateSeriesValues(formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_tipo_serie').getValue());
                 }
             },
-            preSetFieldsToEdit: function(fields) {
+            preSetFieldsToEdit: function (fields) {
                 // Por conveniencia llamamos a eta funcion que ya efectua lo que se requiere
                 this.setupFieldsToAdd(fields);
             },
@@ -346,29 +349,27 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
              *
              * @param {ListGrid} component la grilla origen o fuente del registro a editar.
              */
-            editSelectedData: function (component,fieldsRequiredToEdit) {
-                var record = component.getSelectedRecord();
+            editSelectedData: function (component) {
 
                 this.Super('editSelectedData', arguments);
 
+                var record = component.getSelectedRecord();
+
+//                console.log('PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP')
+//                console.log(record);
+//                console.log(formCompetenciasPruebasResultadosMantForm.getOldValues());
+//                console.log(formCompetenciasPruebasResultadosMantForm.getValues());
+//                console.log('PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP')
+                
                 // Aqui forzamos solo a leer un registro justo el que corresponde a la prueba
                 // de este registro.
-                // Para que esto funcione ok es necesario que el combo de pruebas indique
-                //      fetchMissingValues: false,
-                //      autoFetchData: false
-                // De tal manera que se anulen lecturas no deseadas.
-                fcr_cb_pruebas.pickListCriteria = {
-                    "pruebas_codigo": record.pruebas_codigo
-                };
-                formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').fetchData(function (it, resp, data, req) {
-                    if (resp.status >= 0) {
-                        formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(data[0], false, false);
-                    }
-                    else {
-                        formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(null, false, false);
-                    }
-                    fcr_cb_pruebas.pickListCriteria = {};
-                });
+                // 
+                winCompetenciasResultadosMantForm.fetchFieldRecord('pruebas_codigo',{"pruebas_codigo": record.pruebas_codigo,"pruebas_descripcion":undefined});
+            },
+            fieldDataFetched: function(formFieldName,record) {
+                if (formFieldName === 'pruebas_codigo') {
+                    formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(record, false, false);
+                } 
             },
             canShowTheDetailGrid: function (mode) {
                 if (mode == 'add') {
@@ -385,13 +386,10 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
             _updateSeriesValues: function (tipoSerieValue) {
                 var itTipoSerie = formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_tipo_serie');
                 var itNroSerie = formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_nro_serie');
-
                 if (tipoSerieValue == 'SU' || tipoSerieValue == 'FI') {
                     itNroSerie.setValue(1);
                     itNroSerie.hide();
-
-                }
-                else {
+                } else {
                     itNroSerie.setRequired(true);
                     itNroSerie.show();
                 }
@@ -401,10 +399,8 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     itTipoSerie.hide();
                     itNroSerie.setValue(1);
                     itNroSerie.hide();
-                }
-                else {
+                } else {
                     itTipoSerie.show();
-
                 }
             },
             _updateMarcasFieldsStatus: function (record, clearResultado, pruebaChanged) {
@@ -412,8 +408,7 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     formCompetenciasPruebasResultadosMantForm._apppruebas_multiple = record.apppruebas_multiple;
                     formCompetenciasPruebasResultadosMantForm._vcache_pruebas_codigo = record.pruebas_codigo;
                     formCompetenciasPruebasResultadosMantForm.__updateMarcasFieldsStatus(pruebaChanged, clearResultado, record.unidad_medida_tipo, record.unidad_medida_regex_e, record.unidad_medida_regex_m, record.apppruebas_verifica_viento, record.apppruebas_viento_individual);
-                }
-                else {
+                } else {
                     formCompetenciasPruebasResultadosMantForm._apppruebas_multiple = undefined;
                     formCompetenciasPruebasResultadosMantForm._vcache_pruebas_codigo = undefined;
                     formCompetenciasPruebasResultadosMantForm.__updateMarcasFieldsStatus(true, true, undefined, undefined, undefined, undefined, undefined);
@@ -430,90 +425,83 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 var itViento = thisForm.getItem('competencias_pruebas_viento');
                 var itAnemometro = thisForm.getItem('competencias_pruebas_anemometro');
                 var itMaterial = thisForm.getItem('competencias_pruebas_material_reglamentario');
-
                 // Si la unidad de medida es tiempo , si la prueba es cambiada se activa y se muestra el checkbox
                 // de manual  , de lo contrario de limpia el campo y se esconde.
                 if (unidad_medida_tipo == 'T') {
                     if (pruebaChanged) {
                         thisForm._setFieldStatus(itemEsManual, true, false, true);
                         thisForm._setFieldStatus(itViento, false, true, true);
-                    }
-                    else {
+                    } else {
                         thisForm._setFieldStatus(itemEsManual, true, false, false);
                     }
-                }
-                else {
+                } else {
                     thisForm._setFieldStatus(itemEsManual, false, true, true);
                 }
-
                 // Si la prueba requeire verificacion de viento , se enciende el
                 // campo de viento y si la unidad de medida es tiempo o Metros (para los saltos largo/triple)
                 // se indica requerido.
                 if (apppruebas_verifica_viento == true) {
                     if (apppruebas_viento_individual == false) {
                         thisForm._setFieldStatus(itViento, true, false, false);
-                    }
-                    else {
+                    } else {
                         thisForm._setFieldStatus(itViento, false, true, true);
                     }
                     thisForm._setFieldStatus(itAnemometro, true, false, false);
                     if (unidad_medida_tipo == 'T' || unidad_medida_tipo == 'M') {
                         itViento.setRequired(true);
-                    }
-                    else {
-                        itViento.setRequired(false);
+                    } else {
                         thisForm._setFieldStatus(itViento, false, true, true);
                         thisForm._setFieldStatus(itAnemometro, false, true, true);
+                        itViento.setRequired(false);
+
                     }
-                }
-                else {
+                } else {
                     // Si no se requiere se apaga y se indica no requerido.
                     thisForm._setFieldStatus(itViento, false, true, true);
                     thisForm._setFieldStatus(itAnemometro, false, true, true);
                     itViento.setRequired(false);
                 }
-
-
                 // Para el caso de pruebas multiples no se requiere mostrar o editar los resultados de la
                 // prueba , ya que seran un summary de la grilla de detalle.
                 if (thisForm._apppruebas_multiple) {
                     thisForm._setFieldStatus(itMaterial, false, true, false);
-                }
-                else {
+                } else {
                     thisForm._setFieldStatus(itMaterial, true, false, false);
                 }
             },
             /**
              * Funcion de soporte para limpiar un campo , sus errores y activarlo o desactivarlo.
+             * 
+             * Importante , si un campo viene de la base de datos en null o undefined , clearField
+             * lo removera de los valores a crear en el nuevo record a editar.
+             * 
              * @param {FormItem} campo de la forma
              * @param {boolean} enable true para activar , false para desactivar.
              * @param {boolean} hide true para esconder , false para mostrar.
              * @param {boolean} clear true para limpiar campo, false no tocarlo.
              */
             _setFieldStatus: function (field, enable, hide, clear) {
-                if (hide == true) {
-                    field.hide();
+                    if (clear == true) {
+                        field.clearErrors();
+                        field.clearValue();
+                    }
+                    if (hide == true) {
+                        field.hide();
+                    } else {
+                        field.show();
+                    }
+                    if (enable == false) {
+                        field.disable();
+                    } else {
+                        field.enable();
+                    }
                 }
-                else {
-                    field.show();
-                }
-
-                if (enable == false) {
-                    field.disable();
-                }
-                else {
-                    field.enable();
-                }
-                if (clear == true) {
-                    field.clearErrors();
-                    field.clearValue();
-                }
-            }
-            //  , cellBorder: 1
+                //  , cellBorder: 1
         });
     },
     createDetailGridContainer: function (mode) {
-        return isc.DetailGridContainer.create({
+        return isc.DetailGridWithFormContainer.create({
+            ID: "yyy",
             height: 280,
             sectionTitle: 'Resultados',
             gridProperties: {
@@ -524,95 +512,19 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 sortField: "atletas_resultados_puesto",
                 autoFetchData: false,
                 canSort: false,
-                //    showGridSummary: true,
+                canEdit: false,
                 fields: [{
-                    name: "atletas_codigo",
-                    editorType: "comboBoxExt",
-                    showPending: true,
-                    valueField: "atletas_codigo",
-                    displayField: "atletas_nombre_completo",
-                    pickListFields: [{
-                        name: "atletas_codigo",
-                        width: '20%'
-                    }, {
-                        name: "atletas_nombre_completo",
-                        width: '80%'
-                    }],
-                    completeOnTab: true,
-                    width: '60%',
-                    optionOperationId: 'fetchForList',
-                    editorProperties: {
-                        // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
-                        // en pickListProperties o afuera funciona de distinta manera.
-                        optionDataSource: mdl_atletas_list,
-                        minimumSearchLength: 3,
-                        autoFetchData: false,
-                        textMatchStyle: 'substring',
-                        sortField: "atletas_nombre_completo",
-                        getPickListFilterCriteria: function () {
-                            // Recogo primero el filtro si existe uno y luego le agrego
-                            //  el sexo del atleta.
-                            var record_prueba = formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord();
-                            var filter = this.Super("getPickListFilterCriteria", arguments);
-                            if (filter == null) {
-                                filter = {};
-                            }
-
-                            // Si existe un filtro ya pre digitado lo pongo en la criteria , de lo contrario
-                            // todos los del sexo indicado.
-                            if (filter.atletas_nombre_completo) {
-                                filter = {
-                                    _constructor: "AdvancedCriteria",
-                                    operator: "and",
-                                    criteria: [{
-                                        fieldName: "atletas_nombre_completo",
-                                        operator: "iContains",
-                                        value: filter.atletas_nombre_completo
-                                    }, {
-                                        fieldName: 'atletas_sexo',
-                                        operator: 'equals',
-                                        value: record_prueba.pruebas_sexo
-                                    }]
-                                };
-                            }
-                            else {
-                                filter = {
-                                    _constructor: "AdvancedCriteria",
-                                    operator: "and",
-                                    criteria: [{
-                                        fieldName: 'atletas_sexo',
-                                        operator: 'equals',
-                                        value: record_prueba.pruebas_sexo
-                                    }]
-                                };
-                            }
-                            return filter;
-                        }
-                    }
-
+                    name: "atletas_nombre_completo"
                 }, {
-                    name: "atletas_resultados_resultado",
-                    showPending: true,
-                    align: 'right',
-                    validators: [{
-                        type: "regexp",
-                        showPending: true,
-                        expression: '^$'
-                    }]
+                    name: "atletas_resultados_resultado"
                 }, {
-                    name: "atletas_resultados_viento",
-                    showPending: true,
-                    align: 'right'
+                    name: "atletas_resultados_viento"
                 }, {
-                    name: "atletas_resultados_puntos",
-                    showPending: true,
-                    align: 'right',
-                    defaultValue: 0
+                    name: "atletas_resultados_puntos"
                 }, {
-                    name: "atletas_resultados_puesto",
-                    showPending: true,
-                    align: 'right'
+                    name: "atletas_resultados_puesto"
                 }],
+
                 onRemoveRecordClick: function (rowNum) {
                     if (formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_origen_combinada') == true) {
                         isc.say('No puede eliminarse individualmente resultados que conforman una prueba combinada , eliminelo desde la misma prueba principal.');
@@ -620,82 +532,221 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     }
                     return true;
                 },
-                show: function () {
-                    if (formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_origen_combinada') == true) {
-                        g_atletas_resultados.showField('atletas_resultados_puntos');
+                fieldDataFetched: function(formFieldName,record) {
+                    if (formFieldName === 'pruebas_codigo') {
+                        g_atletas_resultados._setupGridFields(record);
                     }
-                    else {
-                        g_atletas_resultados.hideField('atletas_resultados_puntos');
-                    }
-
-                    var record = formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord();
-                    if (record && record.apppruebas_viento_individual == true) {
-                        g_atletas_resultados.showField('atletas_resultados_viento');
-                    }
-                    else {
-                        g_atletas_resultados.hideField('atletas_resultados_viento');
-                    }
-
-                    return this.Super("show", arguments);
                 },
-                rowEditorEnter: function (record, editValues, rowNum) {
-                    var itResultado = g_atletas_resultados.getField('atletas_resultados_resultado');
-                    // De acuerdo a si es manual o no se cambia la expresion regular para el input,
-                    // validator.
-                    var pruebasRecord = formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord();
-                    if (formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_manual') != true) {
-                        itResultado.validators[0].expression = pruebasRecord.unidad_medida_regex_e;
-                    }
-                    else {
-                        itResultado.validators[0].expression = pruebasRecord.unidad_medida_regex_m;
-                    }
 
-                },
-                /**
-                 * La celdas de manual y viento seran editables solo en los casos que las pruebas
-                 * lo permitan , digamos las de velocidad requieren ambos , el salto largo solo el viento, etc.
-                 */
-                canEditCell: function (rowNum, colNum) {
-                    if (formCompetenciasPruebasResultadosMantForm._apppruebas_multiple == true) {
-                        return false;
-                    }
-                    else {
-
-                        var fieldName = this.getFieldName(colNum);
-                        if (fieldName == 'atletas_resultados_puntos') {
-                            return formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_origen_combinada');
-                        }
-                    }
-                    return this.Super("canEditCell", arguments);
-                },
                 /**
                  * Luego de grabar esta funcion es llamada , aqui aprovechamos en resetear a los nuevos valores
                  * las partes del registro que basicamente no son del modelo de datos pero comonen parte de
                  * la respuesta del servidor , ya que estos datos son requeridos para tomar acciones
                  * sobre la grilla.
                  */
-                editComplete: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
-                    // Actualizamos el registro GRBADO no puedo usar setEditValue porque asumiria que el regisro recien grabado
-                    // difiere de lo editado y lo tomaria como pendiente de grabar.d
-                    // Tampoco puedo usar el record basado en el rowNum ya que si la lista esta ordenada al reposicionarse los registros
-                    // el rownum sera el que equivale al actual orden y no realmente al editado.
-                    // En otras palabras este evento es llamado despues de grabar correctamente Y ORDENAR SI HAY UN ORDER EN LA GRILLA
-                    // Para resolver esto actualizamos la data del response la cual luego sera usada por el framework SmartClient para actualizar el registro visual.
-                    dsResponse.data[0].atletas_nombre_completo = (newValues.atletas_nombre_completo ? newValues.atletas_nombre_completo : oldValues.atletas_nombre_completo);
-
-
-                    // Por defecto smartclient no resortea luego de un add o update , por diseño , aqui
-                    // reforzamos el sort.
-                    g_atletas_resultados.setSort([{
-                        property: 'atletas_resultados_puesto'
-                    }]);
+//                editComplete2: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
+//                    // Actualizamos el registro GRBADO no puedo usar setEditValue porque asumiria que el regisro recien grabado
+//                    // difiere de lo editado y lo tomaria como pendiente de grabar.d
+//                    // Tampoco puedo usar el record basado en el rowNum ya que si la lista esta ordenada al reposicionarse los registros
+//                    // el rownum sera el que equivale al actual orden y no realmente al editado.
+//                    // En otras palabras este evento es llamado despues de grabar correctamente Y ORDENAR SI HAY UN ORDER EN LA GRILLA
+//                    // Para resolver esto actualizamos la data del response la cual luego sera usada por el framework SmartClient para actualizar el registro visual.
+//                    dsResponse.data[0].atletas_nombre_completo = (newValues.atletas_nombre_completo ? newValues.atletas_nombre_completo : oldValues.atletas_nombre_completo);
+//                    // Por defecto smartclient no resortea luego de un add o update , por diseño , aqui
+//                    // reforzamos el sort.
+//                    g_atletas_resultados.setSort([{
+//                        property: 'atletas_resultados_puesto'
+//                    }]);
+//                },
+                _setupGridFields: function(pruebasRecord) {
+                    if (pruebasRecord && pruebasRecord.competencias_pruebas_origen_id ) {
+                    //if (formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_origen_combinada') == true) {
+                        g_atletas_resultados.showField('atletas_resultados_puntos');
+                    } else {
+                        g_atletas_resultados.hideField('atletas_resultados_puntos');
+                    }
+                    if (pruebasRecord && pruebasRecord.apppruebas_viento_individual == true) {
+                        g_atletas_resultados.showField('atletas_resultados_viento');
+                    } else {
+                        g_atletas_resultados.hideField('atletas_resultados_viento');
+                    }
                 }
-            }
+            },
+            getFormComponent: function () {
+                    var newGrid;
+                    var me = this;
+                    if (this.getChildForm() == undefined) {
+                        newGrid = isc.DynamicFormExt.create({
+                           // ID: "formCompetenciasxx",
+                            numCols: 4,
+                            colWidths: ["200", "100", "*", "*"],
+                            fixedColWidths: false,
+                            padding: 5,
+                            //heigth: 100,
+                            dataSource: mdl_atletas_resultados,
+                            formMode: this.formMode, // parametro de inicializacion
+                            focusInEditFld: 'atletas_codigo',
+                            fields: [{
+                                name: "atletas_codigo",
+                                editorType: "comboBoxExt",
+                                showPending: true,
+                                valueField: "atletas_codigo",
+                                displayField: "atletas_nombre_completo",
+                                pickListWidth: 360,
+                                endRow: true,
+                                pickListFields: [{
+                                    name: "atletas_codigo",
+                                    width: '20%'
+                                }, {
+                                    name: "atletas_nombre_completo",
+                                    width: '80%'
+                                }],
+                                completeOnTab: true,
+                                colSpan: 4,
+                                width: 250,
+                                optionOperationId: 'fetchForList',
+                                editorProperties: {
+                                    // Aqui es la mejor posicion del optionDataSource en cualquiera de los otros lados
+                                    // en pickListProperties o afuera funciona de distinta manera.
+                                    optionDataSource: mdl_atletas_list,
+                                    minimumSearchLength: 3,
+                                    autoFetchData: false,
+                                    textMatchStyle: 'substring',
+                                    sortField: "atletas_nombre_completo",
+                                    getPickListFilterCriteria: function () {
+                                        // Recogo primero el filtro si existe uno y luego le agrego
+                                        //  el sexo del atleta.
+                                        var record_prueba = formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord();
+                                        var filter = this.Super("getPickListFilterCriteria", arguments);
+                                        if (filter == null) {
+                                            filter = {};
+                                        }
+                                        // Si existe un filtro ya pre digitado lo pongo en la criteria , de lo contrario
+                                        // todos los del sexo indicado.
+                                        if (filter.atletas_nombre_completo) {
+                                            filter = {
+                                                _constructor: "AdvancedCriteria",
+                                                operator: "and",
+                                                criteria: [{
+                                                    fieldName: "atletas_nombre_completo",
+                                                    operator: "iContains",
+                                                    value: filter.atletas_nombre_completo
+                                                }, {
+                                                    fieldName: 'atletas_sexo',
+                                                    operator: 'equals',
+                                                    value: record_prueba.pruebas_sexo
+                                                }]
+                                            };
+                                        } else {
+                                            filter = {
+                                                _constructor: "AdvancedCriteria",
+                                                operator: "and",
+                                                criteria: [{
+                                                    fieldName: 'atletas_sexo',
+                                                    operator: 'equals',
+                                                    value: record_prueba.pruebas_sexo
+                                    }]
+                                            };
+                                        }
+                                        return filter;
+                                    }
+                                }
+                        }, {
+                                name: "atletas_resultados_resultado",
+                                showPending: true,
+                                validators: [{
+                                        type: "regexp",
+                                        showPending: true,
+                                        expression: '^$'
+                                    }],
+                                width: 85
+                        }, {
+                                name: "atletas_resultados_viento",
+                                showPending: true,
+                                width:80,
+                                endRow: true
+                        }, {
+                                name: "atletas_resultados_puntos",
+                                showPending: true,
+                                width: 60,
+                                endRow: true
+                        }, {
+                                name: "atletas_resultados_puesto",
+                                showPending: true,
+                                width: 45
+                        },
+                        {
+                            name: "competencias_pruebas_id",
+                            visible: false,
+                            defaultValue: null
+                        }],
+                        fieldDataFetched: function(formFieldName,record) {
+                                if (formFieldName === 'pruebas_codigo') {
+                                    this._setupFields(record);
+                                }
+                        },
+                        postSaveData: function(record) {
+                            if (this.formMode === 'edit') {
+                                g_atletas_resultados.getSelectedRecord().atletas_nombre_completo = this.getField('atletas_codigo').getDisplayValue();
+                            } else {
+                                if (!record.hasOwnProperty('atletas_nombre_completo')) {
+                                    isc.addProperties(record,{'atletas_nombre_completo': this.getField('atletas_codigo').getDisplayValue()});
+                                } else {
+                                    record.atletas_nombre_completo = this.getField('atletas_codigo').getDisplayValue();
+                                }
+                            }
+                        },
+                        _setupFields: function(pruebasRecord) {
+                            // De acuerdo a si es manual o no se cambia la expresion regular para el input,
+                            // validator.
+                            var itResultado = this.getField('atletas_resultados_resultado');
+                            if (formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_manual') != true) {
+                                itResultado.validators[0].expression = pruebasRecord.unidad_medida_regex_e;
+                            }
+                            else {
+                                itResultado.validators[0].expression = pruebasRecord.unidad_medida_regex_m;
+                            }
+
+                            if (pruebasRecord && pruebasRecord.competencias_pruebas_origen_id) {
+                                this.showField('atletas_resultados_puntos');
+                            }
+                            else {
+                                this.hideField('atletas_resultados_puntos');
+                            }
+
+
+                            if (pruebasRecord && pruebasRecord.apppruebas_viento_individual == true) {
+                                this.showField('atletas_resultados_viento');
+                            }
+                            else {
+                                this.hideField('atletas_resultados_viento');
+                            }
+
+                           // console.log(pruebasRecord.apppruebas_multiple);
+                           var field = this.getField('atletas_resultados_resultado');
+
+                            if (pruebasRecord && pruebasRecord.apppruebas_multiple === true) {
+                                field.setCanEdit(false);
+                                field.setRequired(false);
+                                itViento.setRequired(false);
+                            } else {
+                                field.setCanEdit(true);
+                                field.setRequired(true);
+                            }
+                         }
+                        });
+                    } else {
+                        newGrid = yyy.getChildForm();
+                    }
+                   // yyy.newGrid.editSelectedData(g_atletas_resultados);
+                    return newGrid;
+                }
         });
     },
+                    
     canShowTheDetailGrid: function (mode) {
         if (mode == 'add') {
-            if (formCompetenciasPruebasResultadosMantForm._apppruebas_multiple !== false) {
+            if (formCompetenciasPruebasResultadosMantForm   ._apppruebas_multiple !== false) {
                 return false;
             }
         }

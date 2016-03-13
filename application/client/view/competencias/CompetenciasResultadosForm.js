@@ -98,14 +98,16 @@ isc.CompetenciasResultadosForm.addProperties({
             gridComponents: [CompetenciasResultadosFormID._toolStrip, "header", "body"],
             getCellCSSText: function(record, rowNum, colNum) {
                 var style = 'font-style:normal;';
-                if (record.competencias_pruebas_origen_id > 0) {
-                    style = 'font-style:italic;'
-                }
+                if (record) {
+                    if (record.competencias_pruebas_origen_id > 0) {
+                        style = 'font-style:italic;'
+                    }
 
-                if (record.pruebas_sexo == 'F') {
-                    style += 'color:red;'
-                } else if (record.pruebas_sexo == 'M') {
-                    style += 'color:blue;'
+                    if (record.pruebas_sexo == 'F') {
+                        style += 'color:red;'
+                    } else if (record.pruebas_sexo == 'M') {
+                        style += 'color:blue;'
+                    }
                 }
                 return style;
             },

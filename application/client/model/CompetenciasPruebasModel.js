@@ -21,7 +21,8 @@ isc.RestDataSource.create({
         {name: "pruebas_codigo", title: "Prueba", foreignKey: "mdl_pruebas.pruebas_codigo", required: true},
         {name: "competencias_pruebas_origen_id", type: 'integer', nullReplacementValue: null},
         {name: "competencias_pruebas_fecha", title: "Fecha", type: 'date', required: true},
-        {name: "competencias_pruebas_viento", title: "Viento", type: 'double'},
+        {name: "competencias_pruebas_viento", title: "Viento", type: 'double',getFieldValue: function(r, v, f, fn) {
+                return mdl_competencias_pruebas._getVientoFieldValue(v);}},
         {name: "competencias_pruebas_tipo_serie", title: "Tipo Serie",
             valueMap: {"HT": 'Hit', "SR": 'Serie', "SM": 'SemiFinal', "FI": 'Final', "SU": 'Unica'},
             required: true},
@@ -73,5 +74,35 @@ isc.RestDataSource.create({
             return true;
         }
 
+    },
+    /**
+     * Normalizador de valores para el viento ya que este puede ser null dependiendo de la prueba,
+     * El problemas es que si llega con valor null a la forma este campo no es copiado a los values
+     * de edicion al cargar inicialmente los valores. Se requiere que siempre tenga un valor aunque este sea imposible
+     * lo cual indicara a la forma que en realidad es un valor nulo.
+     * Se entiende que las pruebas que requieren viento traern un valor no null , de no ser asi los datos
+     * en la bd seran errados.
+     */
+    _getVientoFieldValue: function(value) {
+        //  console.log(value);
+        if (value === 'null' || value === 'NULL'  || value === null) {
+            return '-100';
+        } else {
+            return value;
+        }
+    },
+    /**
+     * En el caso que el viento sea de menos 100 por protocolo se enviara null ya que ese es un numero magico
+     * usado para enteder que es nulo.
+     * Ver _getVientoFieldValue()
+     */
+    transformRequest: function(dsRequest) {
+        var data = this.Super("transformRequest", arguments);
+        if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
+            if (data['competencias_pruebas_viento'] === '-100') {
+                data['competencias_pruebas_viento'] = null;
+            }
+        }
+        return data;
     }
 });
