@@ -50,11 +50,15 @@ isc.defineClass("ComboBoxExtItem", isc.ComboBoxItem);
         // Agregamos el icono
         icons: [{
                 src: "[SKIN]/actions/refresh.png",
-                showOver: true,
+                showOver: false,
                 hspace: 1,
                 tabIndex: - 1,
+                inline: true,
+                inlineIconAlign: 'right',
+                width: 12,
+                height: 12,
                 click: function (form, item) {
-                item.forceRefresh();
+                    item.forceRefresh();
                 }
         }]
 });
