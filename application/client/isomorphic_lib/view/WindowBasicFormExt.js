@@ -327,10 +327,10 @@ isc.WindowBasicFormExt.addProperties({
      *
      */
    _close: function (checkMainForm, doRealClose) {
-//        console.log('//////////////////////////////////////////////////////////')
-//        console.log(this._form.getOldValues())
-//        console.log(this._form.getValues())
-//        console.log(this._form.getChangedValues())
+        console.log('//////////////////////////////////////////////////////////')
+        console.log(this._form.getOldValues())
+        console.log(this._form.getValues())
+        console.log(this._form.getChangedValues())
 
         var me = this;
         var existChanges = false;
@@ -426,15 +426,23 @@ isc.WindowBasicFormExt.addProperties({
 
             var me = this;
             item.fetchData(function (it, resp, data, req) {
-                // Luego de la operacion la forma,la grilla y la forma interna seran notificadas.
+                var grid = me.getDetailGrid();
+                var gridForm = me.getDetailGridForm();
+                var record = null;
+
                 if (resp.status >= 0) {
-                    me.getForm().fieldDataFetched(formFieldName, data[0]);
-                    me.getDetailGrid().fieldDataFetched(formFieldName, data[0]);
-                    me.getDetailGridForm().fieldDataFetched(formFieldName, data[0]);
+                    record = data[0];
                 } else {
-                    me.getForm().fieldDataFetched(formFieldName, null);
-                    me.getDetailGrid().fieldDataFetched(formFieldName, null);
-                    me.getDetailGridForm().fieldDataFetched(formFieldName, null);
+                    record = null;
+                }
+
+                // Luego de la operacion la forma,la grilla y la forma interna seran notificadas.
+                me.getForm().fieldDataFetched(formFieldName, record);
+                if (grid) {
+                    grid.fieldDataFetched(formFieldName, record);
+                }
+                if (gridForm) {
+                    gridForm.fieldDataFetched(formFieldName, record);
                 }
 
                 // Al terminar el fetch la criteria sera puesta en blanco.
