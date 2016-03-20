@@ -281,7 +281,7 @@ isc.DefaultController.addProperties({
         me._mantForm.preSaveData(me._mantForm.getValues());
 
 
-        this._mantForm.saveData(function (dsResponse, data, dsRequest) {
+        me._mantForm.saveData(function (dsResponse, data, dsRequest) {
             if (dsResponse.status === 0) {
                 // Luego de grabar puede requerirse armar campos compuestos o virtuales
                 // osea campos como descripciones de codigos foreign.
@@ -521,26 +521,31 @@ isc.DefaultController.addProperties({
      * haciendola visible , preparando los campos join de existir.
      * Si la forma esta abierta y verifyIsOpen es true se indicara un error y no se tomara
      * accion alguna.
+     * IMPORTANTE: L grilla debe aceptar agregar registros (canAdd == true)
      * 
      * @private
      * @param {boolean} verifyisOpen si es false entraremos nuevamente a modo add este visible
      *      o no la forma , de lo contrario solo se hara si la forma no es visible.
      */
     _detailGridFormAdd: function (verifyisOpen) {
-        var gridForm = this._formWindow.getDetailGridForm();
-        // Solo si la forma interna de la grilla es visible o se indica se proceda
-        // sin verificar su visibilidad procedemos a mostrar la forma.
-        if (gridForm.isVisible() === false || verifyisOpen === false) {
-            // Ponemos mode add , copiamos los key fields que se requieren para unir la forma
-            // principal al registro nuevo de la forma interna y finalmente mostramos.
-            gridForm.setEditMode('add');
-            this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'gridForm', gridForm ,null);
-            this._formWindow.detailGridFormShow();
-        } else {
-            // Indicamos esta abierta.
-            if (verifyisOpen === true) {
-                isc.say('La forma ya esta abierta');
+        if (this._formWindow.getDetailGridForm().canAdd === true) {
+            var gridForm = this._formWindow.getDetailGridForm();
+            // Solo si la forma interna de la grilla es visible o se indica se proceda
+            // sin verificar su visibilidad procedemos a mostrar la forma.
+            if (gridForm.isVisible() === false || verifyisOpen === false) {
+                // Ponemos mode add , copiamos los key fields que se requieren para unir la forma
+                // principal al registro nuevo de la forma interna y finalmente mostramos.
+                this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'gridForm', gridForm ,null);
+                this._formWindow.detailGridFormShow();
+                gridForm.setEditMode('add');
+            } else {
+                // Indicamos esta abierta.
+                if (verifyisOpen === true) {
+                    isc.say('La forma ya esta abierta');
+                }
             }
+        } else {
+            isc.say('No se permite ingresar mas registros desde esta forma , consultar.');
         }
     },
     /**
@@ -580,13 +585,16 @@ isc.DefaultController.addProperties({
     _detailGridFormSave: function () {
         var me = this;
         // Grabamos
+        var gridForm = me._formWindow.getDetailGridForm();
+        var oldValues = gridForm.getOldValues();
+
         this._formWindow.getDetailGridForm().saveData(function (dsResponse, data, dsRequest) {
             if (dsResponse.status === 0) {
-                // Si no hay error informamos a la forma interna y la pantalla que las contiene
-                // que el registro se ha grabado
-                var gridForm = me._formWindow.getDetailGridForm();
+                // Si no hay error informamos a la forma interna y la pantalla con la grilla principal
+                // por si requiere actualizarse algo con los cambios
                 gridForm.postSaveData(data);
-                me._mainWindow.afterFormDetailGridRecordSaved(data, gridForm.getOldValues());
+                me._mainWindow.afterFormDetailGridRecordSaved(data, oldValues);
+                gridForm.afterDetailGridRecordSaved(me._detailGrid, -1, -1, data, oldValues);
                 // Si estamos en mode add seguimos editando un nuevo registro
                 // de lo contrario cerramos la forma interna.
                 if (gridForm.formMode === 'add') {
