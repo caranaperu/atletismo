@@ -116,15 +116,8 @@ isc.DetailGridContainer.addProperties({
      */
     _createGrid: function (properties) {
         var defProperties = {
-            // canEdit: false,
             autoDraw: false,
-            //waitForSave: true,
-            //validateByCell: true,
-            //stopOnErrors: true,
             selectionType: 'single',
-            // modalEditing: true,
-            //rowEndEditAction: "same",
-            // enterKeyEditAction: "nextCell",
             canRemoveRecords: true,
             warnOnRemoval: true,
             /**
@@ -248,7 +241,6 @@ isc.DetailGridContainer.addProperties({
                     grid,
                     isc.VLayout.create({
                         visibility: "hidden",
-                        //backgroundColor: "yellow",
                         members: [this._childForm,this._gridFormButtons]
                     })
                 ],
@@ -267,7 +259,6 @@ isc.DetailGridContainer.addProperties({
             grid.modalEditing= true;
             grid.rowEndEditAction= "same";
             grid.enterKeyEditAction= "nextCell";
-            //grid.editEvent : 'click'
 
             this.addItem(0,grid,0);
         }
