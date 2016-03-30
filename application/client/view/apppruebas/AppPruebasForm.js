@@ -279,7 +279,7 @@ isc.WinAppPruebasForm.addProperties({
                     formAppPruebas._setMarcasFieldStatus(record, false);
                 }
             },
-            postSaveData: function (record) {
+            postSaveData: function (mode,record) {
                 record.pruebas_clasificacion_descripcion = formAppPruebas._pruebas_clasificacion_descripcion;
             },
             /**
