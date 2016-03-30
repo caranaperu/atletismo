@@ -53,14 +53,13 @@ class AtletasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
                 '\'' . $record->get_atletas_codigo() . '\'::character varying,' .
                 $record->get_competencias_pruebas_id() . '::integer,' .
                 '\'' . $record->get_atletas_resultados_resultado() . '\'::character varying,' .
-                $record->get_atletas_resultados_puntos() . '::integer,' .
+                ($record->get_atletas_resultados_puntos() == null ? '0' : $record->get_atletas_resultados_puntos()) . '::integer,' .
                 ($record->get_atletas_resultados_puesto() == null ? 'null' : $record->get_atletas_resultados_puesto()) . '::integer,' .
                 ($record->get_atletas_resultados_viento() == null ? 'null' : $record->get_atletas_resultados_viento()) . '::numeric,' .
                 'false::boolean,' .
                 '\'' . $record->getActivo() . '\'::boolean,' .
                 '\'' . $record->getUsuario() . '\'::character varying,' .
                 'null::integer,0::bit)';
-
         return $sql;
     }
 
@@ -147,7 +146,7 @@ class AtletasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
                 '\'' . $record->get_atletas_codigo() . '\'::character varying,' .
                 $record->get_competencias_pruebas_id() . '::integer,' .
                 '\'' . $record->get_atletas_resultados_resultado() . '\'::character varying,' .
-                $record->get_atletas_resultados_puntos() . '::integer,' .
+                ($record->get_atletas_resultados_puntos() == null ? '0' : $record->get_atletas_resultados_puntos()) . '::integer,' .
                 ($record->get_atletas_resultados_puesto() == null ? 'null' : $record->get_atletas_resultados_puesto()) . '::integer,' .
                 ($record->get_atletas_resultados_viento() == null ? 'null' : $record->get_atletas_resultados_viento()) . '::numeric,' .
                 'false::boolean,' .
