@@ -135,9 +135,10 @@ isc.DynamicFormExt.addProperties({
      * Metodo a ser implementado enel caso que se requiera pre procesar los datos
      * antes de una grabacion, por default no hace nada
      *
+     * @param String 'add' agregar,'edit' en update
      * @param Object record conteniendo los valores que se van a guardar en la persistencia.
      */
-    preSaveData: function(record) {
+    preSaveData: function(mode,record) {
         //console.log('implementame si deseas que haga algo');
     },
     /**
@@ -166,9 +167,10 @@ isc.DynamicFormExt.addProperties({
      * Metodo a ser implementado enel caso que se requiera post procesar los datos
      * luego de una grabacion, por default no hace nada
      *
+     * @param String mode 'add¡ agregar , 'edit' update.
      * @param Object record conteniendo los valores que se van a guardar en la persistencia.
      */
-    postSaveData: function(record) {
+    postSaveData: function(mode,record) {
         //console.log('implementame si deseas que haga algo');
     },
     /**
@@ -223,6 +225,22 @@ isc.DynamicFormExt.addProperties({
      */
     fieldDataFetched: function(formFieldName,record) {
         return;
+    },
+    /**
+     * Metodo hook llamado desde el controlador cada vez que un item en la forma principal
+     * es cambiado , aqui podra tomarse decisiones por ejemplo de cambiar la visibilidad
+     * de campos en la forma que depena de un determinado valor de la forma principal.
+     * 
+     * IMPORTANTE: Solo sera invocado cuando esta forma sea la forma que edita los campos de una grilla de
+     * detalle. Si la forma es justo la forma principal usar simplemente itemChanged o changed en los
+     * form items.
+     * 
+     * @param {FormItem} item este tambien puede ser un combobox
+     * @param {any} newValue
+     * @returns true , SIEMPRE DEBE RETORNA TRUE
+     */
+    mainFormItemChanged: function(item,newValue) {
+        return true;
     },
     initWidget: function(parms) {
         this.Super("initWidget", arguments);

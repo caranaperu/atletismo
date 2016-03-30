@@ -25,7 +25,24 @@ isc.IControlledCanvas.addInterfaceProperties({
     /**
      * @public
      * Metodo a ser llamado por el controlador luego de que en la forma de mantenimiento
-     * haya un cambio en algun registro de la grilla de detalle de existir alguna.
+     * se agregue o se haga un update en la forma principal de edicion , NO ES LLAMADA
+     * por cambios en la grilla de detalle de dicha forma , en ese caso es llamada
+     * afterFormDetailGridRecordSaved
+     *
+     * Aqui el canvas principal puede tomar decisiones basado en eso.
+     *
+     * @param object newValues record con los elementos grabados , actualizados o eliminados.
+     * @param object oldValues record con los elementos previos a los cambios , en caso de add
+     * son null..
+     *
+     */
+    afterFormRecordSaved: function(newValues, oldValues) {
+        // Debehacerse override , por default no hace nada.
+    },
+    /**
+     * @public
+     * Metodo a ser llamado por el controlador luego de que en la forma de mantenimiento
+     * se haga un add o update en algun registro de la grilla de detalle de existir alguna.
      *
      * Aqui el canvas principal puede tomar decisiones basado en eso.
      *
