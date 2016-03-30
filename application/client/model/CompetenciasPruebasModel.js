@@ -86,23 +86,23 @@ isc.RestDataSource.create({
     _getVientoFieldValue: function(value) {
         //  console.log(value);
         if (value === 'null' || value === 'NULL'  || value === null) {
-            return '-100';
+            return null;
         } else {
             return value;
         }
-    },
+    }
     /**
      * En el caso que el viento sea de menos 100 por protocolo se enviara null ya que ese es un numero magico
      * usado para enteder que es nulo.
      * Ver _getVientoFieldValue()
      */
-    transformRequest: function(dsRequest) {
-        var data = this.Super("transformRequest", arguments);
-        if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
-            if (data['competencias_pruebas_viento'] === '-100') {
-                data['competencias_pruebas_viento'] = null;
-            }
-        }
-        return data;
-    }
+//    transformRequest: function(dsRequest) {
+//        var data = this.Super("transformRequest", arguments);
+//        if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
+//            if (data['competencias_pruebas_viento'] === '-100') {
+//                data['competencias_pruebas_viento'] = null;
+//            }
+//        }
+//        return data;
+//    }
 });
