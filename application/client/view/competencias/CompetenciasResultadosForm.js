@@ -21,12 +21,29 @@ isc.CompetenciasResultadosForm.addProperties({
     // Para cache solamente y pasarlo a otras vistas
     _vcache_competencias_fecha_inicio: undefined,
     _vcache_competencias_fecha_final: undefined,
-  //  _vcache_sourceRecord: undefined,
     /**
      * Este metodo es llamado por el controller cuando en la forma de mantenimiento , en la
      * grilla de detalle , de existir ha ocurrido una operacion sobre alguno de sus registros.
      */
     afterFormDetailGridRecordSaved: function(newValues, oldValues) {
+        competenciasResultadosList.invalidateCache();
+
+
+    },
+    /**
+     * Este metodo es llamado por el controller cuando en la forma de mantenimiento se agrega o modifica un registro.
+     */
+    afterFormRecordSaved: function(newValues, oldValues) {
+        console.log('afterFormRecordSaved')
+        console.log(newValues,oldValues)
+
+        competenciasResultadosList.setCriteria({
+                competencias_codigo: CompetenciasResultadosFormID.infoKey,
+                pruebas_codigo: newValues.pruebas_codigo,
+                pruebas_sexo: newValues.pruebas_sexo,
+                serie: newValues.serie,
+                origen: (newValues.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
+            });
         competenciasResultadosList.invalidateCache();
     },
     /**
@@ -34,8 +51,6 @@ isc.CompetenciasResultadosForm.addProperties({
      * lo que hace es limpiar la grilla de resultados.
      */
     onInfoKeyChanged: function(formRecord) {
-        console.log('????????????????????????????????????????????????????????????????')
-             console.log(formRecord);
            //  _vcache_sourceRecord = formRecord;
         var infLabelContents='<span style="font-weight:bold; font-size:16px">' + formRecord.competencias_descripcion + '</span> (' + formRecord.categorias_codigo + ' / ' + formRecord.agno + ' / ' + formRecord.ciudades_descripcion + '-' + formRecord.paises_descripcion + ')'
         competenciasResultadosInfoLabel.setContents(infLabelContents)
@@ -75,6 +90,7 @@ isc.CompetenciasResultadosForm.addProperties({
             autoFetchData: false,
             dataSource: mdl_competencias_pruebas,
             fetchOperation: 'fetchPruebasPorCompetencia',
+            lastComptenciaPruebaVisitedId : undefined,
             fields: [
                 {name: 'competencias_pruebas_id', hidden: true},
                 {name: "pruebas_sexo", hidden: true,
@@ -114,14 +130,19 @@ isc.CompetenciasResultadosForm.addProperties({
             rowClick: function(record, recordNum, fieldNum) {
                 this.Super("rowClick", arguments);
                 if (!record.groupMembers) {
-                    competenciasResultadosList.filterData({
-                        competencias_codigo: CompetenciasResultadosFormID.infoKey,
-                        pruebas_codigo: record.pruebas_codigo,
-                        pruebas_sexo: record.pruebas_sexo,
-                        serie: record.serie,
-                        origen: (record.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
-                    },
-                    undefined, {textMatchStyle: 'exact'});
+                    // Solo releer si la relacion competencia-prueba es cambiada.
+                    if (this.lastComptenciaPruebaVisitedId !== record.competencias_pruebas_id) {
+                        this.lastComptenciaPruebaVisitedId = record.competencias_pruebas_id;
+                        
+                        competenciasResultadosList.filterData({
+                            competencias_codigo: CompetenciasResultadosFormID.infoKey,
+                            pruebas_codigo: record.pruebas_codigo,
+                            pruebas_sexo: record.pruebas_sexo,
+                            serie: record.serie,
+                            origen: (record.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
+                        },
+                        undefined, {textMatchStyle: 'exact'});
+                    }
                 }
             },
             // Refrescamos la lista de resultados para la prueba e indicamos relectura de la lista de pruebas.
