@@ -27,7 +27,7 @@ isc.WinPerfilForm.addProperties({
             dataSource: mdl_perfil,
             formMode: this.formMode, // parametro de inicializacion
             keyFields: ['sys_systemcode', 'perfil_codigo'],
-            saveButton: this.getButton('save'),
+            saveButton: this.getFormButton('save'),
             focusInEditFld: 'perfil_descripcion',
             fields: [
                 {name: "sys_systemcode", editorType: "comboBoxExt", showPending: true,
