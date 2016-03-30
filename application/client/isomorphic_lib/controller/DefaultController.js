@@ -85,9 +85,8 @@ isc.DefaultController.addProperties({
             // atachamos los eventos a este controlador
             this.observe(this._formWindow.getFormButton('save'), "click", "observer._saveRecord();");
             this.observe(this._formWindow.getFormButton('exit'), "click", "observer._formWindow.close();");
-            this.observe(this._mantForm, "itemChanged",
-                "observer._formWindow.getFormButton('save').setDisabled(!observer._mantForm.valuesAreValid(false));return true;"
-                );
+            this.observe(this._mantForm, "itemChanged","observer._mantFormItemChanged(item,newValue)");
+            
             // Si debe observarse el dataSource de la forma , implementamos el observe
             if (this._mantForm.observeDataSource === true) {
                 this.observe(this._mantForm.dataSource, "transformResponse", "observer._formTransformResponse(dsResponse, dsRequest, data)");
@@ -187,6 +186,7 @@ isc.DefaultController.addProperties({
 
             }
         }
+        
         // Mostramos la forma
         this._formWindow.showWithMode(mode);
 
@@ -278,8 +278,8 @@ isc.DefaultController.addProperties({
         }
 
         // Se envia los valores que contiene la forma que son fuente de input para grabacion.
-        me._mantForm.preSaveData(me._mantForm.getValues());
-
+        me._mantForm.preSaveData(me._mantForm.formMode,me._mantForm.getValues());
+        var oldValues = me._mantForm.getOldValues();
 
         me._mantForm.saveData(function (dsResponse, data, dsRequest) {
             if (dsResponse.status === 0) {
@@ -292,11 +292,12 @@ isc.DefaultController.addProperties({
                 // Cuando este metodo es llamado los valores que vienen del record y son parte de la forma
                 // YA SE ENCUENTRAN ACTUALIZADOS CON LOS VALORES RETORNADOS DEL SERVER , POR ENDE SOLO SERA NECESARIO
                 // ACTUALIZAR DATOS VIRTUALES EN ESTE PUNTO.
-                me._mantForm.postSaveData(data);
+                me._mantForm.postSaveData(me._mantForm.formMode,data);
 
                 if (me._mantForm.isPostOperationDataRefreshMainListRequired(dsRequest.operationType)) {
                     me._refreshMainList();
                 }
+                me._mainWindow.afterFormRecordSaved(data,oldValues);
 
                 if (me._mantForm.formMode === 'add') {
                     var needCloseForm = false;
@@ -425,6 +426,30 @@ isc.DefaultController.addProperties({
             });
         }
     },
+    _mantFormItemChanged: function(item,newValue) {
+        // Manejo el status del boton grabar si luego del cambio del item de la forma hay valores invalidos en la misma.
+        this._formWindow.getFormButton('save').setDisabled(!this._mantForm.valuesAreValid(false));
+
+
+        // Notificamos a la grilla de detalle y a la forma interna de la grilla de detalle que existen cambios en la forma principal
+        // la idea aqui es que si el estado de los campos de dicha grilla y la forma dependen de los campos de la forma
+        // principal puedan aqui reaccionar a dichos cambios.
+
+        if (this._detailGrid) {
+            this._detailGrid.mainFormItemChanged(item,newValue);
+        }
+
+        var gridForm = this._formWindow.getDetailGridForm();
+        if (gridForm) {
+            gridForm.mainFormItemChanged(item,newValue);
+        }
+
+        //console.log(item.name);
+        //console.log(newValue);
+
+        return true;
+
+    },
     /******************************************************************************
      ******************************************************************************
      *
@@ -528,16 +553,17 @@ isc.DefaultController.addProperties({
      *      o no la forma , de lo contrario solo se hara si la forma no es visible.
      */
     _detailGridFormAdd: function (verifyisOpen) {
-        if (this._formWindow.getDetailGridForm().canAdd === true) {
+        if (this._detailGrid.canAdd === true) {
             var gridForm = this._formWindow.getDetailGridForm();
             // Solo si la forma interna de la grilla es visible o se indica se proceda
             // sin verificar su visibilidad procedemos a mostrar la forma.
             if (gridForm.isVisible() === false || verifyisOpen === false) {
                 // Ponemos mode add , copiamos los key fields que se requieren para unir la forma
                 // principal al registro nuevo de la forma interna y finalmente mostramos.
+                gridForm.setEditMode('add');
                 this._joinKeyFieldsCopyTo(this._formWindow.joinKeyFields, 'gridForm', gridForm ,null);
                 this._formWindow.detailGridFormShow();
-                gridForm.setEditMode('add');
+
             } else {
                 // Indicamos esta abierta.
                 if (verifyisOpen === true) {
@@ -592,7 +618,7 @@ isc.DefaultController.addProperties({
             if (dsResponse.status === 0) {
                 // Si no hay error informamos a la forma interna y la pantalla con la grilla principal
                 // por si requiere actualizarse algo con los cambios
-                gridForm.postSaveData(data);
+                gridForm.postSaveData(gridForm.formMode,data);
                 me._mainWindow.afterFormDetailGridRecordSaved(data, oldValues);
                 gridForm.afterDetailGridRecordSaved(me._detailGrid, -1, -1, data, oldValues);
                 // Si estamos en mode add seguimos editando un nuevo registro
