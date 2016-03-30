@@ -55,9 +55,16 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
             saveButton: this.getFormButton('save'),
             focusInEditFld: 'competencias_codigo',
             // Campo virtual o de cache de datos
-            _categorias_codigo: undefined,
-            _atletas_sexo: undefined,
-            _apppruebas_multiple: undefined,
+            _cachedData : {categorias_codigo:undefined,
+                            atletas_sexo:undefined,
+                            apppruebas_multiple: undefined,
+                            competencias_descripcion:undefined,
+                            paises_descripcion:undefined,
+                            ciudades_descripcion:undefined,
+                            atletas_nombre_completo:undefined,
+                            pruebas_descripcion:undefined
+
+             },
             fields: [{
                 ID: "far_cb_competencias",
                 name: "competencias_codigo",
@@ -99,8 +106,9 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                         // Luego se procede a limpiar variables y estados de los campos asociados
                         formAtletasPruebasResultados.clearValue('pruebas_codigo');
                         formAtletasPruebasResultados.clearValue('competencias_pruebas_fecha');
-                        formAtletasPruebasResultados._setCachedCompetenciasVars(null, null);
-                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true);
+                        formAtletasPruebasResultados.setValue('ciudades_altura',false);
+                        formAtletasPruebasResultados._cachedData.categorias_codigo = undefined;
+                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true,false);
                     }
                     return true;
                 },
@@ -109,16 +117,23 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     if (record) {
                         var newCategoria = record.categorias_codigo;
                         // Solo si la categoria ha cambiado .
-                        if (formAtletasPruebasResultados._categorias_codigo != newCategoria) {
+                        if (formAtletasPruebasResultados._cachedData.categorias_codigo != newCategoria) {
                             // Al cambiar la competencia se limpia la prueba ya que esa depende
                             // de la categoria de prueba (may,men,etc) y el sexo del atleta
                             // Luego se procede a limpiar variables y estados de los campos asociados
                             formAtletasPruebasResultados.clearValue('pruebas_codigo');
-                            formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true);
+                            formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true,false);
                         }
-                        // LA fecha de la competencia es seteada y las variables de cache de competencias son seteadas,
+                        formAtletasPruebasResultados._cachedData.competencias_descripcion = record.competencias_descripcion;
+                        formAtletasPruebasResultados._cachedData.ciudades_descripcion = record.ciudades_descripcion;
+                        formAtletasPruebasResultados._cachedData.paises_descripcion = record.paises_descripcion;
+                        formAtletasPruebasResultados._cachedData.ciudades_alture = record.ciudades_alture;
+                        formAtletasPruebasResultados._cachedData.categorias_codigo = record.categorias_codigo;
+
+                        // LA fecha de la competencia es seteada y si la ciudad esta en altura se setean
                         formAtletasPruebasResultados.setValue('competencias_pruebas_fecha', record.competencias_fecha_inicio);
-                        formAtletasPruebasResultados._setCachedCompetenciasVars(record.categorias_codigo, record.ciudades_altura);
+                        formAtletasPruebasResultados.setValue('ciudades_altura',record.ciudades_altura);
+
                     }
                 }
 
@@ -154,24 +169,26 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     if (value == null || value == undefined) {
                         formAtletasPruebasResultados.clearValue('pruebas_codigo');
                         //formAtletasPruebasResultados._setCachedAtletasVars(null);
-                        formAtletasPruebasResultados._atletas_sexo = undefined;
-                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true);
+                        formAtletasPruebasResultados._cachedData.atletas_sexo = undefined;
+                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true,false);
                     }
                     return true;
                 },
                 changed: function (form, item, value) {
                     var record = item.getSelectedRecord();
 
-                    if (record) {
+                    if (record) {                        
                         // Si el sexo ha cambiado limpiamos la prueba ya que esta asociada al sexo.
-                        if (formAtletasPruebasResultados._atletas_sexo != record.atletas_sexo) {
-                            formAtletasPruebasResultados._atletas_sexo = record.atletas_sexo;
+                        if (formAtletasPruebasResultados._cachedData.atletas_sexo != record.atletas_sexo) {
                             // Si limpio la prueba , limpio los inputs asociados con la misma.
                             // , esto es para el caso que varie el sexo con lo que se invalida
                             // el codigo de prueba.
                             formAtletasPruebasResultados.clearValue('pruebas_codigo');
-                            formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true);
+                            formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true,false);
                         }
+                        formAtletasPruebasResultados._cachedData.atletas_sexo = record.atletas_sexo;
+                        formAtletasPruebasResultados._cachedData.atletas_nombre_completo = record.atletas_nombre_completo;
+
                     }
                 }
             }, {
@@ -207,30 +224,27 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 minimumSearchLength: 3,
                 textMatchStyle: 'substring',
                 sortField: "pruebas_descripcion",
-                //                    _far_cb_pruebasTransformResponse: function (dsResponse, dsRequest, data) {
-                //                        console.log('_far_cb_pruebasTransformResponse')
-                //                        if (dsRequest.operationType === 'fetch' && data.response.status >=
-                //                            0 && dsRequest.data._textMatchStyle === 'exact' && dsRequest.data
-                //                            .pruebas_codigo != null) {
-                //                            console.log('DATA LEIDA NO EN BLOQUE ')
-                //                            console.log(dsResponse.data[0])
-                //                        }
-                //                    },
                 /**
                  * Se hace el override ya que este campo requiere que solo obtenga las pruebas
                  * que dependen de la de la categoria y el sexo del atleta,el primero proviene
                  * de la competencia y el segundo del atleta.
                  */
                 getPickListFilterCriteria: function () {
-                    // Recogo primero el filtro si existe uno y luego le agrego
-                    // la categoria y el sexo.
-                    var filter = this.Super("getPickListFilterCriteria", arguments);
-                    if (filter == null) {
-                        filter = {};
-                    }
+                        var filter = this.pickListCriteria;
+                        if (filter == null) {
+                            filter = {};
+                        }
+
+                        var filterSearchExact =  (filter.filterSearchExact ? filter.filterSearchExact : false);
+                        if (filterSearchExact === false) {
+                            filter = this.Super("getPickListFilterCriteria", arguments);
+                        }
+                        if (filter == null) {
+                            filter = {};
+                        }
                     // Si existe una  prueba en el filtro estamos en un edit por ende solo buscamos dicha prueba
                     // esto por eficiencia y no jalamaos todo innecesariamente.
-                    if (filter.pruebas_codigo && this.formMode !== 'add' && !filter.pruebas_descripcion) {
+                    if ((filter.pruebas_codigo  && !filter.pruebas_descripcion) || filterSearchExact === true) {
                         filter = {
                             _constructor: "AdvancedCriteria",
                             operator: "and",
@@ -241,11 +255,11 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                             }, {
                                 fieldName: "categorias_codigo",
                                 operator: "equals",
-                                value: formAtletasPruebasResultados._categorias_codigo
+                                value: formAtletasPruebasResultados._cachedData.categorias_codigo
                             }, {
                                 fieldName: 'pruebas_sexo',
                                 operator: 'equals',
-                                value: formAtletasPruebasResultados._atletas_sexo
+                                value: formAtletasPruebasResultados._cachedData.atletas_sexo
                             }]
                         };
                     }
@@ -260,11 +274,11 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                             }, {
                                 fieldName: "categorias_codigo",
                                 operator: "equals",
-                                value: formAtletasPruebasResultados._categorias_codigo
+                                value: formAtletasPruebasResultados._cachedData.categorias_codigo
                             }, {
                                 fieldName: 'pruebas_sexo',
                                 operator: 'equals',
-                                value: formAtletasPruebasResultados._atletas_sexo
+                                value: formAtletasPruebasResultados._cachedData.atletas_sexo
                             }]
                         };
 
@@ -276,11 +290,11 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                             criteria: [{
                                 fieldName: "categorias_codigo",
                                 operator: "equals",
-                                value: formAtletasPruebasResultados._categorias_codigo
+                                value: formAtletasPruebasResultados._cachedData.categorias_codigo
                             }, {
                                 fieldName: 'pruebas_sexo',
                                 operator: 'equals',
-                                value: formAtletasPruebasResultados._atletas_sexo
+                                value: formAtletasPruebasResultados._cachedData.atletas_sexo
                             }]
                         };
                     }
@@ -290,7 +304,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     // Si el campo esta en blaco limipamos el estado de los campos
                     // asoicados y los ponemos en su default.
                     if (value == null || value == undefined) {
-                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true);
+                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, true, true,false);
                     }
 
                     // Se verifica que si no estan seleccionados una competencia y un atleta no se puede seleccionar nada.
@@ -302,8 +316,12 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     return true;
                 },
                 changed: function (form, item, value) {
-                    formAtletasPruebasResultados._updateMarcasFieldsStatus(item.getSelectedRecord(), true, true);
-                    formAtletasPruebasResultados._updateSeriesValues('FI');
+                    var record = item.getSelectedRecord();
+                    if (record) {
+                        formAtletasPruebasResultados._cachedData.pruebas_descripcion = record.pruebas_descripcion;
+                        formAtletasPruebasResultados._updateMarcasFieldsStatus(record, true, true,false);
+                        formAtletasPruebasResultados._updateSeriesValues('FI');
+                    }
                 }
 
             }, {
@@ -345,7 +363,8 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     type: "requiredIf",
                     expression: "formAtletasPruebasResultados.getValue('competencias_pruebas_tipo_serie') != 'SU' && formAtletasPruebasResultados.getValue('competencias_pruebas_tipo_serie') != 'FI'",
                     errorMessage: "Indique el nro de hit,serie,etc"
-                }]
+                }],
+                defaultValue: 1,
             }, {
                 name: 'apr_resultados_separator',
                 defaultValue: "Resultado",
@@ -364,7 +383,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     // Si es cambiado de manual a electronico o viceversa , actualizamos los campos
                     // asociados al resultado ya que el formato del input depende de este valor.
                     formAtletasPruebasResultados._updateMarcasFieldsStatus(
-                    formAtletasPruebasResultados.getItem('pruebas_codigo').getSelectedRecord(), true, false);
+                    formAtletasPruebasResultados.getItem('pruebas_codigo').getSelectedRecord(), true, false,false);
                 }
             }, {
                 name: "atletas_resultados_resultado",
@@ -385,15 +404,15 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
 
                             // Para efectos de validacion es irrelevante si son manuales o electronicas , asumimos todas electronicas.
                             var minValue = isc.AtlUtils.getMarcaNormalizada(
-                            pruebasRecord.apppruebas_marca_menor, pruebasRecord.unidad_medida_codigo, false, 0);
+                                pruebasRecord.apppruebas_marca_menor, pruebasRecord.unidad_medida_codigo, false, 0);
                             var maxValue = isc.AtlUtils.getMarcaNormalizada(
-                            pruebasRecord.apppruebas_marca_mayor, pruebasRecord.unidad_medida_codigo, false, 0);
+                                pruebasRecord.apppruebas_marca_mayor, pruebasRecord.unidad_medida_codigo, false, 0);
                             var valueTest = isc.AtlUtils.getMarcaNormalizada(
-                            value, pruebasRecord.unidad_medida_codigo, false, 0);
+                                value, pruebasRecord.unidad_medida_codigo, false, 0);
                             if (parseInt(valueTest) < minValue || parseInt(
-                            valueTest) > maxValue) {
-                                validator.errorMessage = 'EL resultado esta fuera del rango permitido de ' + pruebasRecord.apppruebas_marca_menor + ' hasta ' + pruebasRecord.apppruebas_marca_mayor;
-                                return false;
+                                valueTest) > maxValue) {
+                                    validator.errorMessage = 'EL resultado esta fuera del rango permitido de ' + pruebasRecord.apppruebas_marca_menor + ' hasta ' + pruebasRecord.apppruebas_marca_mayor;
+                                    return false;
                             }
                         }
                         return true;
@@ -407,6 +426,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 length: 12,
                 width: '50',
                 textAlign: 'right'
+
             }, {
                 name: "atletas_resultados_puesto",
                 showPending: true,
@@ -423,15 +443,17 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 width: "*",
                 canCollapse: false,
                 align: 'center',
-                itemIds: ["ciudades_altura", //"ciudades_altura",
+                itemIds: ["ciudades_altura",
                 "competencias_pruebas_anemometro", "competencias_pruebas_material_reglamentario", "competencias_pruebas_observaciones"]
             }, {
                 name: "ciudades_altura",
                 type: 'staticText',
+                defaultValue: false,
                 // depende de la ciudad,
                 formatValue: function (value, record, form, item) {
                     if (value !== true) {
                         return 'No';
+                        Va
                     }
                     else {
                         return '<b style = "color:#FF6699;">Si</b>';
@@ -442,7 +464,10 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 showPending: true,
                 width: '50',
                 defaultValue: true,
-                labelAsTitle: true
+                labelAsTitle: true,
+                changed: function (form, item, value) {
+                    formAtletasPruebasResultados._setupViento(value);
+                }
             }, {
                 name: "competencias_pruebas_material_reglamentario",
                 showPending: true,
@@ -466,33 +491,40 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 name: "competencias_pruebas_id",
                 visible: false
             }],
+            preSaveData: function(mode,currentValues) {
+                // Si es prueba multiple ponemos cero para cumplir con las reglas
+                // del servidor que este valor debe existir
+                if (mode == 'add' && formAtletasPruebasResultados._cachedData.apppruebas_multiple == true) {
+                    formAtletasPruebasResultados.getItem('atletas_resultados_resultado').setValue(0);
+                }
+            },
             /**
              * Override para aprovecar que todas los datos modificados en esta pantalla que estan representados
              * en la lista que llama a esta se actualizen.
              *
+             * @param {String} 'add' agregar , 'edit' update.
              * @param {Object} record El registro recien grabado.
              */
-            postSaveData: function (record) {
-                var record_values;
+            postSaveData: function (mode,record) {
+               
+                //var record_values;
                 // Copiamos al registro los valores que son parte de este pero no de la forma.
-                record_values = formAtletasPruebasResultados.getItem('competencias_codigo').getSelectedRecord();
-                record.competencias_descripcion = record_values.competencias_descripcion;
-                record.paises_descripcion = record_values.paises_descripcion;
-                record.ciudades_descripcion = record_values.ciudades_descripcion;
-                record.categorias_codigo = record_values.categorias_codigo;
-                record.ciudades_altura = record_values.ciudades_altura;
-                record_values = formAtletasPruebasResultados.getItem('atletas_codigo').getSelectedRecord();
-                record.atletas_nombre_completo = record_values.atletas_nombre_completo;
-                record.atletas_sexo = record_values.atletas_sexo;
-                record_values = formAtletasPruebasResultados.getItem('pruebas_codigo').getSelectedRecord();
-                record.pruebas_descripcion = record_values.pruebas_descripcion;
-                record.apppruebas_multiple = formAtletasPruebasResultados._apppruebas_multiple;
+                record.competencias_descripcion  = formAtletasPruebasResultados._cachedData.competencias_descripcion;
+                record.paises_descripcion = formAtletasPruebasResultados._cachedData.paises_descripcion;
+                record.ciudades_descripcion = formAtletasPruebasResultados._cachedData.ciudades_descripcion;
+                record.categorias_codigo = formAtletasPruebasResultados._cachedData.categorias_codigo;
+                record.atletas_nombre_completo = formAtletasPruebasResultados._cachedData.atletas_nombre_completo;
+                record.atletas_sexo = formAtletasPruebasResultados._cachedData.atletas_sexo;
+                record.pruebas_descripcion = formAtletasPruebasResultados._cachedData.pruebas_descripcion;
+                record.apppruebas_multiple = formAtletasPruebasResultados._cachedData.apppruebas_multiple;
                 // Campos ensamblados del registro.
                 // Observaciones
                 if (record.ciudades_altura == true || formAtletasPruebasResultados.getValue('competencias_pruebas_manual') == true || 
                     formAtletasPruebasResultados.getValue('competencias_pruebas_anemometro') == false ||
                     formAtletasPruebasResultados.getValue('competencias_pruebas_material_reglamentario') == false) {
                     record.obs = true;
+                } else {
+                    record.obs = false;
                 }
 
                 // Serie
@@ -503,8 +535,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 else {
                     record.serie = tipo_serie + "-" + formAtletasPruebasResultados.getValue('competencias_pruebas_nro_serie');
                 }
-
-
             },
             /**
              * Override para aprovecha que solo en modo add se blanqueen todas las variables de cache y el estado
@@ -515,16 +545,17 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
             setEditMode: function (mode) {
                 this.Super("setEditMode", arguments);
                 if (mode == 'add') {
-                    formAtletasPruebasResultados._setCachedCompetenciasVars(null, null);
-                    formAtletasPruebasResultados._atletas_sexo = undefined;
-                    formAtletasPruebasResultados._updateMarcasFieldsStatus(null, null, null);
+                    // Empezamos con los valores del filtro de pruebas indefinidos
+                    formAtletasPruebasResultados._cachedData.categorias_codigo = undefined;
+                    formAtletasPruebasResultados._cachedData.atletas_sexo = undefined;
+
+                    // Se ponen los defaults al nuevo registro
+                    formAtletasPruebasResultados._updateMarcasFieldsStatus(null, null, null,false);
                     formAtletasPruebasResultados._updateSeriesValues('FI');
                 }
                 else {
-                    //     far_cb_competencias.invalidateDisplayValueCache();
-                    //     far_cb_atletas.invalidateDisplayValueCache();
-                    //     far_cb_pruebas.invalidateDisplayValueCache();
                     formAtletasPruebasResultados._updateSeriesValues(formAtletasPruebasResultados.getItem('competencias_pruebas_tipo_serie').getValue());
+                    formAtletasPruebasResultados._setupViento(formAtletasPruebasResultados.getValue('competencias_pruebas_anemometro'));
                 }
             },
             /**
@@ -552,16 +583,25 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
              */
             editSelectedData: function (component) {
                 var record = component.getSelectedRecord();
+                console.log('El record en editSelectedData')
+                console.log(record)
 
                 // Conservamos primero que todo los campos que se requieren para la criteria
                 // del combo de pruebas. Por optimizacion y garantizar que estos esten definidos
                 // antes de la busqueda , provienen de la grilla.
-                formAtletasPruebasResultados._categorias_codigo = record.categorias_codigo;
-                formAtletasPruebasResultados._atletas_sexo = record.atletas_sexo;
-                formAtletasPruebasResultados._setCachedCompetenciasVars(record.categorias_codigo, record.ciudades_altura);
-                formAtletasPruebasResultados._apppruebas_multiple = record.apppruebas_multiple;
+                formAtletasPruebasResultados._cachedData.categorias_codigo = record.categorias_codigo;
+                formAtletasPruebasResultados._cachedData.atletas_sexo = record.atletas_sexo;
+                formAtletasPruebasResultados._cachedData.apppruebas_multiple = record.apppruebas_multiple;
+
+                formAtletasPruebasResultados._cachedData.competencias_descripcion = record.competencias_descripcion;
+                formAtletasPruebasResultados._cachedData.paises_descripcion = record.paises_descripcion;
+                formAtletasPruebasResultados._cachedData.ciudades_descripcion = record.ciudades_descripcion;
+                formAtletasPruebasResultados._cachedData.atletas_nombre_completo = record.atletas_nombre_completo;
+                formAtletasPruebasResultados._cachedData.pruebas_descripcion = record.pruebas_descripcion;
+
 
                 this.Super('editSelectedData', arguments);
+
 
                 // Aqui forzamos solo a leer un registro justo el que corresponde a la prueba
                 // de este registro.
@@ -569,62 +609,19 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 //      fetchMissingValues: false,
                 //      autoFetchData: false
                 // De tal manera que se anulen lecturas no deseadas.
-                far_cb_pruebas.pickListCriteria = {
-                    "pruebas_codigo": record.pruebas_codigo
-                };
-
-                formAtletasPruebasResultados.getItem('pruebas_codigo').fetchData(function (
-                it, resp, data, req) {
-                    if (resp.status >= 0) {
-                        formAtletasPruebasResultados._updateMarcasFieldsStatus(data[0], false, false);
-                    }
-                    else {
-                        formAtletasPruebasResultados._updateMarcasFieldsStatus(null, false, false);
-                    }
-                    far_cb_pruebas.pickListCriteria = {};
-                });
-
+                winAtletasPruebasResultadosForm.fetchFieldRecord('pruebas_codigo',
+                        {"pruebas_codigo": record.pruebas_codigo,"pruebas_descripcion":undefined});
             },
-            /**
-             * Este metodo es llamado por el controlador cuando una linea de la grilla es debidamente grabada,
-             * en este caso dado que cada vez que se graba un item en la grilla el header es modificaco
-             * en el server con el nuevo total de la prueba combinada , se aprovecha en forzar
-             * en releer los datos y presentarlos adecuadamente, usando para eso updateCaches luego de un fetch.
-             * Hay que recordar que se fuerza un fetchJoined que trae la mism data que lo que se presenta en la grilla
-             * y en la forma de dicion (que trabaj sobre el selected record , claro).
-             */
-            afterDetailGridRecordSaved: function (listControl, rowNum, colNum, newValues, oldValues) {
-                var searchCriteria = {
-                    atletas_resultados_id: formAtletasPruebasResultados.getValue('atletas_resultados_id')
-                };
-                formAtletasPruebasResultados.filterData(searchCriteria, function (dsResponse, data, dsRequest) {
-                    if (dsResponse.status === 0) {
-                        // aprovechamos el mismo ds response pero le cambiamos el tipo de operacion
-                        // este update caches actualiza tanto la forma como la grilla (ambos comparten
-                        // el mismo modelo).
-                        dsResponse.operationType = 'update';
-                        DataSource.get(mdl_atletaspruebas_resultados).updateCaches(
-                        dsResponse);
-                    }
-                }, {
-                    operationId: 'fetchJoined',
-                    textMatchStyle: 'exact'
-                });
+            fieldDataFetched: function(formFieldName,record) {
+                if (formFieldName === 'pruebas_codigo') {
+                    formAtletasPruebasResultados._updateMarcasFieldsStatus(record, false, false,true);
+                } 
             },
+
             /*******************************************************************
              *
              * FUNCIONES DE SOPORTE PARA LA FORMA
              */
-            _setCachedCompetenciasVars: function (categorias_codigo, ciudades_altura) {
-                if (categorias_codigo) {
-                    formAtletasPruebasResultados._categorias_codigo = categorias_codigo;
-                    formAtletasPruebasResultados.getItem('ciudades_altura').setValue(ciudades_altura);
-                }
-                else {
-                    formAtletasPruebasResultados._categorias_codigo = undefined;
-                    formAtletasPruebasResultados.getItem('ciudades_altura').setValue(false);
-                }
-            },
             _updateSeriesValues: function (tipoSerieValue) {
                 var itTipoSerie = formAtletasPruebasResultados.getItem('competencias_pruebas_tipo_serie');
                 var itNroSerie = formAtletasPruebasResultados.getItem('competencias_pruebas_nro_serie');
@@ -638,7 +635,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     itNroSerie.show();
                 }
                 // Si es multiple ademas no se puede cambiar el tipo de serie por no haber.
-                if (formAtletasPruebasResultados._apppruebas_multiple == true) {
+                if (formAtletasPruebasResultados._cachedData.apppruebas_multiple == true) {
                     itTipoSerie.setValue('FI');
                     itTipoSerie.hide();
                     itNroSerie.setValue(1);
@@ -648,14 +645,15 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                     itTipoSerie.show();
                 }
             },
-            _updateMarcasFieldsStatus: function (record, clearResultado, pruebaChanged) {
+            _updateMarcasFieldsStatus: function (record, clearResultado, pruebaChanged,initOnly) {
                 if (record) {
-                    formAtletasPruebasResultados._apppruebas_multiple = record.apppruebas_multiple;
-                    formAtletasPruebasResultados.__updateMarcasFieldsStatus(pruebaChanged, clearResultado, record.unidad_medida_tipo, record.unidad_medida_regex_e, record.unidad_medida_regex_m, record.apppruebas_verifica_viento);
+                    formAtletasPruebasResultados._cachedData.apppruebas_multiple = record.apppruebas_multiple;
+                    formAtletasPruebasResultados.__updateMarcasFieldsStatus(pruebaChanged, clearResultado, record.unidad_medida_tipo, record.unidad_medida_regex_e, 
+                        record.unidad_medida_regex_m, record.apppruebas_verifica_viento,initOnly);
                 }
                 else {
-                    formAtletasPruebasResultados._apppruebas_multiple = undefined;
-                    formAtletasPruebasResultados.__updateMarcasFieldsStatus(true, true, undefined, undefined, undefined, undefined);
+                    formAtletasPruebasResultados._cachedData.apppruebas_multiple = undefined;
+                    formAtletasPruebasResultados.__updateMarcasFieldsStatus(true, true, undefined, undefined, undefined, undefined,initOnly);
                 }
             },
             /**
@@ -663,7 +661,8 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
              * campo pruebas_clasificacion_codigo.
              * @param {boolean} clearFields , true si los campos de marca menor y mayor deben ser limpiados y activados
              */
-            __updateMarcasFieldsStatus: function (pruebaChanged, clearResultado, unidad_medida_tipo, unidad_medida_regex_e, unidad_medida_regex_m, apppruebas_verifica_viento) {
+            __updateMarcasFieldsStatus: function (pruebaChanged, clearResultado, unidad_medida_tipo, unidad_medida_regex_e, unidad_medida_regex_m, apppruebas_verifica_viento,initOnly) {
+ 
                 var thisForm = formAtletasPruebasResultados; // para velocidad
                 var itemEsManual = thisForm.getItem('competencias_pruebas_manual');
                 var itViento = thisForm.getItem('competencias_pruebas_viento');
@@ -676,39 +675,33 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 // de manual  , de lo contrario de limpia el campo y se esconde.
                 if (unidad_medida_tipo == 'T') {
                     if (pruebaChanged) {
-                        thisForm._setFieldStatus(itemEsManual, true, false, true);
-                        thisForm._setFieldStatus(itPuesto, true, false, true);
-                        thisForm._setFieldStatus(itViento, false, true, true);
+                        thisForm._setFieldStatus(itemEsManual, true, false, true,initOnly);
+                        thisForm._setFieldStatus(itPuesto, true, false, true,initOnly);
+                        thisForm._setFieldStatus(itViento, false, true, true,initOnly);
                     }
                     else {
-                        thisForm._setFieldStatus(itemEsManual, true, false, false);
+                        thisForm._setFieldStatus(itemEsManual, true, false, false,initOnly);
                     }
                 }
                 else {
-                    thisForm._setFieldStatus(itemEsManual, false, true, true);
+                    thisForm._setFieldStatus(itemEsManual, false, true, true,initOnly);
                 }
 
                 // Si la prueba requeire verificacion de viento , se enciende el
                 // campo de viento y si la unidad de medida es tiempo o Metros (para los saltos largo/triple)
                 // se indica requerido.
-                if (apppruebas_verifica_viento == true) {
-                    thisForm._setFieldStatus(itViento, true, false, false);
-                    thisForm._setFieldStatus(itAnemometro, true, false, false);
-                    if (unidad_medida_tipo == 'T' || unidad_medida_tipo == 'M') {
-                        itViento.setRequired(true);
-                    }
-                    else {
-                        itViento.setRequired(false);
-                        thisForm._setFieldStatus(itViento, false, true, true);
-                        thisForm._setFieldStatus(itAnemometro, false, true, true);
-                    }
+                if (apppruebas_verifica_viento == true && (unidad_medida_tipo == 'T' || unidad_medida_tipo == 'M')) {
+                        // Si la prueba verifica viento , veamos si esta encendido el anemometro
+                        thisForm._setFieldStatus(itAnemometro, true, false, false,initOnly);
+                        thisForm._setupViento(itAnemometro.getValue());
                 }
                 else {
                     // Si no se requiere se apaga y se indica no requerido.
-                    thisForm._setFieldStatus(itViento, false, true, true);
-                    thisForm._setFieldStatus(itAnemometro, false, true, true);
-                    itViento.setRequired(false);
+                    thisForm._setFieldStatus(itAnemometro, false, true, true,initOnly);
+                    thisForm._setupViento(false);
                 }
+
+
 
                 // De acuerdo a si es manual o no se cambia la expresion regular para el input,
                 if (itemEsManual.getValue() == false) {
@@ -720,15 +713,27 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
 
                 // Para el caso de pruebas multiples no se requiere mostrar o editar los resultados de la
                 // prueba , ya que seran un summary de la grilla de detalle.
-                if (thisForm._apppruebas_multiple) {
-//                    itResultado.setValue('00');
-                    thisForm._setFieldStatus(itResultado, false, true, false);
-                    thisForm._setFieldStatus(itMaterial, false, true, false);
+                if (thisForm._cachedData.apppruebas_multiple) {
+
+                    itResultado.setRequired(false);
+                    thisForm._setFieldStatus(itResultado, false, true, false,initOnly);
+                    thisForm._setFieldStatus(itMaterial, false, true, false,initOnly);
                 }
                 else {
+                    itResultado.setRequired(true);
                     // Si el resultado debe ser blanqueado se procede.
-                    thisForm._setFieldStatus(itResultado, true, false, clearResultado);
-                    thisForm._setFieldStatus(itMaterial, true, false, false);
+                    thisForm._setFieldStatus(itResultado, true, false, clearResultado,initOnly);
+                    thisForm._setFieldStatus(itMaterial, true, false, false,initOnly);
+                }
+            },
+            _setupViento: function(withAnemometro) {
+                var itViento = formAtletasPruebasResultados.getItem('competencias_pruebas_viento');
+                if (withAnemometro === true) {
+                    itViento.enable();
+                    itViento.show();
+                } else {
+                    itViento.clearValue();
+                    itViento.hide();
                 }
             },
             /**
@@ -737,38 +742,36 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
              * @param {boolean} enable true para activar , false para desactivar.
              * @param {boolean} hide true para esconder , false para mostrar.
              * @param {boolean} clear true para limpiar campo, false no tocarlo.
+             * @param {boolean} initOnly Si se solo init no debera blanquarse ningun campo.
              */
-            _setFieldStatus: function (field, enable, hide, clear) {
-                if (hide == true) {
-                    field.hide();
+            _setFieldStatus: function (field, enable, hide, clear,initOnly) {
+                    if (clear == true ) {
+                        field.clearErrors();
+                        if (initOnly === false) {
+                            field.clearValue();
+                        }
+                    }
+                    if (hide == true) {
+                        field.hide();
+                    } else {
+                        field.show();
+                    }
+                    if (enable == false) {
+                        field.disable();
+                    } else {
+                        field.enable();
+                    }
                 }
-                else {
-                    field.show();
-                }
-
-                if (enable == false) {
-                    field.disable();
-                }
-                else {
-                    field.enable();
-                }
-                if (clear == true) {
-                    field.clearErrors();
-                    field.clearValue();
-                }
-            },
-            hide: function () {
-                this.Super("hide", arguments);
-            }
+           // }
             //  , cellBorder: 1
         });
     },
     canShowTheDetailGrid: function (mode) {
-        return formAtletasPruebasResultados._apppruebas_multiple;
+        return formAtletasPruebasResultados._cachedData.apppruebas_multiple;
     },
     isRequiredReadDetailGridData: function () {
         // Si es multiple se requiere releer , de lo ocntraio no es necesario.
-        return formAtletasPruebasResultados._apppruebas_multiple;
+        return formAtletasPruebasResultados._cachedData.apppruebas_multiple;
     },
     createDetailGridContainer: function (mode) {
         return isc.DetailGridContainer.create({
@@ -787,131 +790,182 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 showGridSummary: true,
                 fields: [{
                     name: "pruebas_descripcion",
-                    width: '50%',
-                    canEdit: false
+                    width: '50%'
                 }, {
                     name: "competencias_pruebas_fecha"
                 }, {
-                    name: "competencias_pruebas_manual",
-                    canToggle: false,
-                    showPending: true,
-                    changed: function (form, item, value) {
-                        var record = g_atletaspruebas_resultados_detalle.getCellRecord(
-                        g_atletaspruebas_resultados_detalle.getEditRow());
-                        g_atletaspruebas_resultados_detalle._setResultadoExpression(
-                        record, value);
-                        g_atletaspruebas_resultados_detalle.setEditValue(record, 'atletas_resultados_resultado', '');
-                    }
+                    name: "competencias_pruebas_manual"                    
                 }, {
-                    name: "competencias_pruebas_anemometro",
-                    showPending: true,
-                    canToggle: false
+                    name: "competencias_pruebas_anemometro"
                 }, {
-                    name: "competencias_pruebas_material_reglamentario",
-                    showPending: true,
-                    canToggle: false
+                    name: "competencias_pruebas_material_reglamentario"
                 }, {
                     name: "atletas_resultados_resultado",
-                    showPending: true,
-                    align: 'right',
-                    validators: [{
-                        type: "regexp",
-                        expression: '^$'
-                    }]
+                    align: 'right'
                 }, {
                     name: "competencias_pruebas_viento",
-                    showPending: true,
                     align: 'right',
                     showGridSummary: false
                 }, {
                     name: "atletas_resultados_puntos",
-                    showPending: true,
                     align: 'right',
                     showGridSummary: true,
                     summaryFunction: 'sum'
-                }],
-                rowEditorEnter: function (record, editValues, rowNum) {
-                    g_atletaspruebas_resultados_detalle._setResultadoExpression(record, editValues.competencias_pruebas_manual);
-                },
-                /**
-                 * La celdas de manual y viento seran editables solo en los casos que las pruebas
-                 * lo permitan , digamos las de velocidad requieren ambos , el salto largo solo el viento, etc.
-                 */
-                canEditCell: function (rowNum, colNum) {
-                    var fieldName = this.getFieldName(colNum);
-                    if (fieldName == 'competencias_pruebas_manual' || fieldName == 'competencias_pruebas_viento' || fieldName == 'competencias_pruebas_anemometro') {
+                },{
+                    name: "atletas_resultados_puesto",
+                    align: 'right',
+                    showGridSummary: false
+                }]
+            },
+            getFormComponent: function () {
+                var newGrid;
+                if (this.getChildForm() == undefined) {
+                    newGrid = isc.DynamicFormExt.create({
+                        ID: "gform_atletaspruebas_resultados_detalle",
+                        numCols: 6,
+                        colWidths: ["100", "250", "*", "*", "*", "*"],
+                        titleWidth: 100,
+                        fixedColWidths: false,
+                        padding: 5,
+                        dataSource: mdl_atletaspruebas_resultados_detalles,
+                        formMode: this.formMode, // parametro de inicializacion
+                        focusInEditFld: 'competencias_pruebas_fecha',
+                        fields: [{
+                             name: "pruebas_descripcion",
+                             colSpan: 2,
+                             width: 250,
+                             canEdit: false
+                         }, {
+                             name: "competencias_pruebas_fecha",
+                             useTextField: true,
+                             showPickerIcon: false,
+                             width: 150,
+                             endRow:true
+                         }, {
+                             name: "competencias_pruebas_manual",title: 'Manual ?',labelAsTitle: true,showPending: true,
+                             changed: function (form, item, value) {
+                                 var record = g_atletaspruebas_resultados_detalle.getSelectedRecord();
+                                 gform_atletaspruebas_resultados_detalle._setResultadoExpression(record, value);
+                                 gform_atletaspruebas_resultados_detalle.getField('atletas_resultados_resultado').setValue( '');
+                             }
+                         }, {
+                             name: "competencias_pruebas_anemometro",title: 'Anemometro ?',labelAsTitle: true,showPending: true,
+                             changed: function (form, item, value) {
+                                 gform_atletaspruebas_resultados_detalle._setupViento(value);
+                             }
+                         }, {
+                             name: "competencias_pruebas_material_reglamentario",title: 'Material Reglamentario ?',labelAsTitle: true,showPending: true,endRow:true
+                         }, {
+                             name: "atletas_resultados_resultado",                          
+                             showPending: true,
+                             validators: [{
+                                 type: "regexp",
+                                 expression: '^$'
+                             }]
+                         }, {
+                             name: "competencias_pruebas_viento",
+                             showPending: true,
+                             endRow:true
+                         }, {
+                             name: "atletas_resultados_puntos",
+                             showPending: true,
+                             startRow: true
+                         },{
+                            name: "atletas_resultados_puesto",
+                            showPending: true,
+                        }],
+                        editSelectedData: function(component) {
+                            this.Super('editSelectedData',arguments);
+                            var record = component.getSelectedRecord();
+                            gform_atletaspruebas_resultados_detalle._setResultadoExpression(record, record.competencias_pruebas_manual);
 
-                        var record = this.getRecord(rowNum);
-                        if (record) {
-                            if (record.unidad_medida_tipo != 'T' && fieldName == 'competencias_pruebas_manual') {
-                                return false;
+                            if (record.unidad_medida_tipo != 'T') {
+                                gform_atletaspruebas_resultados_detalle.getField('competencias_pruebas_manual').hide();
+                            } else {
+                                gform_atletaspruebas_resultados_detalle.getField('competencias_pruebas_manual').show();
                             }
-                            if (record.apppruebas_verifica_viento == false && fieldName == 'competencias_pruebas_viento') {
-                                return false;
+
+                            var compViento = gform_atletaspruebas_resultados_detalle.getField('competencias_pruebas_viento');
+
+                            if (record.apppruebas_verifica_viento == false) {
+                                compViento .hide();
+                                gform_atletaspruebas_resultados_detalle.getField('competencias_pruebas_anemometro').hide();
+                            } else {
+                                compViento.show();
+                                gform_atletaspruebas_resultados_detalle.getField('competencias_pruebas_anemometro').show();
+                                gform_atletaspruebas_resultados_detalle._setupViento(record.competencias_pruebas_anemometro);
                             }
-                            if (record.apppruebas_verifica_viento == false && fieldName == 'competencias_pruebas_anemometro') {
-                                return false;
+
+                        },
+                        _setupViento: function(withAnemometro) {
+                            var compViento = gform_atletaspruebas_resultados_detalle.getField('competencias_pruebas_viento');
+                            if (withAnemometro === false) {
+                               compViento.setValue( null);
+                               compViento.hide();
+                            } else {
+                               compViento.show();
+                            }
+                        },
+                                                /**
+                         * Este metodo es llamado por el controlador cuando una linea de la grilla es debidamente grabada,
+                         * en este caso dado que cada vez que se graba un item en la grilla el header es modificaco
+                         * en el server con el nuevo total de la prueba combinada , se aprovecha en forzar
+                         * en releer los datos y presentarlos adecuadamente, usando para eso updateCaches luego de un fetch.
+                         * Hay que recordar que se fuerza un fetchJoined que trae la mism data que lo que se presenta en la grilla
+                         * y en la forma de dicion (que trabaj sobre el selected record , claro).
+                         */
+                        afterDetailGridRecordSaved: function (listControl, rowNum, colNum, newValues, oldValues) {
+
+                            if (this.formMode === 'edit') {
+                                // Preservamos valores que no son leidos al grabarse.
+                                    newValues.unidad_medida_regex_e = oldValues.unidad_medida_regex_e;
+                                    newValues.unidad_medida_regex_m = oldValues.unidad_medida_regex_m;
+                                    newValues.unidad_medida_tipo = oldValues.unidad_medida_tipo;
+                                    newValues.pruebas_descripcion =  oldValues.pruebas_descripcion;
+                                    newValues.apppruebas_verifica_viento =  oldValues.apppruebas_verifica_viento;
+
+                                    // Dado que los valores de las pruebas individuales cambian el total de los puntos de la prueba
+                                    // y asi mismo pueden introducir observaciones , leemos el registro principal en edicion
+                                    // para actualizar los datos en la grilla principal y se reflejen los cambios infdirectos
+                                    // que pueden ocasionarse en las pruebas individuales.
+                                    var searchCriteria = {
+                                        atletas_resultados_id: formAtletasPruebasResultados.getValue('atletas_resultados_id')
+                                    };
+                                    formAtletasPruebasResultados.filterData(searchCriteria, function (dsResponse, data, dsRequest) {
+                                        if (dsResponse.status === 0) {
+                                            // aprovechamos el mismo ds response pero le cambiamos el tipo de operacion
+                                            // este update caches actualiza tanto la forma como la grilla (ambos comparten
+                                            // el mismo modelo).
+                                            dsResponse.operationType = 'update';
+                                            DataSource.get(mdl_atletaspruebas_resultados).updateCaches(dsResponse);
+                                        }
+                                    }, {
+                                        operationId: 'fetchJoined',
+                                        textMatchStyle: 'exact'
+                                    });
+                            }
+                        },
+                        _setResultadoExpression: function (record, manualStatus) {
+                            var itResultado = gform_atletaspruebas_resultados_detalle.getField('atletas_resultados_resultado');
+                            // De acuerdo a si es manual o no se cambia la expresion regular para el input,
+                            // validator.
+                            if (manualStatus != true) {
+                                itResultado.validators[0].expression = record.unidad_medida_regex_e;
+                            }
+                            else {
+                                itResultado.validators[0].expression = record.unidad_medida_regex_m;
                             }
                         }
-                    }
-                    return this.Super("canEditCell", arguments);
-                },
-                cancelEditing: function () {
-                    this.Super('cancelEditing', arguments);
-                    // Al cancelarse hay que recalcular ya que el framework no lo hace en ese caso
-                    this.recalculateGridSummary()
-                },
-                /**
-                 * Luego de grabar esta funcion es llamada , aqui aprovechamos en resetear a los nuevos valores
-                 * las partes del registro que basicamente no son del modelo de datos pero comonen parte de
-                 * la respuesta del servidor , ya que estos datos son requeridos para tomar acciones
-                 * sobre la grilla.
-                 */
-                editComplete: function (rowNum, colNum, newValues, oldValues, editCompletionEvent, dsResponse) {
-                    // Actualizamos el registro GRBADO no puedo usar setEditValue porque asumiria que el regisro recien grabado
-                    // difiere de lo editado y lo tomaria como pendiente de grabar.d
-                    // Tampoco puedo usar el record basado en el rowNum ya que si la lista esta ordenada al reposicionarse los registros
-                    // el rownum sera el que equivale al actual orden y no realmente al editado.
-                    // En otras palabras este evento es llamado despues de grabar correctamente Y ORDENAR SI HAY UN ORDER EN LA GRILLA
-                    // Para resolver esto actualizamos la data del response la cual luego sera usada por el framework SmartClient para actualizar el registro visual.
-                    dsResponse.data[0].unidad_medida_regex_e = oldValues.unidad_medida_regex_e;
-                    dsResponse.data[0].unidad_medida_regex_m = oldValues.unidad_medida_regex_m;
-                    // el registro es null si se ha eliminado
-                    // Si los valores no han cambiado es generalmente que viene de un delete
-                    if (newValues.pruebas_descripcion != oldValues.pruebas_descripcion) {
-                        dsResponse.data[0].pruebas_descripcion = (newValues.pruebas_descripcion ? newValues.pruebas_descripcion : oldValues.pruebas_descripcion);
-                    }
-
-                    if (newValues.apppruebas_verifica_viento != oldValues.apppruebas_verifica_viento) {
-                        dsResponse.data[0].apppruebas_verifica_viento = (newValues.apppruebas_verifica_viento ? newValues.apppruebas_verifica_viento : oldValues.apppruebas_verifica_viento)
-                    }
-
-                    if (newValues.unidad_medida_tipo != oldValues.unidad_medida_tipo) {
-                        dsResponse.data[0].unidad_medida_tipo = (newValues.unidad_medida_tipo ? dsResponse.data[0].unidad_medida_tipo : oldValues.unidad_medida_tipo)
-                    }
-
-                },
-                _setResultadoExpression: function (record, manualStatus) {
-                    var itResultado = g_atletaspruebas_resultados_detalle.getField('atletas_resultados_resultado');
-                    // De acuerdo a si es manual o no se cambia la expresion regular para el input,
-                    // validator.
-                    if (manualStatus != true) {
-                        itResultado.validators[0].expression = record.unidad_medida_regex_e;
-                    }
-                    else {
-                        itResultado.validators[0].expression = record.unidad_medida_regex_m;
-                    }
+                       // , cellBorder: 1
+                    });
+                } else {
+                    newGrid = g_atletaspruebas_resultados_detalle.getChildForm();
                 }
+                return newGrid;
             }
         });
     },
     initWidget: function () {
         this.Super("initWidget", arguments);
-        //  far_cb_competencias.observe(far_cb_competencias.optionDataSource, "transformResponse",
-        //      "observer._far_cb_competenciasTransformResponse(dsResponse, dsRequest, data)");
-        //  far_cb_atletas.observe(far_cb_atletas.optionDataSource, "transformResponse",
-        //      "observer._far_cb_atletasTransformResponse(dsResponse, dsRequest, data)");
-        //  far_cb_pruebas.observe(far_cb_pruebas.optionDataSource, "transformResponse",
-        //     "observer._far_cb_pruebasTransformResponse(dsResponse, dsRequest, data)");
     }
 });
