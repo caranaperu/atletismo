@@ -38,7 +38,7 @@ isc.RestDataSource.create({
         {name: "atletas_resultados_resultado", title: 'Marca', required: true},
         {name: "atletas_resultados_puntos", title: "Puntos", type: 'integer', required: true,
             validators: [{type: "lengthRange", max: 4}, {type: 'integerRange', min: 0, max: 1400}]},
-        //       {name: "atletas_resultados_puesto", title: "Puesto", type: 'integer'},
+        {name: "atletas_resultados_puesto", title: "Puesto", type: 'integer'},
         {name: "competencias_pruebas_id", type: 'integer', required: true},
         {name: "competencias_pruebas_origen_id", type: 'integer', required: true},
         {name: "versionId", type: 'integer', nullReplacementValue: null},
@@ -52,6 +52,12 @@ isc.RestDataSource.create({
         {name: "unidad_medida_regex_e"},
         {name: "unidad_medida_regex_m"}
     ],
+    /**
+     * @private
+     * Lista de campos que   no deben ser proesados por transforRequest asi sean null o undefined
+     * @property {array} lista de campos con excepcion.
+     */
+    _noTransformFields: ['competencias_pruebas_viento','atletas_resultados_puesto'],
     /**
      * Normalizador de valores booleanos ya que el backend pude devolver de diversas formas
      * segun la base de datos.
@@ -83,16 +89,19 @@ isc.RestDataSource.create({
      */
     transformRequest: function(dsRequest) {
         var data = this.Super("transformRequest", arguments);
+        console.log(this._noTransformFields)
         if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
             //  var data = isc.addProperties({}, dsRequest.data);
             // Solo para los valores que se encuentran en oldValues de no existir
             // se deja como esta.
             for (var fieldName in dsRequest.oldValues) {
-                if (data[fieldName] === undefined) {
-                    data[fieldName] = dsRequest.oldValues[fieldName];
-                }
-                else if (data[fieldName] === null) {
-                    data[fieldName] = '';
+                if (this._noTransformFields.indexOf(fieldName) === -1) {
+                    if (data[fieldName] === undefined) {
+                        data[fieldName] = dsRequest.oldValues[fieldName];
+                    }
+                    else if (data[fieldName] === null) {
+                        data[fieldName] = '';
+                    }
                 }
             }
             return data;
