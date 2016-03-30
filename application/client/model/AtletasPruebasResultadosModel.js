@@ -20,7 +20,8 @@ isc.RestDataSource.create({
         {name: "competencias_codigo", title: "Competencia", foreignKey: "mdl_competencias.competencias_codigo", required: true},
         {name: "pruebas_codigo", title: "Prueba", foreignKey: "mdl_pruebas.pruebas_codigo", required: true},
         {name: "competencias_pruebas_fecha", title: "Fecha", type: 'date', required: true},
-        {name: "competencias_pruebas_viento", title: "Viento", type: 'double'},
+        {name: "competencias_pruebas_viento", title: "Viento", type: 'double',getFieldValue: function(r, v, f, fn) {
+                return mdl_atletaspruebas_resultados._getVientoFieldValue(v);}},
         {name: "competencias_pruebas_tipo_serie", title: "Tipo Serie",
             valueMap: {"HT": 'Hit', "SR": 'Serie', "SM": 'SemiFinal', "FI": 'Final', "SU": 'Unica'},
             required: true},
@@ -66,6 +67,21 @@ isc.RestDataSource.create({
             }},
     ],
     /**
+     * Normalizador de valores para el viento ya que este puede ser null dependiendo de la prueba,
+     * El problemas es que si llega con valor null a la forma este campo no es copiado a los values
+     * de edicion al cargar inicialmente los valores. Se requiere que siempre tenga un valor aunque este sea imposible
+     * lo cual indicara a la forma que en realidad es un valor nulo.
+     * Se entiende que las pruebas que requieren viento traern un valor no null , de no ser asi los datos
+     * en la bd seran errados.
+     */
+    _getVientoFieldValue: function(value) {
+        if (value === 'null' || value === 'NULL'  || value === null) {
+            return null;
+        } else {
+            return value;
+        }
+    },
+    /**
      * Normalizador de valores booleanos ya que el backend pude devolver de diversas formas
      * segun la base de datos.
      */
@@ -94,6 +110,14 @@ isc.RestDataSource.create({
      */
     transformRequest: function (dsRequest) {
         var data = this.Super("transformRequest", arguments);
+
+        // En el caso que el viento sea de menos 100 por protocolo se enviara null ya que ese es un numero magico
+        // usado para enteder que es nulo.
+//        if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
+//            if (data['competencias_pruebas_viento'] === '-100') {
+//                data['competencias_pruebas_viento'] = null;
+//            }
+//        }
         // Si esxiste criteria y se define que proviene de un advanced filter y la operacion es fetch,
         // construimos un objeto JSON serializado como texto para que el lado servidor lo interprete correctamente.
         if (data.criteria && data._constructor == "AdvancedCriteria" && data._operationType == 'fetch') {
