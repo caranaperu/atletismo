@@ -47,7 +47,7 @@ isc.WinAtletasCarnetsForm.addProperties({
                 var record = this.getValues();
                 formAtletasCarnets._atletas_nombre_completo = record.atletas_nombre_completo;
             },
-            postSaveData: function(record) {
+            postSaveData: function(mode,record) {
                 record.atletas_nombre_completo = formAtletasCarnets._atletas_nombre_completo;
             }
         });
