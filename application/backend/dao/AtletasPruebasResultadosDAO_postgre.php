@@ -57,7 +57,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                 '\'' . $record->getActivo() . '\'::boolean,' .
                 '\'' . $record->getUsuario() . '\'::character varying,' .
                 'null::integer, 0::BIT)';
-        //echo $sql;
+ //       echo $sql;
         return $sql;
     }
 
@@ -131,7 +131,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
 
         } else {
             if ($subOperation == 'fetchJoined') {
-                $sql = //'select * from ('.
+                $sql = 'select * from ('.
                          'select atletas_resultados_id,cp.pruebas_codigo,eatl.atletas_codigo,atletas_nombre_completo,pr.pruebas_descripcion,cp.competencias_pruebas_tipo_serie,' .
                         'cp.competencias_pruebas_nro_serie,cp.competencias_codigo,' .
                         '(case when apppruebas_viento_individual = TRUE THEN eatl.atletas_resultados_viento ELSE competencias_pruebas_viento END) as competencias_pruebas_viento,' .
@@ -149,8 +149,9 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
                         'inner join tb_app_pruebas_values pv on pv.apppruebas_codigo = pr.pruebas_generica_codigo ' .
                         'inner join tb_competencias co on co.competencias_codigo = cp.competencias_codigo ' .
                         'inner join tb_ciudades ciu on ciu.ciudades_codigo = co.ciudades_codigo ' .
-                        'inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo ';
-                       // . ' ) answer ';
+                        'inner join tb_paises pa on pa.paises_codigo = ciu.paises_codigo '.
+                        'where competencias_pruebas_origen_combinada=FALSE'.
+                         ' ) answer ';
             } else if ($subOperation == 'fetchAtletasResultadoPrueba') {
                 // Devuelve los datos de una tleta para una especifica prueba , si la prueba es null retornara todos
                 // sus resultados.
@@ -186,12 +187,6 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
             }
 
 
-            if (isset($constraints)) {
-                $orderby = $constraints->getSortFieldsAsString();
-                if ($orderby !== NULL) {
-                    $sql .= ' order by ' . $orderby;
-                }
-            }
 
             // TRUCO: dado que en pantalla se muestra e resultado para formato visual , ese
             // campo no puede ser usado para el sort , en este caso se cambia por el real
@@ -200,11 +195,19 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
             // que son parte de una prueba combinada, ya que estas se editaran a traves de las mismas.
             if ($subOperation == 'fetchAtletasResultadoPrueba') {
                 $sql = str_replace('atletas_resultados_resultado', 'norm_resultado', $sql);
-            } else if ($subOperation == 'fetchJoined') {
-                if (strpos($sql, 'where') !== false) {
-                    $sql = str_replace('where', 'where competencias_pruebas_origen_combinada=FALSE and', $sql);
-                } else {
-                    $sql .= ' where competencias_pruebas_origen_combinada=FALSE';
+            } //else if ($subOperation == 'fetchJoined') {
+//                if (strpos($sql, 'where') !== false) {
+//                    $sql = str_replace('where', 'where competencias_pruebas_origen_combinada=FALSE and', $sql);
+//                } else {
+//                    $sql .= ' where competencias_pruebas_origen_combinada=FALSE';
+//                }
+         //   }
+
+            // order by?
+            if (isset($constraints)) {
+                $orderby = $constraints->getSortFieldsAsString();
+                if ($orderby !== NULL) {
+                    $sql .= ' order by ' . $orderby;
                 }
             }
 
@@ -215,9 +218,11 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
             if ($endRow > $startRow) {
                 $sql .= ' LIMIT ' . ($endRow - $startRow) . ' OFFSET ' . $startRow;
             }
+
+
         }
         $sql = str_replace('like', 'ilike', $sql);
-          echo $sql;
+     //   echo $sql;
         return $sql;
     }
 
