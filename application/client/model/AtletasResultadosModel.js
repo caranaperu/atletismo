@@ -20,9 +20,9 @@ isc.RestDataSource.create({
         {name: "atletas_resultados_puntos", title: "Puntos", type: 'integer', required: true,
             validators: [{type: "lengthRange", max: 4}, {type: 'integerRange', min: 0, max: 1400}]},
         {name: "atletas_resultados_puesto", title: "Puesto", type: 'integer', required: true,
-            validators: [{type: 'integerRange', min: 1, max: 100}]},
+            validators: [{type: 'integerRange', min: 0, max: 100}]},
         {name: "atletas_resultados_viento", title: "Viento", type: 'double',
-            validators: [{type: "lengthRange", min: 1}, {type: 'floatRange', min: 0.00, max: 20.00}]},
+            validators: [{type: "lengthRange", min: 1}, {type: 'floatRange', min: -20.00, max: 20.00}]},
         {name: "competencias_pruebas_id", type: 'integer'},
         {name: "versionId", type: 'integer', nullReplacementValue: null},
         // Virtuales producto de un join
