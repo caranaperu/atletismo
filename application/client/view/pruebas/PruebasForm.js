@@ -102,7 +102,7 @@ isc.WinPruebasForm.addProperties({
                     formPruebas._apppruebas_multiple = false;
                 }
             },
-            postSaveData: function (record) {
+            postSaveData: function (mode,record) {
                 var record_values;
                 record_values = formPruebas.getItem('pruebas_generica_codigo').getSelectedRecord();
                 record.pruebas_clasificacion_descripcion = record_values.pruebas_clasificacion_descripcion;
