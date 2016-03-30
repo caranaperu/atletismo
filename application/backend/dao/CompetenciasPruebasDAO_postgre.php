@@ -51,6 +51,8 @@ class CompetenciasPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDA
                 '\'' . $record->get_competencias_pruebas_material_reglamentario() . '\'::boolean,' .
                 '\'' . $record->get_competencias_pruebas_observaciones() . '\'::character varying,' .
                 '\'false\'::boolean,' . //  protected
+                '\'true\'::boolean,' . //  protected
+                '\'true\'::boolean,' . //  protected
                 '\'' . $record->getActivo() . '\'::boolean,' .
                 '\'' . $record->getUsuario() . '\'::character varying,' .
                 'null::integer, 0::BIT)';
@@ -210,7 +212,7 @@ FROM tb_competencias_pruebas where pruebas_codigo =
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
 
         /* @var $record  CompetenciasPruebasModel */
-        $sql = 'select * from (select sp_competencias_pruebas_save_record(' .
+            $sql = 'select * from (select sp_competencias_pruebas_save_record(' .
                 $record->get_competencias_pruebas_id().'::integer,' .
                 '\'' . $record->get_competencias_codigo() . '\'::character varying,' .
                 '\'' . $record->get_pruebas_codigo() . '\'::character varying,' .
@@ -224,10 +226,11 @@ FROM tb_competencias_pruebas where pruebas_codigo =
                 '\'' . $record->get_competencias_pruebas_material_reglamentario() . '\'::boolean,' .
                 '\'' . $record->get_competencias_pruebas_observaciones() . '\'::character varying,' .
                 '\'false\'::boolean,' . //  protected
+                '\'true\'::boolean,' . //  protected
+                '\'true\'::boolean,' . //  protected
                 '\'' . $record->getActivo() . '\'::boolean,' .
                 '\'' . $record->get_Usuario_mod() . '\'::character varying,' .
                 $record->getVersionId() . '::integer, 1::BIT)  as insupd) as ans where insupd is not null';
-
         return $sql;
 
     }
