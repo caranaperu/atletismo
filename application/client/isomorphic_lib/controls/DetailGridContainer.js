@@ -134,6 +134,18 @@ isc.DetailGridContainer.addProperties({
             */
            fieldDataFetched: function(formFieldName,record) {
                return;
+           },
+           /**
+            * Metodo hook llamado desde el controlador cada vez que un item en la forma principal
+            * es cambiado , aqui podra tomarse decisiones por ejemplo de cambiar la visibilidad
+            * de campos en la grilla que depena de un determinado valor de la forma principal.
+            *
+            * @param {FormItem} item este tambien puede ser un combobox
+            * @param {any} newValue
+            * @returns true , SIEMPRE DEBE RETORNA TRUE
+            */
+           mainFormItemChanged: function(item,newValue) {
+               return true;
            }
                 //  editEvent: 'click',
                 // Esta propiedad es propia , si es false no agregara nuevos items.
