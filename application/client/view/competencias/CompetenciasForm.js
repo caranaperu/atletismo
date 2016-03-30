@@ -106,7 +106,7 @@ isc.WinCompetenciasForm.addProperties({
                 formCompetencias._competencia_tipo_descripcion = record.competencia_tipo_descripcion;
                 formCompetencias._ciudades_altura = record.ciudades_altura;
             },
-            postSaveData: function (record) {
+            postSaveData: function (mode,record) {
                 record.paises_descripcion = formCompetencias._paises_descripcion;
                 record.ciudades_descripcion = formCompetencias._ciudades_descripcion;
                 record.categorias_descripcion = formCompetencias._categorias_descripcion;
