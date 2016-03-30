@@ -73,7 +73,7 @@ class AtletasPruebasResultadosDetalleDAO_postgre extends \app\common\dao\TSLAppB
                     '(case when apppruebas_viento_individual = TRUE THEN ar.atletas_resultados_viento ELSE competencias_pruebas_viento END) as competencias_pruebas_viento,' .
                     'competencias_pruebas_manual,competencias_pruebas_tipo_serie,competencias_pruebas_nro_serie,' .
                     'competencias_pruebas_anemometro, competencias_pruebas_material_reglamentario, competencias_pruebas_origen_combinada, competencias_pruebas_observaciones, ' .
-                    'coalesce(atletas_codigo,\'' . $constraints->getFilterField('atletas_codigo') . '\') as atletas_codigo,atletas_resultados_resultado,atletas_resultados_puntos,pr.pruebas_descripcion,apppruebas_marca_menor,' .
+                    'coalesce(atletas_codigo,\'' . $constraints->getFilterField('atletas_codigo') . '\') as atletas_codigo,atletas_resultados_resultado,atletas_resultados_puntos,atletas_resultados_puesto,pr.pruebas_descripcion,apppruebas_marca_menor,' .
                     'apppruebas_marca_menor,apppruebas_verifica_viento,unidad_medida_regex_e,unidad_medida_tipo,unidad_medida_regex_m,' .
                     'eatl.activo,ar.xmin as "versionId" ' .
                     'from  tb_competencias_pruebas eatl ' .
