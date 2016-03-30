@@ -4,7 +4,7 @@
 
 -- Dumped from database version 9.3.11
 -- Dumped by pg_dump version 9.3.10
--- Started on 2016-03-10 04:34:09 PET
+-- Started on 2016-03-30 14:29:00 PET
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -14,7 +14,7 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 
 --
--- TOC entry 223 (class 3079 OID 11829)
+-- TOC entry 224 (class 3079 OID 11829)
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
@@ -22,8 +22,8 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 2627 (class 0 OID 0)
--- Dependencies: 223
+-- TOC entry 2634 (class 0 OID 0)
+-- Dependencies: 224
 -- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
@@ -33,7 +33,7 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 621 (class 1247 OID 16390)
+-- TOC entry 624 (class 1247 OID 16390)
 -- Name: sexo_full_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -47,7 +47,7 @@ CREATE TYPE sexo_full_type AS ENUM (
 ALTER TYPE public.sexo_full_type OWNER TO postgres;
 
 --
--- TOC entry 624 (class 1247 OID 16398)
+-- TOC entry 627 (class 1247 OID 16398)
 -- Name: sexo_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -60,7 +60,78 @@ CREATE TYPE sexo_type AS ENUM (
 ALTER TYPE public.sexo_type OWNER TO postgres;
 
 --
--- TOC entry 236 (class 1255 OID 16403)
+-- TOC entry 290 (class 1255 OID 37520)
+-- Name: fn_can_modify_manual_status(integer, integer, character varying); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION fn_can_modify_manual_status(p_competencias_pruebas_id integer, p_atletas_resultados_id integer, p_mode character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 01-04-2014
+
+Funcion que verifica si s posible cambiar el statius manual de la prueba.
+el parametro  p_mode debe ser 'strict', 'add' , 'update'  si no se envia ni add o update se asumira strict
+
+IMPORTANTE: debe ser llamado antes de agregar o modificar la prueba en la tabla tb_atletas_resultados
+de lo contrario dara falso positivo o negativo.
+
+Historia : Creado 28-03-2016
+*/
+DECLARE v_count integer;
+DECLARE v_return integer = 1;
+
+BEGIN
+
+
+	IF p_mode  != 'add' AND p_mode != 'update'
+	THEN
+	    SELECT COUNT(1) INTO v_count
+	    	FROM tb_atletas_resultados
+	    	where competencias_pruebas_id = p_competencias_pruebas_id;
+
+		IF v_count > 0
+		THEN
+			v_return := 0;
+		END IF;
+	ELSE
+		IF p_mode = 'add'
+		THEN
+		    SELECT COUNT(1) INTO v_count
+		    	FROM tb_atletas_resultados
+		    	where competencias_pruebas_id = p_competencias_pruebas_id;
+
+			IF v_count >  0
+			THEN
+				v_return := 0;
+			END IF;
+		ELSE
+			IF p_mode = 'update'
+			THEN
+			    SELECT COUNT(1) INTO v_count
+			    	FROM tb_atletas_resultados
+			    	where competencias_pruebas_id = p_competencias_pruebas_id
+			    		and atletas_resultados_id != p_atletas_resultados_id;
+
+				IF v_count >= 1
+				THEN
+					v_return := 0;
+				END IF;
+			END IF;
+		END IF;
+	END IF;
+
+	RETURN v_return;
+
+END;
+$$;
+
+
+ALTER FUNCTION public.fn_can_modify_manual_status(p_competencias_pruebas_id integer, p_atletas_resultados_id integer, p_mode character varying) OWNER TO atluser;
+
+--
+-- TOC entry 237 (class 1255 OID 16403)
 -- Name: fn_get_combinada_resultados_as_text(integer, character varying, character varying); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -132,7 +203,7 @@ $$;
 ALTER FUNCTION public.fn_get_combinada_resultados_as_text(p_competencia_id integer, p_atleta_codigo character varying, p_categoria_codigo character varying) OWNER TO atluser;
 
 --
--- TOC entry 239 (class 1255 OID 16404)
+-- TOC entry 240 (class 1255 OID 16404)
 -- Name: fn_get_marca_normalizada(character varying, character varying, boolean, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -257,7 +328,7 @@ $$;
 ALTER FUNCTION public.fn_get_marca_normalizada(p_timetotest character varying, p_type character varying, p_ismanual boolean, p_adjustmanualtime numeric) OWNER TO postgres;
 
 --
--- TOC entry 240 (class 1255 OID 16405)
+-- TOC entry 241 (class 1255 OID 16405)
 -- Name: fn_get_marca_normalizada_tonumber(character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -352,7 +423,7 @@ $$;
 ALTER FUNCTION public.fn_get_marca_normalizada_tonumber(p_marca character varying, p_type character varying) OWNER TO postgres;
 
 --
--- TOC entry 241 (class 1255 OID 16406)
+-- TOC entry 242 (class 1255 OID 16406)
 -- Name: fn_get_marca_normalizada_totext(character varying, character varying, boolean, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -529,7 +600,7 @@ $$;
 ALTER FUNCTION public.fn_get_marca_normalizada_totext(p_timetotest character varying, p_type character varying, p_ismanual boolean, p_adjustmanualtime numeric) OWNER TO postgres;
 
 --
--- TOC entry 242 (class 1255 OID 16408)
+-- TOC entry 243 (class 1255 OID 16408)
 -- Name: fn_get_records_for_result_as_text(integer, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -660,7 +731,7 @@ $$;
 ALTER FUNCTION public.old_sp_atletas_resultados_delete_for_competencia(p_competencias_codigo character varying, p_usuario_mod character varying) OWNER TO atluser;
 
 --
--- TOC entry 243 (class 1255 OID 16409)
+-- TOC entry 244 (class 1255 OID 16409)
 -- Name: old_sp_atletas_resultados_detalle_save_record_old(integer, integer, character varying, character varying, numeric, boolean, integer, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -917,7 +988,7 @@ $$;
 ALTER FUNCTION public.old_sp_atletas_resultados_detalle_save_record_old(p_atletas_resultados_detalle_id integer, p_atletas_resultados_id integer, p_pruebas_codigo character varying, p_atletas_resultados_detalle_resultado character varying, p_atletas_resultados_detalle_viento numeric, p_atletas_resultados_detalle_manual boolean, p_atletas_resultados_detalle_puntos integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 237 (class 1255 OID 16412)
+-- TOC entry 238 (class 1255 OID 16412)
 -- Name: old_sp_atletas_resultados_save_record(integer, character varying, character varying, character varying, date, character varying, numeric, integer, boolean, boolean, character varying, character, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -1301,7 +1372,7 @@ $$;
 ALTER FUNCTION public.old_sp_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_atletas_resultados_fecha date, p_atletas_resultados_resultado character varying, p_atletas_resultados_viento numeric, p_atletas_resultados_puesto integer, p_atletas_resultados_manual boolean, p_atletas_resultados_invalida boolean, p_atletas_resultados_observaciones character varying, p_atletas_resultados_origen character, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 238 (class 1255 OID 16415)
+-- TOC entry 239 (class 1255 OID 16415)
 -- Name: old_sp_atletas_resultados_save_record_old(integer, character varying, character varying, character varying, date, character varying, numeric, integer, boolean, boolean, boolean, character varying, character, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -2093,7 +2164,7 @@ $$;
 ALTER FUNCTION public.old_sp_pruebas_atletas_resultados_save_record(p_atletas_resultados_id integer, p_atletas_codigo character varying, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_combinada boolean, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_manual boolean, p_competencias_pruebas_observaciones character varying, p_atletas_resultados_resultado character varying, p_atletas_resultados_puntos integer, p_atletas_resultados_puesto integer, p_atletas_resultados_invalida boolean, p_atletas_resultados_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 244 (class 1255 OID 16418)
+-- TOC entry 245 (class 1255 OID 16418)
 -- Name: sp_apppruebas_save_record(character varying, character varying, character varying, character varying, character varying, boolean, boolean, boolean, numeric, numeric, integer, numeric, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -2270,7 +2341,7 @@ $$;
 ALTER FUNCTION public.sp_apppruebas_save_record(p_apppruebas_codigo character varying, p_apppruebas_descripcion character varying, p_pruebas_clasificacion_codigo character varying, p_apppruebas_marca_menor character varying, p_apppruebas_marca_mayor character varying, p_apppruebas_multiple boolean, p_apppruebas_verifica_viento boolean, p_apppruebas_viento_individual boolean, p_apppruebas_viento_limite_normal numeric, p_apppruebas_viento_limite_multiple numeric, p_apppruebas_nro_atletas integer, p_apppruebas_factor_manual numeric, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 245 (class 1255 OID 16421)
+-- TOC entry 246 (class 1255 OID 16421)
 -- Name: sp_asigperfiles_save_record(integer, integer, integer, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -2344,7 +2415,48 @@ $$;
 ALTER FUNCTION public.sp_asigperfiles_save_record(p_asigperfiles_id integer, p_perfil_id integer, p_usuarios_id integer, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
--- TOC entry 246 (class 1255 OID 16422)
+-- TOC entry 288 (class 1255 OID 37501)
+-- Name: sp_atletas_pruebas_resultado_clear_viento(integer, boolean, boolean, character varying); Type: FUNCTION; Schema: public; Owner: atluser
+--
+
+CREATE FUNCTION sp_atletas_pruebas_resultado_clear_viento(p_competencias_pruebas_id integer, p_competencias_pruebas_anemometro boolean, p_apppruebas_viento_individual boolean, p_usuario character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+/**
+Autor : Carlos arana Reategui
+Fecha : 08-10-2013
+
+Stored procedure que pone en blanco el viento de todos los resultudados asociado a la prueba x de una competencia
+especificada por su id.
+
+Retorna 1 si hizo update y 0 si no fue necesario ya que la prueba no requiere viento individual.
+
+Historia : Creado 27-03-2016
+*/
+BEGIN
+	-- solo si no hay anemometro y se requiere viento individual
+	IF p_competencias_pruebas_anemometro = FALSE AND p_apppruebas_viento_individual = TRUE
+	THEN
+	    -- Requerimos limpiar el viento en los resultados individuales de la prueba?
+		UPDATE
+			tb_atletas_resultados
+		SET
+			atletas_resultados_viento = null,
+			usuario_mod = p_usuario
+		WHERE competencias_pruebas_id = p_competencias_pruebas_id;
+		RETURN 1;
+	ELSE
+		RETURN 0;
+	END IF;
+
+END;
+$$;
+
+
+ALTER FUNCTION public.sp_atletas_pruebas_resultado_clear_viento(p_competencias_pruebas_id integer, p_competencias_pruebas_anemometro boolean, p_apppruebas_viento_individual boolean, p_usuario character varying) OWNER TO atluser;
+
+--
+-- TOC entry 247 (class 1255 OID 16422)
 -- Name: sp_atletas_pruebas_resultados_detalle_save_record(integer, integer, character varying, date, numeric, boolean, boolean, boolean, character varying, character varying, integer, integer, boolean, boolean, character varying, integer); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -2419,6 +2531,8 @@ DECLARE v_competencias_pruebas_id integer;
 DECLARE v_prueba_saved integer=0;
 DECLARE v_unidad_medida_tipo character(1);
 DECLARE v_apppruebas_viento_individual boolean;
+DECLARE v_competencias_pruebas_anemometro_old boolean;
+DECLARE v_check_update_resultados_viento boolean = FALSE;
 
 BEGIN
 
@@ -2427,8 +2541,8 @@ BEGIN
 	-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
 	-- de lo contrario es imposible hacer un update.
 	-- Solo busca aquellas que no son parte de una combinada.
-	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_codigo
-		INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_codigo
+	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_codigo,competencias_pruebas_anemometro
+		INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_codigo,v_competencias_pruebas_anemometro_old
 	FROM tb_competencias_pruebas cp
 	WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
 
@@ -2461,18 +2575,22 @@ BEGIN
 		END IF;
 	END IF;
 
-		-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
-	-- lo cual no es logico.
-	IF EXISTS(SELECT 1
-		FROM tb_competencias_pruebas pr
-		inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
-		where   atletas_resultados_puesto=p_atletas_resultados_puesto and
-			atletas_resultados_resultado != p_atletas_resultados_resultado and
-			pr.competencias_pruebas_id = p_competencias_pruebas_id  and
-			atletas_codigo != p_atletas_codigo)
+	-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
+	-- lo cual no es logico. Si el puesto es 0 no se valida ya que se toma como no conocido
+	IF p_atletas_resultados_puesto > 0
 	THEN
-		RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+		IF EXISTS(SELECT 1
+			FROM tb_competencias_pruebas pr
+			inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
+			where   atletas_resultados_puesto=p_atletas_resultados_puesto and
+				atletas_resultados_resultado != p_atletas_resultados_resultado and
+				pr.competencias_pruebas_id = p_competencias_pruebas_id  and
+				atletas_codigo != p_atletas_codigo)
+		THEN
+			RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+		END IF;
 	END IF;
+
 	-----------------------------------------------------------------------------------------------------------
 	-----------------------------------------------------------------------------------------------------------
 	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
@@ -2566,12 +2684,26 @@ BEGIN
 	END IF;
 
 
+--	IF v_apppruebas_verifica_viento = TRUE AND p_competencias_pruebas_anemometro = TRUE --AND v_apppruebas_viento_individual = TRUE
+--	THEN
+--		IF p_competencias_pruebas_viento is null
+--		THEN
+--			-- La prueba requiere se indique el viento
+--			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+--		END IF;
+--	ELSE
+--		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
+--		p_competencias_pruebas_viento := NULL;
+--	END IF;
+
+	-- Se ha tomado la decision que el viento pueda ser null en cualquier caso ya que en la preactica muchas veces este
+	-- no se conoce sobre todo en pruebas hitoricas.
 	IF v_apppruebas_verifica_viento = TRUE --AND v_apppruebas_viento_individual = TRUE
 	THEN
-		IF p_competencias_pruebas_viento is null
+		IF p_competencias_pruebas_anemometro = FALSE
 		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+			-- No habra viento en el caso que el anemometro no este encendido.
+		p_competencias_pruebas_viento := NULL;
 		END IF;
 	ELSE
 		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
@@ -2585,12 +2717,6 @@ BEGIN
 		p_competencias_pruebas_manual := false;
 	END IF;
 
-	-- Si la prueba no requiere verificacion de viento ponemos
-	-- que si tuvo.
-	IF v_apppruebas_verifica_viento = FALSE
-	THEN
-		p_competencias_pruebas_anemometro := true;
-	END IF;
 
 	---------------------------------------------------------------------
 	-- FIN VALIDACIONES PRIMARIAS - AHORA GRABACION.
@@ -2612,6 +2738,8 @@ BEGIN
 			p_competencias_pruebas_material_reglamentario,
 			p_competencias_pruebas_observaciones,
 			p_atletas_resultados_protected,
+			false,
+			true,
 			p_activo ,
 			p_usuario,
 			NULL::integer,
@@ -2624,6 +2752,8 @@ BEGIN
 		-- La prueba no existe
 		RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
 	 END IF;
+
+	 v_check_update_resultados_viento := TRUE;
 
 	-- Si se conoce la id del resultado se trata de un update.
 	IF p_atletas_resultados_id IS NOT NULL
@@ -2717,6 +2847,11 @@ BEGIN
 						)
 		WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id and atletas_codigo = p_atletas_codigo;
 
+		IF v_check_update_resultados_viento = TRUE AND v_competencias_pruebas_anemometro_old != p_competencias_pruebas_anemometro
+		THEN
+			PERFORM sp_atletas_pruebas_resultado_clear_viento(v_competencias_pruebas_id, p_competencias_pruebas_anemometro,v_apppruebas_viento_individual, p_usuario);
+		END IF;
+
 		RETURN 1;
 	ELSE
 		--RAISE '' USING ERRCODE = 'record modified';
@@ -2795,8 +2930,13 @@ DECLARE v_isFromCombinada boolean := false;
 DECLARE v_competencias_pruebas_tipo_serie_old character varying(2);
 DECLARE v_competencias_pruebas_nro_serie_old integer;
 DECLARE v_apppruebas_viento_individual BOOLEAN;
+DECLARE v_check_update_resultados_viento BOOLEAN = FALSE;
+DECLARE v_competencias_pruebas_anemometro_old BOOLEAN;
+DECLARE v_competencias_pruebas_manual_old BOOLEAN;
+DECLARE v_can_modify INTEGER;
 
 BEGIN
+	--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record';
 	-----------------------------------------------------------------------------------------------------------
 	-----------------------------------------------------------------------------------------------------------
 	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
@@ -2887,12 +3027,15 @@ BEGIN
 
 	IF p_is_update = '1'
 	THEN
+		-- RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - UPDATE';
+
 		-- La prueba debe existir (tb_competencias_pruebas) antes de actualizar
 		-- de lo contrario es imposible hacer un update.
 		-- Solo busca aquellas que no son parte de una combinada.
-		SELECT competencias_pruebas_id,competencias_pruebas_origen_id,competencias_pruebas_tipo_serie,competencias_pruebas_nro_serie
+		SELECT competencias_pruebas_id,competencias_pruebas_origen_id,competencias_pruebas_tipo_serie,competencias_pruebas_nro_serie,competencias_pruebas_anemometro,
+				competencias_pruebas_manual
 			INTO v_competencias_pruebas_id,v_competencias_pruebas_origen_id,
-				v_competencias_pruebas_tipo_serie_old,v_competencias_pruebas_nro_serie_old
+				v_competencias_pruebas_tipo_serie_old,v_competencias_pruebas_nro_serie_old,v_competencias_pruebas_anemometro_old,v_competencias_pruebas_manual_old
 		FROM tb_competencias_pruebas cp
 		WHERE cp.competencias_pruebas_id =  (select competencias_pruebas_id from tb_atletas_resultados where atletas_resultados_id = p_atletas_resultados_id);
 
@@ -2904,6 +3047,23 @@ BEGIN
 		THEN
 			-- La prueba no existe
 			RAISE 'Para la competencia , la prueba no se ha encontrado , esto es incorrecto durante una actualizacion de resultados'  USING ERRCODE = 'restrict_violation';
+		ELSE
+			-- Si la competencia existe validamos si el puesto otorgado es el correcto.
+			-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
+			-- lo cual no es logico. Si el puesto es 0 no se valida ya que se toma como no conocido
+			IF p_atletas_resultados_puesto > 0
+			THEN
+				IF EXISTS(SELECT 1
+					FROM tb_competencias_pruebas pr
+					inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
+					where   atletas_resultados_puesto=p_atletas_resultados_puesto and
+						atletas_resultados_resultado != p_atletas_resultados_resultado and
+						pr.competencias_pruebas_id = v_competencias_pruebas_id  and
+						atletas_codigo != p_atletas_codigo)
+				THEN
+					RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+				END IF;
+			END IF;
 		END IF;
 
 		IF v_competencias_pruebas_origen_id IS NOT NULL
@@ -2914,10 +3074,7 @@ BEGIN
 
 		--Si es null el numero de serie le ponemos 1
 		p_competencias_pruebas_nro_serie := coalesce(p_competencias_pruebas_nro_serie,1);
-		--RAISE NOTICE 'v_competencias_pruebas_tipo_serie_old = %',v_competencias_pruebas_tipo_serie_old;
-		--RAISE NOTICE 'p_competencias_pruebas_tipo_serie = %',p_competencias_pruebas_tipo_serie;
-		--RAISE NOTICE 'v_competencias_pruebas_nro_serie_old = %',v_competencias_pruebas_nro_serie_old;
-		--RAISE NOTICE 'p_competencias_pruebas_nro_serie = %',p_competencias_pruebas_nro_serie;
+
 
 		-- en este caso necesitamos agregar la prueba o hacerle update si ya existe.
 		-- Debemos recordar que el tipo y nro de serie hacen unica una prueba por ende si estos valores han cmbiado
@@ -2926,6 +3083,8 @@ BEGIN
 		-- Trataremos de eliminar la anterior prueba siempre que no tenga resultados adjuntos.
 		IF v_competencias_pruebas_tipo_serie_old != p_competencias_pruebas_tipo_serie OR v_competencias_pruebas_nro_serie_old != p_competencias_pruebas_nro_serie
 		THEN
+			--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - UPDATE - MODIFICADO COMPETENCIA PRUEBA';
+
 			--RAISE NOTICE 'ESTA MODIFICADO';
 			-- Buscamos si esta posible nueva prueba ya existe
 			SELECT competencias_pruebas_id INTO v_competencias_pruebas_changed_id
@@ -2939,6 +3098,8 @@ BEGIN
 			--Si existe un id , ya existe y actualizamos de lo contrario agregamos.
 			IF v_competencias_pruebas_changed_id IS NOT NULL
 			THEN
+				--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - UPDATE - MODIFICADO COMPETENCIA PRUEBA - EXISTE';
+
 
 				-- Debemos actualizar la prueba
 				-- Ejecutamos sin interesarnos el retorno ya que no chequearemos
@@ -2957,13 +3118,18 @@ BEGIN
 					p_competencias_pruebas_material_reglamentario,
 					p_competencias_pruebas_observaciones,
 					p_atletas_resultados_protected,
+					FALSE,
+					TRUE, -- Aqui si debe validar el cambio de automatico/manual o viceversa ya que se esta actualizando la prueba y esto afectaria a los demas resultados.
 					p_activo ,
 					p_usuario,
 					NULL::integer,
 					1::bit);
 
+				v_check_update_resultados_viento := TRUE;
 				v_competencias_pruebas_id := v_competencias_pruebas_changed_id;
 			ELSE
+				--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - UPDATE - MODIFICADO COMPETENCIA PRUEBA - NO EXISTE';
+
 				-- Debemos agregar la prueba a la competencia ya que no existe.
 				PERFORM  sp_competencias_pruebas_save_record(
 					NULL::integer,
@@ -2979,6 +3145,8 @@ BEGIN
 					p_competencias_pruebas_material_reglamentario,
 					p_competencias_pruebas_observaciones,
 					p_atletas_resultados_protected,
+					FALSE,
+					FALSE,
 					p_activo ,
 					p_usuario,
 					NULL::integer,
@@ -3014,6 +3182,8 @@ BEGIN
 					p_competencias_pruebas_material_reglamentario,
 					p_competencias_pruebas_observaciones,
 					p_atletas_resultados_protected,
+					FALSE,
+					FALSE,
 					p_activo ,
 					p_usuario,
 					NULL::integer,
@@ -3021,13 +3191,31 @@ BEGIN
 			 into v_prueba_saved
 			 where updins is not null;
 
-			RAISE NOTICE 'GRABO LA COMPETENCIA';
+			--RAISE NOTICE 'GRABO LA COMPETENCIA';
 
 			 IF v_prueba_saved != 1
 			 THEN
 				-- La prueba no existe
 				RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
 			 END IF;
+
+			 v_check_update_resultados_viento := TRUE;
+		END IF;
+
+		-- Si el tipo de de cronometraje manual cambia de estado solo se permitira cambiarlo si solo existe un resultaodo qe seria
+		-- justo este que vamos a hacer update.
+		IF v_competencias_pruebas_manual_old != p_competencias_pruebas_manual
+		THEN
+			v_can_modify := (select fn_can_modify_manual_status(v_competencias_pruebas_id,p_atletas_resultados_id,'update'))::INTEGER;
+			IF v_can_modify = 0
+			THEN
+				IF v_competencias_pruebas_manual_old = TRUE
+				THEN
+					RAISE 'No puede cambiarse el estado manual de la prueba ya que existen mas resultados ya con resultados asignados con el cronometraje manual'  USING ERRCODE = 'restrict_violation';
+				ELSE
+					RAISE 'No puede cambiarse el estado manual de la prueba ya que existen mas resultados ya con resultados asignados con el cronometraje electronico'  USING ERRCODE = 'restrict_violation';
+				END IF;
+			END IF;
 		END IF;
 
 		-- El  update
@@ -3045,21 +3233,23 @@ BEGIN
 			atletas_resultados_puntos =  (case when v_prueba_multiple_new = false and v_isFromCombinada = true then p_atletas_resultados_puntos else atletas_resultados_puntos end),
 			atletas_resultados_puesto =  p_atletas_resultados_puesto,
 			-- el viento solo si es una prueba que la requiera individualmente y no sea la principal combinada.
+			-- Si requiere viento pero no tiene anemomentro se colocara null ya que no se conoce el viento.
 			atletas_resultados_viento = (case when coalesce(v_prueba_multiple_new,false) = TRUE
 				THEN NULL
-				ELSE (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end)
+				ELSE (case when v_apppruebas_viento_individual = TRUE AND p_competencias_pruebas_anemometro = true then p_competencias_pruebas_viento else NULL end)
 			END),
 			atletas_resultados_protected =  p_atletas_resultados_protected,
 			activo = p_activo,
 			usuario_mod = p_usuario
 		WHERE atletas_resultados_id = p_atletas_resultados_id  and xmin =p_version_id ;
 
-		RAISE NOTICE  'COUNT ID --> %', FOUND;
+		--RAISE NOTICE  'COUNT ID --> %', FOUND;
 
 		-- Todo ok , si es una prueba parte de una combinada actualizamos el total de puntos
 		-- en la principal.
 		IF FOUND THEN
 			--RAISE NOTICE  'ACTUALIZA EL RESULTADO';
+			--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - UPDATE tb_competencias_pruebas t1';
 
 			-- Vemos si alguna prueba de esta competencia tiene datos que invalidan la prueba , ya sea anemometro , material , o si
 			-- el resultado es manual , para asi actualizar la prueba principal.
@@ -3093,6 +3283,11 @@ BEGIN
 				WHERE competencias_pruebas_id = v_competencias_pruebas_origen_id AND atletas_codigo = p_atletas_codigo;
 			END IF;
 
+			IF v_check_update_resultados_viento = TRUE AND v_competencias_pruebas_anemometro_old != p_competencias_pruebas_anemometro
+			THEN
+				PERFORM sp_atletas_pruebas_resultado_clear_viento(v_competencias_pruebas_id, p_competencias_pruebas_anemometro,v_apppruebas_viento_individual, p_usuario);
+			END IF;
+
 			RETURN 1;
 		ELSE
 			--RAISE '' USING ERRCODE = 'record modified';
@@ -3108,8 +3303,10 @@ BEGIN
 		--RAISE NOTICE 'El origen combinada a chequear es %',p_competencias_pruebas_origen_combinada;
 		--RAISE NOTICE 'v_competencias_pruebas_id %',v_competencias_pruebas_id;
 
-		SELECT competencias_pruebas_id ,competencias_pruebas_origen_id
-		INTO v_competencias_pruebas_id ,v_competencias_pruebas_origen_id
+		--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - ADD';
+
+		SELECT competencias_pruebas_id ,competencias_pruebas_origen_id ,competencias_pruebas_anemometro,competencias_pruebas_manual
+		INTO v_competencias_pruebas_id ,v_competencias_pruebas_origen_id,v_competencias_pruebas_anemometro_old,v_competencias_pruebas_manual_old
 		FROM tb_competencias_pruebas cp
 		WHERE cp.competencias_codigo =  p_competencias_codigo AND
 		      cp.pruebas_codigo =  p_pruebas_codigo AND
@@ -3132,11 +3329,20 @@ BEGIN
 		-- Si la prueba no existe la creamos
 		IF v_competencias_pruebas_id IS NULL
 		THEN
+
+			--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - ADD - v_competencias_pruebas_id __ISNULL';
+
 			-- La prueba multiple usara siempre estos defaults, para grabarse
 			IF coalesce(v_prueba_multiple_new,false) = TRUE
 			THEN
 				p_competencias_pruebas_tipo_serie := 'FI';
 				p_competencias_pruebas_nro_serie := 1;
+
+				-- La prueba multiple usara siempre estos defaults.
+				p_competencias_pruebas_viento := NULL;
+				p_competencias_pruebas_manual := FALSE;
+				p_competencias_pruebas_anemometro := TRUE;
+				p_competencias_pruebas_material_reglamentario := TRUE;
 
 			END IF;
 
@@ -3158,20 +3364,15 @@ BEGIN
 				p_competencias_pruebas_material_reglamentario,
 				p_competencias_pruebas_observaciones,
 				p_atletas_resultados_protected,
+				FALSE,
+				FALSE,
 				p_activo ,
 				p_usuario,
 				NULL::integer,
 				0::bit);
 
-			-- La prueba multiple usara siempre estos defaults.
-			IF coalesce(v_prueba_multiple_new,false) = TRUE
-			THEN
-				p_competencias_pruebas_viento := NULL;
-				p_competencias_pruebas_manual := FALSE;
-				p_competencias_pruebas_anemometro := TRUE;
-				p_competencias_pruebas_material_reglamentario := TRUE;
 
-			END IF;
+			v_competencias_pruebas_manual_old := p_competencias_pruebas_manual;
 
 			-- Si se ha grabado obtenemos el id.
 			SELECT competencias_pruebas_id INTO v_competencias_pruebas_id
@@ -3189,10 +3390,90 @@ BEGIN
 -- 			RAISE NOTICE 'p_competencias_pruebas_nro_serie %',p_competencias_pruebas_nro_serie;
 -- 			RAISE NOTICE 'p_competencias_pruebas_origen_combinada %',p_competencias_pruebas_origen_combinada;
 
+  		ELSE
+  			-- EXISTE LA COMPETENCIA PERO EL RESULTADO DEL ATLETA ES NUEVO
+  			----------------------------------------------------------------------------------------------
+
+			-- Si la competencia existe validamos si el puesto otorgado es el correcto.
+			-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
+			-- lo cual no es logico. Si el puesto es 0 no se valida ya que se toma como no conocido
+			IF p_atletas_resultados_puesto > 0
+			THEN
+				IF EXISTS(SELECT 1
+					FROM tb_competencias_pruebas pr
+					inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
+					where   atletas_resultados_puesto=p_atletas_resultados_puesto and
+						atletas_resultados_resultado != p_atletas_resultados_resultado and
+						pr.competencias_pruebas_id = v_competencias_pruebas_id  and
+						atletas_codigo != p_atletas_codigo)
+				THEN
+					RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+				END IF;
+			END IF;
+
+
+  			-- Si la prueba existe entonces vemos si debemos actualizarla , para esto ya que podria
+  			-- haber cambiado el status de manual , material reglamentario,viento si la prueba
+  			-- requiere viento general, etc
+
+			--RAISE NOTICE 'REGRABANDO LA COMPETENCIA';
+			-- Grabamos cambios a la prueba
+			select * from (
+				select sp_competencias_pruebas_save_record(
+					v_competencias_pruebas_id::integer,
+					p_competencias_codigo,
+					p_pruebas_codigo,
+					NULL::integer,
+					p_competencias_pruebas_fecha,
+					p_competencias_pruebas_viento,
+					p_competencias_pruebas_manual,
+					p_competencias_pruebas_tipo_serie,
+					p_competencias_pruebas_nro_serie,
+					p_competencias_pruebas_anemometro,
+					p_competencias_pruebas_material_reglamentario,
+					p_competencias_pruebas_observaciones,
+					p_atletas_resultados_protected,
+					FALSE,
+					FALSE,
+					p_activo ,
+					p_usuario,
+					NULL::integer,
+					1::bit) as updins) as ans
+			 into v_prueba_saved
+			 where updins is not null;
+
+			--RAISE NOTICE 'REGRABO LA COMPETENCIA';
+
+			 IF v_prueba_saved != 1
+			 THEN
+				-- La prueba no existe
+				RAISE 'Error actualizando la prueba....'  USING ERRCODE = 'restrict_violation';
+			 END IF;
+
+			v_check_update_resultados_viento := TRUE;
 
 		END IF;
 
+
+		-- Si el tipo de de cronometraje manual cambia de estado solo se permitira cambiarlo si no exiten resultados asignados antes del add
+		IF v_competencias_pruebas_manual_old != p_competencias_pruebas_manual
+		THEN
+			--RAISE 'cpid = % , arid = %',v_competencias_pruebas_id,p_atletas_resultados_id  USING ERRCODE = 'restrict_violation';
+			v_can_modify := (select fn_can_modify_manual_status(v_competencias_pruebas_id,null,'add'))::INTEGER;
+			IF v_can_modify = 0
+			THEN
+				IF v_competencias_pruebas_manual_old = TRUE
+				THEN
+					RAISE 'No puede cambiarse el estado manual de la prueba ya que existen mas resultados ya con resultados asignados con el cronometraje manual'  USING ERRCODE = 'restrict_violation';
+				ELSE
+					RAISE 'No puede cambiarse el estado manual de la prueba ya que existen mas resultados ya con resultados asignados con el cronometraje electronico'  USING ERRCODE = 'restrict_violation';
+				END IF;
+			END IF;
+		END IF;
+
+
 		--RAISE notice 'El id de la competencia prueba es %',v_competencias_pruebas_id;
+		--RAISE NOTICE 'sp_atletas_pruebas_resultados_save_record - ADD - tb_atletas_resultados ';
 
 		-- Con el id de la prueba creada o existente grabamos el resultado.
 		INSERT INTO
@@ -3214,9 +3495,10 @@ BEGIN
 			 p_atletas_resultados_puesto,
 			 0,
 			 -- el viento solo si es una prueba que la requiera individualmente y no sea la principal combinada.
+			 -- si requiere el viento debe estar prendido el anemometro de lo contrario el viento sera null
 			 (case when coalesce(v_prueba_multiple_new,false) = TRUE
 				THEN NULL
-				ELSE (case when v_apppruebas_viento_individual = TRUE then p_competencias_pruebas_viento else NULL end)
+				ELSE (case when v_apppruebas_viento_individual = TRUE AND p_competencias_pruebas_anemometro = true then p_competencias_pruebas_viento else NULL end)
 			 END),
 			 p_atletas_resultados_protected,
 			 p_activo,
@@ -3255,6 +3537,12 @@ BEGIN
 			INNER JOIN tb_pruebas_detalle p on p.pruebas_detalle_prueba_codigo  = cp.pruebas_codigo
 			WHERE cp.competencias_pruebas_origen_id = v_competencias_pruebas_id
 			order by pruebas_detalle_orden;
+		END IF;
+
+		-- Si debe chequearse , entonces si se dan las condiciones debemos poner en blanco todas las pruebas individuales que tenian viento.
+		IF v_check_update_resultados_viento = TRUE AND v_competencias_pruebas_anemometro_old != p_competencias_pruebas_anemometro
+		THEN
+			PERFORM sp_atletas_pruebas_resultado_clear_viento(v_competencias_pruebas_id, p_competencias_pruebas_anemometro,v_apppruebas_viento_individual, p_usuario);
 		END IF;
 
 		RETURN 1;
@@ -3379,7 +3667,7 @@ $$;
 ALTER FUNCTION public.sp_atletas_resultados_delete_record(p_atletas_resultados_id integer, p_include_prueba boolean, p_usuario_mod character varying, p_version_id integer) OWNER TO atluser;
 
 --
--- TOC entry 247 (class 1255 OID 16433)
+-- TOC entry 252 (class 1255 OID 16433)
 -- Name: sp_atletas_resultados_save_record(integer, character varying, integer, character varying, integer, integer, numeric, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
@@ -3435,7 +3723,7 @@ DECLARE v_competencias_pruebas_origen_id integer;
 DECLARE v_apppruebas_viento_individual boolean;
 DECLARE v_pruebas_codigo character varying(15);
 DECLARE v_competencias_pruebas_fecha date;
-
+DECLARE v_competencias_pruebas_anemometro boolean;
 BEGIN
 
 	-----------------------------------------------------------------------------------------------------------
@@ -3446,10 +3734,10 @@ BEGIN
 	-- de lo contrario es imposible hacer un update.
 	-- Solo busca aquellas que no son parte de una combinada.
 	SELECT competencias_pruebas_id,competencias_pruebas_origen_id,pruebas_codigo,competencias_pruebas_fecha,
-		categorias_codigo
+		categorias_codigo,competencias_pruebas_anemometro
 	INTO
 		v_competencias_pruebas_id,v_competencias_pruebas_origen_id,v_pruebas_codigo,v_competencias_pruebas_fecha,
-		v_categorias_codigo
+		v_categorias_codigo,v_competencias_pruebas_anemometro
 	FROM tb_competencias_pruebas cp
 	INNER JOIN tb_competencias c on c.competencias_codigo=cp.competencias_codigo
 	WHERE cp.competencias_pruebas_id =  p_competencias_pruebas_id;
@@ -3490,9 +3778,10 @@ BEGIN
 	where pr.pruebas_codigo = v_pruebas_codigo;
 
 	-- Si es el registro de la prueba principal de una combinada , no permitimos
-	-- grabar o actualizar ya que esta es dependiente de las pruebas que la componen y
+	-- agregar ya que esta es dependiente de las pruebas que la componen y
 	-- depende de los cambios en sus componentes para modificarse.
-	IF coalesce(v_prueba_multiple,false) = TRUE
+	-- La actualizacion solo actualizara el puesto
+	IF coalesce(v_prueba_multiple,false) = TRUE AND p_is_update != '1'
 	THEN
 		-- La prueba no existe
 		RAISE 'Solo resultados para pruebas dentro de una combinada son permitidos'  USING ERRCODE = 'restrict_violation';
@@ -3566,8 +3855,14 @@ BEGIN
 	THEN
 		IF p_atletas_resultados_viento is null
 		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+			IF v_competencias_pruebas_anemometro = TRUE
+			THEN
+				-- La prueba requiere se indique el viento
+				RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+			ELSE
+				-- Sin anemometro no hay viento tomado.
+				p_atletas_resultados_viento := NULL;
+			END IF;
 		END IF;
 	ELSE
 		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
@@ -3575,36 +3870,49 @@ BEGIN
 	END IF;
 
 	-- Validamos que para esta prueba no existan otros atletas con el mismo puesto pero diferente resultado ,
-	-- lo cual no es logico.
-	IF EXISTS(SELECT 1
-		FROM tb_competencias_pruebas pr
-		inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
-		where   atletas_resultados_puesto=p_atletas_resultados_puesto and
-			atletas_resultados_resultado != p_atletas_resultados_resultado and
-			pr.competencias_pruebas_id = p_competencias_pruebas_id  and
-			atletas_codigo != p_atletas_codigo)
+	-- lo cual no es logico. el puesto 0 no necesita verificarse ya que se asume que no se conoce.
+	IF p_atletas_resultados_puesto > 0
 	THEN
-		RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+		IF EXISTS(SELECT 1
+			FROM tb_competencias_pruebas pr
+			inner join tb_atletas_resultados ar on pr.competencias_pruebas_id  =  ar.competencias_pruebas_id
+			where   atletas_resultados_puesto=p_atletas_resultados_puesto and
+				atletas_resultados_resultado != p_atletas_resultados_resultado and
+				pr.competencias_pruebas_id = p_competencias_pruebas_id  and
+				atletas_codigo != p_atletas_codigo)
+		THEN
+			RAISE 'Ya existe al menos un atleta con el mismo puesto pero diferente resultado , verifique por favor'  USING ERRCODE = 'restrict_violation';
+		END IF;
 	END IF;
-
 
 	IF p_is_update = '1'
 	THEN
+		IF coalesce(v_prueba_multiple,false) = TRUE
+		THEN
+			-- El  update para la principal de una combinada solo se hace con el puesto.
+			UPDATE
+				tb_atletas_resultados
+			SET
+				atletas_resultados_puesto =  p_atletas_resultados_puesto,
+				usuario = p_usuario
+			WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
+		ELSE
+			-- El  update
+			UPDATE
+				tb_atletas_resultados
+			SET
+				atletas_codigo =  p_atletas_codigo,
+				competencias_pruebas_id =  p_competencias_pruebas_id,
+				atletas_resultados_resultado =  p_atletas_resultados_resultado,
+				atletas_resultados_viento =  p_atletas_resultados_viento,
+				atletas_resultados_puesto =  p_atletas_resultados_puesto,
+				atletas_resultados_puntos =  p_atletas_resultados_puntos,
+				atletas_resultados_protected =  p_atletas_resultados_protected,
+				activo = p_activo,
+				usuario = p_usuario
+			WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
+		END IF;
 
-		-- El  update
-		UPDATE
-			tb_atletas_resultados
-		SET
-			atletas_codigo =  p_atletas_codigo,
-			competencias_pruebas_id =  p_competencias_pruebas_id,
-			atletas_resultados_resultado =  p_atletas_resultados_resultado,
-			atletas_resultados_viento =  p_atletas_resultados_viento,
-			atletas_resultados_puesto =  p_atletas_resultados_puesto,
-			atletas_resultados_puntos =  p_atletas_resultados_puntos,
-			atletas_resultados_protected =  p_atletas_resultados_protected,
-			activo = p_activo,
-			usuario = p_usuario
-		WHERE atletas_resultados_id = p_atletas_resultados_id and xmin =p_version_id ;
 
                 RAISE NOTICE  'COUNT ID --> %', FOUND;
 
@@ -4081,11 +4389,11 @@ $$;
 ALTER FUNCTION public.sp_competencias_pruebas_delete_record(p_competencias_pruebas_id integer, p_usuario character varying, p_version_id integer) OWNER TO atluser;
 
 --
--- TOC entry 252 (class 1255 OID 16444)
--- Name: sp_competencias_pruebas_save_record(integer, character varying, character varying, integer, date, numeric, boolean, character varying, integer, boolean, boolean, character varying, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
+-- TOC entry 289 (class 1255 OID 37511)
+-- Name: sp_competencias_pruebas_save_record(integer, character varying, character varying, integer, date, numeric, boolean, character varying, integer, boolean, boolean, character varying, boolean, boolean, boolean, boolean, character varying, integer, bit); Type: FUNCTION; Schema: public; Owner: atluser
 --
 
-CREATE FUNCTION sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
+CREATE FUNCTION sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_update_viento_asociado boolean, p_strict_check_manual_time boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 /**
@@ -4125,6 +4433,11 @@ IMPORTANTE : Esta procedure function devuelve un entero siempre que el update o 
 	EN OTRAS BASES ESTO NO ES NECESARIO.
 
 Historia : Creado 15-01-2014
+		 : 27-03-2016 el parametro p_update_viento_asociado indica si debe hacerse update al viento en la tabla tb_atletas_resultados
+		 				si es que ha habido cambio en la existencia del anemometro en la competencia,
+		 				Por lo general si este stored es llamado directamente drante el update de una competencia este valor debe ser tru,
+		 				pero si es llamado desde algun sp que este actualizando las pruebas y la competencia a la vez este valor debe ser false
+		 				y debe derivarse el cambio del viento al sp que llama.
 */
 DECLARE v_categorias_codigo_competencia character varying(15);
 DECLARE v_competencias_fecha_inicio date;
@@ -4138,9 +4451,14 @@ DECLARE v_competencias_pruebas_id integer=0;
 DECLARE v_apppruebas_verifica_viento_new BOOLEAN = FALSE;
 DECLARE v_competencias_pruebas_origen_combinada BOOLEAN = FALSE;
 DECLARE v_apppruebas_viento_individual BOOLEAN;
+DECLARE v_competencias_pruebas_manual_old BOOLEAN;
+DECLARE v_competencias_pruebas_anemometro_old BOOLEAN;
+DECLARE v_count integer;
+DECLARE v_can_modify integer;
 
 BEGIN
 
+	--RAISE NOTICE 'ENTRO CON MANUAL = %',p_competencias_pruebas_manual;
 	-----------------------------------------------------------------------------------------------------------
 	-----------------------------------------------------------------------------------------------------------
 	-- VALIDACIONES PRIMARIAS DE INTEGRIDAD LOGICA
@@ -4199,17 +4517,32 @@ BEGIN
 	-----------------------------------------------------------------------------------------------------------
 	-- OK paso todas las validaciones basicas , ahora veamos si la prueba tiene control de viento y ver si el viento esta indicado.
 	-- SOLO CUANDO SE AGREGA.
+--	IF v_apppruebas_verifica_viento_new = TRUE AND v_apppruebas_viento_individual = FALSE
+--	THEN
+--		IF p_competencias_pruebas_viento is null and p_competencias_pruebas_anemometro = TRUE
+--		THEN
+--			-- La prueba requiere se indique el viento
+--			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+--		END IF;
+--	ELSE
+		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
+--		p_competencias_pruebas_viento := NULL;
+--	END IF;
+
+	-- Se ha tomado la decision que el viento pueda ser null en cualquier caso ya que en la preactica muchas veces este
+	-- no se conoce sobre todo en pruebas hitoricas.
 	IF v_apppruebas_verifica_viento_new = TRUE AND v_apppruebas_viento_individual = FALSE
 	THEN
-		IF p_competencias_pruebas_viento is null
+		IF p_competencias_pruebas_anemometro = FALSE
 		THEN
-			-- La prueba requiere se indique el viento
-			RAISE 'La prueba requiere se indique el limite de viento'  USING ERRCODE = 'restrict_violation';
+			-- No habra viento en el caso que el anemometro no este encendido.
+		p_competencias_pruebas_viento := NULL;
 		END IF;
 	ELSE
 		-- Si no requiere viento lo ponemos en null , por si acaso se envie dato por gusto.
 		p_competencias_pruebas_viento := NULL;
 	END IF;
+
 
 	-- Si la unidad de medida de la prueba no es tiempo
 	-- se blanquea (false) al campo que indica si la medida manual.
@@ -4223,7 +4556,7 @@ BEGIN
 	-- que si tuvo.
 	IF v_apppruebas_verifica_viento_new = FALSE
 	THEN
-		p_competencias_pruebas_anemometro := true;
+		p_competencias_pruebas_anemometro := TRUE;
 	END IF;
 
 
@@ -4231,6 +4564,7 @@ BEGIN
 
 	IF p_is_update = '1'
 	THEN
+		--RAISE NOTICE 'PASO UPDATE';
 		-- Buscamos los datos actualmente grabado.
 		IF NOT EXISTS(SELECT 1
 				FROM tb_competencias_pruebas
@@ -4238,6 +4572,27 @@ BEGIN
 		THEN
 			-- No puede cambiarse la prueba
 			RAISE 'Al actualizar no puede cambiarse de prueba !!'  USING ERRCODE = 'restrict_violation';
+		END IF;
+
+		-- Extraemos el dato previo de competencias_pruebas_manual para validacion
+		SELECT competencias_pruebas_manual,competencias_pruebas_anemometro into v_competencias_pruebas_manual_old,v_competencias_pruebas_anemometro_old
+			from tb_competencias_pruebas where competencias_pruebas_id = p_competencias_pruebas_id;
+
+
+		-- Si el status de manual ha cambiado verificamos que no existan resultados ya registrados, de eexistir
+		-- esto no seria posible. Debe existri mas de un resultado
+		IF p_strict_check_manual_time = TRUE AND v_competencias_pruebas_manual_old != p_competencias_pruebas_manual
+		THEN
+			v_can_modify := (select fn_can_modify_manual_status(p_competencias_pruebas_id,null,'strict'))::INTEGER;
+			IF v_can_modify = 0
+			THEN
+				IF v_competencias_pruebas_manual_old = TRUE
+				THEN
+					RAISE 'No puede cambiarse el estado manual de la prueba ya que existen resultados ya con el cronometraje manual'  USING ERRCODE = 'restrict_violation';
+				ELSE
+					RAISE 'No puede cambiarse el estado manual de la prueba ya que existen resultados ya con el cronometraje electronico'  USING ERRCODE = 'restrict_violation';
+				END IF;
+			END IF;
 		END IF;
 
 
@@ -4262,13 +4617,19 @@ BEGIN
 				activo = p_activo,
 				usuario_mod = p_usuario
 			WHERE competencias_pruebas_id = p_competencias_pruebas_id and
-				(case when p_version_id is null then xmin = xmin else xmin=p_version_id end);
+				(case when p_version_id is null then xmin = xmin else xmin=p_version_id	 end);
 
 
-			RAISE NOTICE  'COUNT ID --> %', FOUND;
+			--RAISE NOTICE  'COUNT ID --> %', FOUND;
 
 			-- Todo ok , si se necesita agregar los detalles lo hacemos
 			IF FOUND THEN
+				-- Requerimos limpiar el viento en los resultados individuales de la prueba?
+				IF v_competencias_pruebas_anemometro_old != p_competencias_pruebas_anemometro AND p_update_viento_asociado = TRUE
+				THEN
+					PERFORM sp_atletas_pruebas_resultado_clear_viento(p_competencias_pruebas_id, p_competencias_pruebas_anemometro,v_apppruebas_viento_individual, p_usuario);
+				END IF;
+
 				RETURN 1;
 			ELSE
 				RETURN null;
@@ -4288,7 +4649,7 @@ BEGIN
 			WHERE competencias_pruebas_id = p_competencias_pruebas_id and
 				(case when p_version_id is null then xmin = xmin else xmin=p_version_id end);
 
-			RAISE NOTICE  'COUNT ID --> %', FOUND;
+			--RAISE NOTICE  'COUNT ID --> %', FOUND;
 
 			-- Todo ok , si se necesita agregar los detalles lo hacemos
 			IF FOUND THEN
@@ -4310,6 +4671,23 @@ BEGIN
 			END IF;
 		END IF;
 	ELSE
+			--RAISE NOTICE 'PASO AGREGAR';
+		-- Si el status de manual ha cambiado verificamos que no existan resultados ya registrados, de eexistir
+		-- esto no seria posible. Debe existri mas de un resultado
+--		v_competencias_pruebas_manual_old := TRUE;
+
+--		IF p_competencias_pruebas_manual = TRUE
+--		THEN
+--			v_competencias_pruebas_manual_old := FALSE;
+--		END IF;
+--	    IF EXISTS(SELECT 1
+--	    		FROM tb_competencias_pruebas cp
+--	    		INNER JOIN  tb_atletas_resultados ar on cp.competencias_pruebas_id = ar.competencias_pruebas_id
+--	    		where cp.competencias_pruebas_id = p_competencias_pruebas_id and competencias_pruebas_manual=v_competencias_pruebas_manual_old)
+--	    THEN
+			-- No puede cambiarse la prueba
+--			RAISE 'No puede cambiarse el estado manual de la prueba ya que existen pruebas registradas, dado que estas han sido registradas con los tiempos de acuerdo a lo actualmente indicado'  USING ERRCODE = 'restrict_violation';
+--	    END IF;
 
 		-- Por si acaso actualizamos el flag de origen combinada si proviene
 		-- de una , lo cual lo sabemos si existe un origen indicado.
@@ -4397,7 +4775,7 @@ BEGIN
 				true,
 				v_competencias_pruebas_id,
 				p_competencias_pruebas_fecha,
-				NULL,
+				null,
 				false,
 				'FI',
 				1,
@@ -4417,7 +4795,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
+ALTER FUNCTION public.sp_competencias_pruebas_save_record(p_competencias_pruebas_id integer, p_competencias_codigo character varying, p_pruebas_codigo character varying, p_competencias_pruebas_origen_id integer, p_competencias_pruebas_fecha date, p_competencias_pruebas_viento numeric, p_competencias_pruebas_manual boolean, p_competencias_pruebas_tipo_serie character varying, p_competencias_pruebas_nro_serie integer, p_competencias_pruebas_anemometro boolean, p_competencias_pruebas_material_reglamentario boolean, p_competencias_pruebas_observaciones character varying, p_competencias_pruebas_protected boolean, p_update_viento_asociado boolean, p_strict_check_manual_time boolean, p_activo boolean, p_usuario character varying, p_version_id integer, p_is_update bit) OWNER TO atluser;
 
 --
 -- TOC entry 282 (class 1255 OID 37410)
@@ -7441,7 +7819,7 @@ CREATE TABLE tb_app_categorias_values (
 ALTER TABLE public.tb_app_categorias_values OWNER TO atluser;
 
 --
--- TOC entry 2628 (class 0 OID 0)
+-- TOC entry 2635 (class 0 OID 0)
 -- Dependencies: 170
 -- Name: TABLE tb_app_categorias_values; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7450,7 +7828,7 @@ COMMENT ON TABLE tb_app_categorias_values IS 'Contiene los valores validos para 
 
 
 --
--- TOC entry 2629 (class 0 OID 0)
+-- TOC entry 2636 (class 0 OID 0)
 -- Dependencies: 170
 -- Name: COLUMN tb_app_categorias_values.appcat_peso; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7488,7 +7866,7 @@ CREATE TABLE tb_app_pruebas_values (
 ALTER TABLE public.tb_app_pruebas_values OWNER TO atluser;
 
 --
--- TOC entry 2630 (class 0 OID 0)
+-- TOC entry 2637 (class 0 OID 0)
 -- Dependencies: 171
 -- Name: TABLE tb_app_pruebas_values; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7573,7 +7951,7 @@ CREATE SEQUENCE tb_atletas_carnets_atletas_carnets_id_seq
 ALTER TABLE public.tb_atletas_carnets_atletas_carnets_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2631 (class 0 OID 0)
+-- TOC entry 2638 (class 0 OID 0)
 -- Dependencies: 174
 -- Name: tb_atletas_carnets_atletas_carnets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7621,7 +7999,7 @@ CREATE SEQUENCE tb_atletas_resultados_atletas_resultados_id_seq
 ALTER TABLE public.tb_atletas_resultados_atletas_resultados_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2632 (class 0 OID 0)
+-- TOC entry 2639 (class 0 OID 0)
 -- Dependencies: 176
 -- Name: tb_atletas_resultados_atletas_resultados_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7668,7 +8046,7 @@ CREATE SEQUENCE tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq
 ALTER TABLE public.tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2633 (class 0 OID 0)
+-- TOC entry 2640 (class 0 OID 0)
 -- Dependencies: 178
 -- Name: tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7813,7 +8191,7 @@ CREATE SEQUENCE tb_clubes_atletas_clubesatletas_id_seq
 ALTER TABLE public.tb_clubes_atletas_clubesatletas_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2634 (class 0 OID 0)
+-- TOC entry 2641 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: tb_clubes_atletas_clubesatletas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7867,7 +8245,7 @@ CREATE TABLE tb_competencias (
 ALTER TABLE public.tb_competencias OWNER TO atluser;
 
 --
--- TOC entry 2635 (class 0 OID 0)
+-- TOC entry 2642 (class 0 OID 0)
 -- Dependencies: 186
 -- Name: COLUMN tb_competencias.competencias_clasificacion; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7876,7 +8254,7 @@ COMMENT ON COLUMN tb_competencias.competencias_clasificacion IS 'Indica si es in
 
 
 --
--- TOC entry 2636 (class 0 OID 0)
+-- TOC entry 2643 (class 0 OID 0)
 -- Dependencies: 186
 -- Name: CONSTRAINT chk_competencias_clasificacion ON tb_competencias; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7931,7 +8309,7 @@ CREATE SEQUENCE tb_competencias_pruebas_competencias_pruebas_id_seq
 ALTER TABLE public.tb_competencias_pruebas_competencias_pruebas_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2637 (class 0 OID 0)
+-- TOC entry 2644 (class 0 OID 0)
 -- Dependencies: 188
 -- Name: tb_competencias_pruebas_competencias_pruebas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -7967,7 +8345,7 @@ CREATE TABLE tb_entidad (
 ALTER TABLE public.tb_entidad OWNER TO atluser;
 
 --
--- TOC entry 2638 (class 0 OID 0)
+-- TOC entry 2645 (class 0 OID 0)
 -- Dependencies: 189
 -- Name: TABLE tb_entidad; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -7991,7 +8369,7 @@ CREATE SEQUENCE tb_entidad_entidad_id_seq
 ALTER TABLE public.tb_entidad_entidad_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2639 (class 0 OID 0)
+-- TOC entry 2646 (class 0 OID 0)
 -- Dependencies: 190
 -- Name: tb_entidad_entidad_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8058,7 +8436,7 @@ CREATE SEQUENCE tb_entrenadores_atletas_entrenadoresatletas_id_seq
 ALTER TABLE public.tb_entrenadores_atletas_entrenadoresatletas_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2640 (class 0 OID 0)
+-- TOC entry 2647 (class 0 OID 0)
 -- Dependencies: 193
 -- Name: tb_entrenadores_atletas_entrenadoresatletas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8146,7 +8524,7 @@ CREATE SEQUENCE tb_ligas_clubes_ligasclubes_id_seq
 ALTER TABLE public.tb_ligas_clubes_ligasclubes_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2641 (class 0 OID 0)
+-- TOC entry 2648 (class 0 OID 0)
 -- Dependencies: 197
 -- Name: tb_ligas_clubes_ligasclubes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8256,7 +8634,7 @@ CREATE SEQUENCE tb_pruebas_detalle_pruebas_detalle_id_seq
 ALTER TABLE public.tb_pruebas_detalle_pruebas_detalle_id_seq OWNER TO postgres;
 
 --
--- TOC entry 2642 (class 0 OID 0)
+-- TOC entry 2649 (class 0 OID 0)
 -- Dependencies: 202
 -- Name: tb_pruebas_detalle_pruebas_detalle_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -8342,7 +8720,7 @@ CREATE SEQUENCE tb_records_records_id_seq
 ALTER TABLE public.tb_records_records_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2643 (class 0 OID 0)
+-- TOC entry 2650 (class 0 OID 0)
 -- Dependencies: 206
 -- Name: tb_records_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8376,7 +8754,7 @@ CREATE TABLE tb_records_tipo (
 ALTER TABLE public.tb_records_tipo OWNER TO atluser;
 
 --
--- TOC entry 2644 (class 0 OID 0)
+-- TOC entry 2651 (class 0 OID 0)
 -- Dependencies: 207
 -- Name: COLUMN tb_records_tipo.records_tipo_peso; Type: COMMENT; Schema: public; Owner: atluser
 --
@@ -8464,7 +8842,7 @@ CREATE SEQUENCE tb_sys_menu_menu_id_seq
 ALTER TABLE public.tb_sys_menu_menu_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2645 (class 0 OID 0)
+-- TOC entry 2652 (class 0 OID 0)
 -- Dependencies: 211
 -- Name: tb_sys_menu_menu_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8533,7 +8911,7 @@ CREATE SEQUENCE tb_sys_perfil_detalle_perfdet_id_seq
 ALTER TABLE public.tb_sys_perfil_detalle_perfdet_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2646 (class 0 OID 0)
+-- TOC entry 2653 (class 0 OID 0)
 -- Dependencies: 214
 -- Name: tb_sys_perfil_detalle_perfdet_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8557,7 +8935,7 @@ CREATE SEQUENCE tb_sys_perfil_id_seq
 ALTER TABLE public.tb_sys_perfil_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2647 (class 0 OID 0)
+-- TOC entry 2654 (class 0 OID 0)
 -- Dependencies: 215
 -- Name: tb_sys_perfil_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8618,7 +8996,7 @@ CREATE SEQUENCE tb_sys_usuario_perfiles_usuario_perfil_id_seq
 ALTER TABLE public.tb_sys_usuario_perfiles_usuario_perfil_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2648 (class 0 OID 0)
+-- TOC entry 2655 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: tb_sys_usuario_perfiles_usuario_perfil_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
@@ -8686,13 +9064,25 @@ CREATE SEQUENCE tb_usuarios_usuarios_id_seq
 ALTER TABLE public.tb_usuarios_usuarios_id_seq OWNER TO atluser;
 
 --
--- TOC entry 2649 (class 0 OID 0)
+-- TOC entry 2656 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: tb_usuarios_usuarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: atluser
 --
 
 ALTER SEQUENCE tb_usuarios_usuarios_id_seq OWNED BY tb_usuarios.usuarios_id;
 
+
+--
+-- TOC entry 223 (class 1259 OID 37545)
+-- Name: v_count; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE v_count (
+    count bigint
+);
+
+
+ALTER TABLE public.v_count OWNER TO postgres;
 
 --
 -- TOC entry 222 (class 1259 OID 16762)
@@ -8707,7 +9097,7 @@ CREATE TABLE v_peso_desde (
 ALTER TABLE public.v_peso_desde OWNER TO postgres;
 
 --
--- TOC entry 2155 (class 2604 OID 16789)
+-- TOC entry 2161 (class 2604 OID 16789)
 -- Name: atletas_carnets_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8715,7 +9105,7 @@ ALTER TABLE ONLY tb_atletas_carnets ALTER COLUMN atletas_carnets_id SET DEFAULT 
 
 
 --
--- TOC entry 2162 (class 2604 OID 16790)
+-- TOC entry 2168 (class 2604 OID 16790)
 -- Name: atletas_resultados_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8723,7 +9113,7 @@ ALTER TABLE ONLY tb_atletas_resultados ALTER COLUMN atletas_resultados_id SET DE
 
 
 --
--- TOC entry 2165 (class 2604 OID 16791)
+-- TOC entry 2171 (class 2604 OID 16791)
 -- Name: atletas_resultados_detalle_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8731,7 +9121,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle ALTER COLUMN atletas_resultados_d
 
 
 --
--- TOC entry 2183 (class 2604 OID 16792)
+-- TOC entry 2189 (class 2604 OID 16792)
 -- Name: clubesatletas_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8739,7 +9129,7 @@ ALTER TABLE ONLY tb_clubes_atletas ALTER COLUMN clubesatletas_id SET DEFAULT nex
 
 
 --
--- TOC entry 2194 (class 2604 OID 16793)
+-- TOC entry 2200 (class 2604 OID 16793)
 -- Name: competencias_pruebas_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8747,7 +9137,7 @@ ALTER TABLE ONLY tb_competencias_pruebas ALTER COLUMN competencias_pruebas_id SE
 
 
 --
--- TOC entry 2197 (class 2604 OID 16794)
+-- TOC entry 2203 (class 2604 OID 16794)
 -- Name: entidad_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8755,7 +9145,7 @@ ALTER TABLE ONLY tb_entidad ALTER COLUMN entidad_id SET DEFAULT nextval('tb_enti
 
 
 --
--- TOC entry 2200 (class 2604 OID 16795)
+-- TOC entry 2206 (class 2604 OID 16795)
 -- Name: entrenadoresatletas_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8763,7 +9153,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas ALTER COLUMN entrenadoresatletas_id SET
 
 
 --
--- TOC entry 2205 (class 2604 OID 16796)
+-- TOC entry 2211 (class 2604 OID 16796)
 -- Name: ligasclubes_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8771,7 +9161,7 @@ ALTER TABLE ONLY tb_ligas_clubes ALTER COLUMN ligasclubes_id SET DEFAULT nextval
 
 
 --
--- TOC entry 2215 (class 2604 OID 16797)
+-- TOC entry 2221 (class 2604 OID 16797)
 -- Name: pruebas_detalle_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -8779,7 +9169,7 @@ ALTER TABLE ONLY tb_pruebas_detalle ALTER COLUMN pruebas_detalle_id SET DEFAULT 
 
 
 --
--- TOC entry 2219 (class 2604 OID 16798)
+-- TOC entry 2225 (class 2604 OID 16798)
 -- Name: records_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8787,7 +9177,7 @@ ALTER TABLE ONLY tb_records ALTER COLUMN records_id SET DEFAULT nextval('tb_reco
 
 
 --
--- TOC entry 2230 (class 2604 OID 16799)
+-- TOC entry 2236 (class 2604 OID 16799)
 -- Name: menu_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8795,7 +9185,7 @@ ALTER TABLE ONLY tb_sys_menu ALTER COLUMN menu_id SET DEFAULT nextval('tb_sys_me
 
 
 --
--- TOC entry 2232 (class 2604 OID 16800)
+-- TOC entry 2238 (class 2604 OID 16800)
 -- Name: perfil_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8803,7 +9193,7 @@ ALTER TABLE ONLY tb_sys_perfil ALTER COLUMN perfil_id SET DEFAULT nextval('tb_sy
 
 
 --
--- TOC entry 2239 (class 2604 OID 16801)
+-- TOC entry 2245 (class 2604 OID 16801)
 -- Name: perfdet_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8811,7 +9201,7 @@ ALTER TABLE ONLY tb_sys_perfil_detalle ALTER COLUMN perfdet_id SET DEFAULT nextv
 
 
 --
--- TOC entry 2242 (class 2604 OID 16802)
+-- TOC entry 2248 (class 2604 OID 16802)
 -- Name: usuario_perfil_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8819,7 +9209,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles ALTER COLUMN usuario_perfil_id SET DEFA
 
 
 --
--- TOC entry 2248 (class 2604 OID 16803)
+-- TOC entry 2254 (class 2604 OID 16803)
 -- Name: usuarios_id; Type: DEFAULT; Schema: public; Owner: atluser
 --
 
@@ -8827,7 +9217,7 @@ ALTER TABLE ONLY tb_usuarios ALTER COLUMN usuarios_id SET DEFAULT nextval('tb_us
 
 
 --
--- TOC entry 2567 (class 0 OID 16512)
+-- TOC entry 2573 (class 0 OID 16512)
 -- Dependencies: 170
 -- Data for Name: tb_app_categorias_values; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8844,7 +9234,7 @@ INF	6	t	ADMIN	2014-03-11 12:50:34.557352	postgres	2014-03-11 12:56:08.382828
 
 
 --
--- TOC entry 2568 (class 0 OID 16516)
+-- TOC entry 2574 (class 0 OID 16516)
 -- Dependencies: 171
 -- Data for Name: tb_app_pruebas_values; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8875,7 +9265,7 @@ DECATLON	Decatlon	COMBI	2000	8000	t	f	\N	\N	f	t	postgres	2014-03-21 04:39:40.145
 
 
 --
--- TOC entry 2569 (class 0 OID 16526)
+-- TOC entry 2575 (class 0 OID 16526)
 -- Dependencies: 172
 -- Data for Name: tb_atletas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8902,7 +9292,7 @@ DEBSOUZA	Souza	Peixoto Luna	Deborah	Souza Peixoto Luna, Deborah	F	99999991		PER	
 
 
 --
--- TOC entry 2570 (class 0 OID 16537)
+-- TOC entry 2576 (class 0 OID 16537)
 -- Dependencies: 173
 -- Data for Name: tb_atletas_carnets; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8914,7 +9304,7 @@ COPY tb_atletas_carnets (atletas_carnets_id, atletas_carnets_numero, atletas_car
 
 
 --
--- TOC entry 2650 (class 0 OID 0)
+-- TOC entry 2657 (class 0 OID 0)
 -- Dependencies: 174
 -- Name: tb_atletas_carnets_atletas_carnets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -8923,7 +9313,7 @@ SELECT pg_catalog.setval('tb_atletas_carnets_atletas_carnets_id_seq', 16, true);
 
 
 --
--- TOC entry 2572 (class 0 OID 16544)
+-- TOC entry 2578 (class 0 OID 16544)
 -- Dependencies: 175
 -- Data for Name: tb_atletas_resultados; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -8933,12 +9323,8 @@ COPY tb_atletas_resultados (atletas_resultados_id, atletas_codigo, competencias_
 776	73501965	610	2:22.59	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:22.259515	789	\N
 778	71835626	624	9:54.12	3	f	t	TESTUSER	2014-07-26 15:05:47.826234	\N	\N	0	\N
 779	71835626	625	9:59.38	6	f	t	TESTUSER	2014-07-27 01:36:39.026511	\N	\N	0	\N
-780	71835626	626	9:55.23	1	f	t	TESTUSER	2014-07-27 14:16:34.798897	\N	\N	0	\N
 781	71835626	627	10:05.48	1	f	t	TESTUSER	2014-07-27 14:47:02.888642	\N	\N	0	\N
 742	46658908	574	15.15	0	f	t	TESTUSER	2014-07-17 09:50:03.039304	TESTUSER	2014-07-17 09:50:21.629318	822	\N
-782	08786474	628	6.10	0	f	t	TESTUSER	2014-07-27 21:12:12.354983	TESTUSER	2014-07-27 21:34:21.424088	0	0.00
-783	10305307	629	6.15	0	f	t	TESTUSER	2014-07-27 22:45:10.238465	\N	\N	0	0.00
-784	10305307	630	6.22	3	f	t	TESTUSER	2014-07-28 03:11:37.207778	\N	\N	0	0.00
 785	71336507	631	0:40:02.07	3	f	t	TESTUSER	2014-07-28 16:29:51.814612	\N	\N	0	\N
 746	46658908	578	5.26	20	f	t	TESTUSER	2014-07-17 09:50:03.039304	atluser	2014-07-18 12:57:37.553202	631	1.30
 743	46658908	575	1.57	10	f	t	TESTUSER	2014-07-17 09:50:03.039304	atluser	2014-07-17 14:08:54.817505	701	\N
@@ -8955,8 +9341,6 @@ COPY tb_atletas_resultados (atletas_resultados_id, atletas_codigo, competencias_
 791	73501965	637	5.07	0	f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:00:41.783238	578	1.00
 792	73501965	638	25.55	0	f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:01:12.930891	393	\N
 793	73501965	639	2:25.26	0	f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:01:31.360077	753	\N
-794	08786474	640	6.01	0	f	t	TESTUSER	2014-07-28 21:28:21.240928	\N	\N	0	0.00
-795	10305307	641	6.23	0	f	t	TESTUSER	2014-07-28 22:10:49.166631	\N	\N	0	0.00
 734	46658908	566	15.47	0	f	t	TESTUSER	2014-07-16 16:45:13.196204	TESTUSER	2014-07-28 22:40:25.366098	781	\N
 735	46658908	567	1.61	0	f	t	TESTUSER	2014-07-16 16:46:43.555646	TESTUSER	2014-07-28 22:40:43.877491	747	\N
 739	46658908	571	38.29	0	f	t	TESTUSER	2014-07-16 16:52:57.758443	TESTUSER	2014-07-16 16:55:02.119882	635	\N
@@ -8966,16 +9350,15 @@ COPY tb_atletas_resultados (atletas_resultados_id, atletas_codigo, competencias_
 772	73501965	606	10.35	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:11:50.920194	552	\N
 797	71835626	643	9:53.42	2	f	t	TESTUSER	2014-08-01 18:00:37.596604	\N	\N	0	\N
 722	46658908	550	1.55	2	f	t	TESTUSER	2014-07-16 15:21:02.102497	\N	\N	678	\N
-798	70830992	644	10.34	1	f	t	TESTUSER	2014-08-02 17:45:35.458328	\N	\N	0	\N
 787	73501965	633	16.40	8	f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2016-03-08 01:11:58.132757	666	\N
 723	46658908	551	10.90	2	f	t	TESTUSER	2014-07-16 15:21:33.887285	\N	\N	589	\N
 724	46658908	552	26.56	3	f	t	TESTUSER	2014-07-16 15:22:12.797712	\N	\N	749	\N
 725	46658908	553	5.22	0	f	t	TESTUSER	2014-07-16 15:26:01.528916	TESTUSER	2014-07-16 16:55:30.993895	620	0.00
 726	46658908	554	39.48	0	f	t	TESTUSER	2014-07-16 15:28:34.322773	TESTUSER	2014-07-16 16:55:36.252744	657	\N
 727	46658908	555	2:28.22	0	f	t	TESTUSER	2014-07-16 15:29:27.34853	TESTUSER	2014-07-16 16:55:42.307548	715	\N
-773	73501965	607	26.42	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:12:16.581166	761	\N
 775	73501965	609	30.90	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:03.397934	494	\N
 770	73501965	604	15.60	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-12-27 14:12:48.118234	764	\N
+780	71835626	626	9:55.23	1	f	t	TESTUSER	2014-07-27 14:16:34.798897	TESTUSER	2016-03-17 01:43:46.646752	0	\N
 774	73501965	608	5.03	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-12-27 14:10:45.694125	567	2.50
 804	79515419	648	54.74	1	f	t	TESTUSER	2015-03-14 16:31:52.311957	\N	\N	0	\N
 806	79515419	650	1:01:21	4	f	t	TESTUSER	2015-03-14 17:01:01.717668	\N	\N	0	\N
@@ -8987,54 +9370,101 @@ COPY tb_atletas_resultados (atletas_resultados_id, atletas_codigo, competencias_
 811	46658908	655	11.02	0	f	t	TESTUSER	2015-04-19 19:30:09.433864	TESTUSER	2015-04-19 19:33:07.661453	596	\N
 812	46658908	656	26.42	0	f	t	TESTUSER	2015-04-19 19:30:09.433864	TESTUSER	2015-04-19 19:33:35.035804	761	\N
 815	46658908	659	2:19.85	0	f	t	TESTUSER	2015-04-19 19:30:09.433864	TESTUSER	2015-04-19 19:34:56.151349	826	\N
-813	46658908	657	5.38	0	f	t	TESTUSER	2015-04-19 19:30:09.433864	TESTUSER	2015-04-19 19:34:06.309458	665	0.20
-808	46658908	652	5020	3	f	t	TESTUSER	2015-04-19 19:30:09.433864	atluser	2015-04-19 19:34:56.151349	0	\N
 817	70830992	661	20.95	2	f	t	TESTUSER	2015-04-26 12:23:36.297155	\N	\N	0	\N
 819	79515419	674	54.63	2	f	t	TESTUSER	2015-04-26 14:53:43.436547	\N	\N	0	\N
 820	72661990	675	4.70	1	f	t	TESTUSER	2015-04-26 17:06:44.705213	\N	\N	0	\N
+795	10305307	641	6.23	0	f	t	TESTUSER	2014-07-28 22:10:49.166631	TESTUSER	2016-03-20 14:19:03.68455	0	\N
 799	70830992	645	10.30	1	f	t	TESTUSER	2014-08-02 17:51:35.218898	atluser	2016-03-02 14:31:01.565309	0	\N
-967	73501965	778	1:10.01	3	f	t	TESTUSER	2016-03-08 03:51:09.962909	atluser	2016-03-08 13:04:18.020264	0	\N
+1138	46658908	855	2:10.10	2	f	t	TESTUSER	2016-03-18 03:28:18.628588	TESTUSER	2016-03-18 13:43:30.132692	0	\N
+794	08786474	640	6.01	0	f	t	TESTUSER	2014-07-28 21:28:21.240928	TESTUSER	2016-03-20 14:19:18.577342	0	\N
+784	10305307	630	6.22	3	f	t	TESTUSER	2014-07-28 03:11:37.207778	TESTUSER	2016-03-20 14:29:04.727622	0	\N
+783	10305307	629	6.15	0	f	t	TESTUSER	2014-07-27 22:45:10.238465	TESTUSER	2016-03-20 14:29:10.460798	0	\N
 720	46658908	548	4719	4	f	t	TESTUSER	2014-07-16 15:20:10.086423	TESTUSER	2016-03-09 18:20:43.196465	0	\N
 741	46658908	573	4776	3	f	t	TESTUSER	2014-07-17 09:50:03.039304	TESTUSER	2016-03-09 18:13:23.391979	0	\N
 803	70690315	647	1.74	1	f	t	TESTUSER	2015-03-14 15:39:01.10463	TESTUSER	2015-03-14 15:42:17.511566	0	\N
-769	73501965	603	4628	10	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2016-03-09 18:22:28.889135	0	\N
+773	73501965	607	26.42	0	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:12:16.581166	761	\N
+782	08786474	628	6.10	0	f	t	TESTUSER	2014-07-27 21:12:12.354983	TESTUSER	2016-03-20 14:29:14.9746	0	\N
+813	46658908	657	5.38	0	f	t	TESTUSER	2015-04-19 19:30:09.433864	TESTUSER	2015-04-19 19:34:06.309458	665	0.20
+808	46658908	652	5020	3	f	t	TESTUSER	2015-04-19 19:30:09.433864	atluser	2015-04-19 19:34:56.151349	0	\N
 818	70424527	662	6.43	1	f	t	TESTUSER	2015-04-26 12:40:05.470178	TESTUSER	2015-04-26 19:32:26.950783	0	0.90
 738	46658908	570	5.45	0	f	t	TESTUSER	2014-07-16 16:52:13.089386	TESTUSER	2016-02-17 18:57:31.373183	686	1.50
 733	46658908	565	4947	4	f	t	TESTUSER	2014-07-16 16:45:13.196204	TESTUSER	2014-07-16 16:54:20.797871	0	\N
-786	73501965	632	4426	1	f	t	TESTUSER	2014-07-28 16:58:35.082982	atluser	2014-07-28 17:01:31.360077	0	\N
-968	79515419	778	59:10	9	f	t	TESTUSER	2016-03-08 13:03:28.480543	atluser	2016-03-08 14:38:25.200051	0	\N
-978	70424527	778	1:00.02	8	f	t	TESTUSER	2016-03-08 14:12:31.807148	atluser	2016-03-08 14:40:43.028994	0	\N
-979	71835626	779	3:00.00	1	f	t	TESTUSER	2016-03-08 15:05:32.875106	\N	\N	0	\N
-980	46658908	779	3:10.00	3	f	t	TESTUSER	2016-03-08 16:36:57.205893	\N	\N	0	\N
-982	70690315	779	4:00.00	7	f	t	TESTUSER	2016-03-08 16:38:28.260718	\N	\N	0	\N
-981	70424527	779	3:20.01	5	f	t	TESTUSER	2016-03-08 16:38:11.595797	atluser	2016-03-08 16:38:43.371604	0	\N
-983	79515419	779	3:05.00	2	f	t	TESTUSER	2016-03-08 16:39:52.319753	\N	\N	0	\N
-984	73501965	779	4:00.00	8	f	t	TESTUSER	2016-03-08 16:44:20.694358	\N	\N	0	\N
-969	46658908	778	56:00	1	f	t	TESTUSER	2016-03-08 13:49:01.162121	TESTUSER	2016-03-09 18:27:04.411696	0	\N
-985	46658908	780	6:10.1	2	f	t	TESTUSER	2016-03-09 18:29:00.347708	\N	\N	0	\N
-986	70424527	781	14.06	0	f	t	TESTUSER	2016-03-09 18:31:06.38775	\N	\N	0	\N
-987	70424527	782		2	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-988	70424527	783	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-989	70424527	784	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-990	70424527	785	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-991	70424527	786	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-992	70424527	787	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-993	70424527	788	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
-994	70424527	789	0	0	f	t	TESTUSER	2016-03-09 18:46:39.337597	\N	\N	0	\N
+1177	70424527	880	4:04.1	1	f	t	TESTUSER	2016-03-20 16:37:21.786637	TESTUSER	2016-03-22 00:32:27.601111	0	\N
+786	73501965	632	4426	11	f	t	TESTUSER	2014-07-28 16:58:35.082982	atluser	2016-03-11 17:39:07.438814	0	\N
+1164	71835626	866	10.90	2	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-19 00:13:50.666141	500	\N
+1135	46658908	852	1:01.10	2	f	t	TESTUSER	2016-03-18 02:59:54.858396	TESTUSER	2016-03-18 03:00:58.508648	0	\N
+1200	46658908	892	24.03	0	f	t	TESTUSER	2016-03-22 00:57:50.714696	\N	\N	0	\N
+798	70830992	644	10.2	1	f	t	TESTUSER	2014-08-02 17:45:35.458328	TESTUSER	2016-03-22 00:58:18.560422	0	\N
+1168	71835626	870	1:59.00	2	f	t	TESTUSER	2016-03-19 00:10:54.27843	atluser	2016-03-28 13:18:37.59873	600	\N
+1204	79515419	862	12.1	5	f	t	TESTUSER	2016-03-22 04:22:52.990673	TESTUSER	2016-03-25 23:45:01.480805	0	\N
+769	73501965	603	4628	10	f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2016-03-09 18:22:28.889135	0	\N
+1198	73501965	862	11.2	1	f	t	TESTUSER	2016-03-22 00:02:19.877899	TESTUSER	2016-03-22 03:19:21.085775	0	\N
+1132	46658908	849	12.1	1	f	t	TESTUSER	2016-03-18 02:30:41.714796	TESTUSER	2016-03-21 18:15:26.940043	0	\N
+1201	70690315	862	13.3	4	f	t	TESTUSER	2016-03-22 01:28:32.164295	TESTUSER	2016-03-22 04:18:10.45446	0	\N
+1179	70830992	923	22.89	0	f	t	TESTUSER	2016-03-20 16:53:54.104873	TESTUSER	2016-03-29 03:55:33.647654	0	\N
+1205	71835626	855	2:19.00	3	f	t	TESTUSER	2016-03-22 13:17:18.741259	\N	\N	0	\N
+1154	71835626	861	9:03.03	1	f	t	TESTUSER	2016-03-18 23:07:38.536846	\N	\N	0	\N
+1147	46658908	864	15.01	2	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-22 03:32:45.143874	800	\N
+1181	71835626	862	12.4	8	f	t	TESTUSER	2016-03-21 18:27:15.538775	TESTUSER	2016-03-28 04:34:17.444219	0	\N
+1144	46658908	861	9:10.00	1	f	t	TESTUSER	2016-03-18 13:38:14.094751	\N	\N	0	\N
+1137	46658908	854	1:01.10	3	f	t	TESTUSER	2016-03-18 03:25:01.6442	TESTUSER	2016-03-18 13:43:18.543509	0	\N
+1206	70690315	855	2:20.12	5	f	t	TESTUSER	2016-03-22 13:17:46.615608	atluser	2016-03-22 13:27:27.205476	0	\N
+1207	79515419	855	2:23.10	6	f	t	TESTUSER	2016-03-22 13:28:02.076926	\N	\N	0	\N
+1216	46658908	914	15.0	1	f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-29 04:11:26.274553	560	\N
+1145	46658908	862	11.4	6	f	t	TESTUSER	2016-03-18 13:45:18.682267	TESTUSER	2016-03-22 18:26:41.791969	0	\N
+1176	70830992	879	2.44	1	f	t	TESTUSER	2016-03-20 16:32:45.756243	TESTUSER	2016-03-20 16:41:41.844105	0	\N
+1148	46658908	865	1.56	2	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-18 14:50:48.036124	450	\N
+1134	46658908	851	26.10	2	f	t	TESTUSER	2016-03-18 02:42:06.302694	TESTUSER	2016-03-19 18:20:01.454874	0	\N
+1162	71835626	864	14.10	0	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-22 03:30:29.101318	1200	\N
+1167	71835626	869	40.12	2	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-19 04:29:49.047388	700	\N
+1150	46658908	867	26.20	2	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 18:38:09.685907	900	\N
+1161	71835626	863	5600	1	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-28 13:18:37.59873	0	\N
+1178	70690315	881	14.02	1	f	t	TESTUSER	2016-03-20 16:43:31.382639	atluser	2016-03-21 16:57:09.979565	0	\N
+1146	46658908	863	5210	2	f	t	TESTUSER	2016-03-18 13:50:33.342962	atluser	2016-03-28 13:18:37.59873	0	\N
+1165	71835626	867	25.10	1	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-19 04:36:32.388135	1100	\N
+1214	46658908	912	11.01	4	f	t	TESTUSER	2016-03-28 01:05:43.190642	\N	\N	0	\N
+1151	46658908	868	5.60	1	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-30 14:24:48.619246	230	\N
+1159	71835626	872	9:10.10	1	f	t	TESTUSER	2016-03-18 23:53:35.132664	\N	\N	0	\N
+1210	70830992	898	6.00	3	f	t	TESTUSER	2016-03-25 23:43:12.492317	TESTUSER	2016-03-26 03:51:10.373974	0	22.00
+1218	46658908	916	0	0	f	t	TESTUSER	2016-03-28 01:52:06.05888	\N	\N	0	\N
+1219	46658908	917	0	0	f	t	TESTUSER	2016-03-28 01:52:06.05888	\N	\N	0	\N
+1158	71835626	871	12.44	2	f	t	TESTUSER	2016-03-18 23:41:23.363084	TESTUSER	2016-03-19 15:04:31.967832	0	\N
+1221	46658908	919	0	0	f	t	TESTUSER	2016-03-28 01:52:06.05888	\N	\N	0	\N
+1222	46658908	920	0	0	f	t	TESTUSER	2016-03-28 01:52:06.05888	\N	\N	0	\N
+1166	71835626	868	5.25	2	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-30 14:24:48.619246	500	\N
+1163	71835626	865	1.85	5	f	t	TESTUSER	2016-03-19 00:10:54.27843	TESTUSER	2016-03-19 00:12:35.317581	1000	\N
+1153	46658908	870	2:10.01	1	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 03:20:59.181577	950	\N
+1149	46658908	866	11.80	5	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 18:53:04.666523	900	\N
+1152	46658908	869	45.00	5	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 03:34:31.977007	980	\N
+1217	46658908	915	1.55	2	f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-28 01:59:28.441854	700	\N
+1211	70830992	890	6.45	2	f	t	TESTUSER	2016-03-25 23:52:36.397226	TESTUSER	2016-03-28 00:54:48.685894	0	\N
+1173	46134708	877	2.45	2	f	t	TESTUSER	2016-03-19 15:47:11.752565	\N	\N	0	\N
+1174	46134708	878	4.45	1	f	t	TESTUSER	2016-03-19 15:51:30.254129	\N	\N	0	\N
+1175	72661990	877	2.45	3	f	t	TESTUSER	2016-03-19 16:00:05.748045	\N	\N	0	\N
+1212	72661990	890	6.10	4	f	t	TESTUSER	2016-03-28 01:02:22.140905	TESTUSER	2016-03-28 03:44:20.914336	0	\N
+1160	73501965	873	4:00.10	2	f	t	TESTUSER	2016-03-19 00:00:30.33452	TESTUSER	2016-03-20 15:43:36.831787	0	\N
+1208	46134708	890	6.25	3	f	t	TESTUSER	2016-03-25 14:17:17.266492	TESTUSER	2016-03-28 00:54:48.685894	0	\N
+1232	72661990	921	11.2	2	f	t	TESTUSER	2016-03-29 00:56:06.689784	\N	\N	0	\N
+1236	72661990	923	22.33	1	f	t	TESTUSER	2016-03-29 03:42:09.717104	\N	\N	0	\N
+1237	71336507	884	22.11	4	f	t	TESTUSER	2016-03-29 03:44:02.685462	TESTUSER	2016-03-29 03:44:30.424102	0	\N
+1235	46134708	884	22.77	1	f	t	TESTUSER	2016-03-29 03:36:29.046391	TESTUSER	2016-03-29 03:52:10.301506	0	\N
+1238	46134708	924	22.99	1	f	t	TESTUSER	2016-03-29 03:56:11.188948	TESTUSER	2016-03-29 03:56:23.700195	0	\N
+1215	46658908	913	1960	2	f	t	TESTUSER	2016-03-28 01:52:06.05888	atluser	2016-03-28 03:20:09.49734	0	\N
+1220	46658908	918	6.10	1	f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-30 14:24:29.825278	700	\N
 \.
 
 
 --
--- TOC entry 2651 (class 0 OID 0)
+-- TOC entry 2658 (class 0 OID 0)
 -- Dependencies: 176
 -- Name: tb_atletas_resultados_atletas_resultados_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_atletas_resultados_atletas_resultados_id_seq', 994, true);
+SELECT pg_catalog.setval('tb_atletas_resultados_atletas_resultados_id_seq', 1238, true);
 
 
 --
--- TOC entry 2574 (class 0 OID 16555)
+-- TOC entry 2580 (class 0 OID 16555)
 -- Dependencies: 177
 -- Data for Name: tb_atletas_resultados_detalle; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9044,7 +9474,7 @@ COPY tb_atletas_resultados_detalle (atletas_resultados_detalle_id, atletas_resul
 
 
 --
--- TOC entry 2652 (class 0 OID 0)
+-- TOC entry 2659 (class 0 OID 0)
 -- Dependencies: 178
 -- Name: tb_atletas_resultados_detalle_atletas_resultados_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9053,7 +9483,7 @@ SELECT pg_catalog.setval('tb_atletas_resultados_detalle_atletas_resultados_detal
 
 
 --
--- TOC entry 2576 (class 0 OID 16562)
+-- TOC entry 2582 (class 0 OID 16562)
 -- Dependencies: 179
 -- Data for Name: tb_atletas_resultados_old; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9074,7 +9504,7 @@ COPY tb_atletas_resultados_old (atletas_resultados_id, atletas_codigo, competenc
 
 
 --
--- TOC entry 2577 (class 0 OID 16575)
+-- TOC entry 2583 (class 0 OID 16575)
 -- Dependencies: 180
 -- Data for Name: tb_categorias; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9091,7 +9521,7 @@ INF	Infantil	11	12	1940-01-01	INF	t	t	TESTUSER	2014-03-05 21:14:00.037012	TESTUS
 
 
 --
--- TOC entry 2578 (class 0 OID 16581)
+-- TOC entry 2584 (class 0 OID 16581)
 -- Dependencies: 181
 -- Data for Name: tb_ciudades; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9120,7 +9550,7 @@ ASU	Asuncion	PAR	t	TESTUSER	2015-04-19 19:24:47.551946	TESTUSER	2016-02-08 16:52
 
 
 --
--- TOC entry 2579 (class 0 OID 16586)
+-- TOC entry 2585 (class 0 OID 16586)
 -- Dependencies: 182
 -- Data for Name: tb_clubes; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9136,7 +9566,7 @@ CCANG	Club Canguros Valiente	Oscar Valiente / Fernando Valiente				Por Definir		
 
 
 --
--- TOC entry 2580 (class 0 OID 16593)
+-- TOC entry 2586 (class 0 OID 16593)
 -- Dependencies: 183
 -- Data for Name: tb_clubes_atletas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9148,16 +9578,16 @@ COPY tb_clubes_atletas (clubesatletas_id, clubes_codigo, atletas_codigo, clubesa
 
 
 --
--- TOC entry 2653 (class 0 OID 0)
+-- TOC entry 2660 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: tb_clubes_atletas_clubesatletas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_clubes_atletas_clubesatletas_id_seq', 12, true);
+SELECT pg_catalog.setval('tb_clubes_atletas_clubesatletas_id_seq', 13, true);
 
 
 --
--- TOC entry 2582 (class 0 OID 16599)
+-- TOC entry 2588 (class 0 OID 16599)
 -- Dependencies: 185
 -- Data for Name: tb_competencia_tipo; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9177,7 +9607,7 @@ SUDA	Sud Americano	t	TESTUSER	2014-02-19 04:06:26.558116	TESTUSER	2016-02-22 01:
 
 
 --
--- TOC entry 2583 (class 0 OID 16603)
+-- TOC entry 2589 (class 0 OID 16603)
 -- Dependencies: 186
 -- Data for Name: tb_competencias; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9213,36 +9643,37 @@ XXXXX	xxxxx	GPRIX	MAY	PER	LIM	2016-01-01	2016-01-02	f	t	TESTUSER	2016-03-01 14:0
 
 
 --
--- TOC entry 2584 (class 0 OID 16610)
+-- TOC entry 2590 (class 0 OID 16610)
 -- Dependencies: 187
 -- Data for Name: tb_competencias_pruebas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, pruebas_codigo, competencias_pruebas_origen_combinada, competencias_pruebas_fecha, competencias_pruebas_viento, competencias_pruebas_manual, competencias_pruebas_tipo_serie, competencias_pruebas_nro_serie, competencias_pruebas_anemometro, competencias_pruebas_material_reglamentario, competencias_pruebas_observaciones, competencias_pruebas_protected, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion, competencias_pruebas_origen_id) FROM stdin;
 96	SOP2014	SLALTOMMY	f	2014-03-07	\N	f	FI	1	t	t		f	t	TESTUSER	2014-05-07 03:35:19.235573	TESTUSER	2014-05-07 04:52:20.465363	\N
-780	GPCLIM2015	3000MOBSFMY	f	2015-04-25	\N	t	FI	1	t	t		f	t	TESTUSER	2016-03-09 18:29:00.347708	\N	\N	\N
-494	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SR	1	t	t		f	t	TESTUSER	2014-06-03 22:15:27.055772	\N	\N	\N
+912	XXXXX	IBALAFMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-28 01:05:43.190642	\N	\N	\N
+914	SDQ	100MVFMYHEP	t	2016-01-01	\N	t	FI	1	f	t		f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-29 04:11:07.219776	913
+879	SDQ	SLALTOMMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-20 16:32:45.756243	TESTUSER	2016-03-20 16:41:41.844105	\N
 247	GPBIRIARTE	200MPFMY	f	2013-05-10	2.00	t	FI	1	t	t		f	t	TESTUSER	2014-05-30 20:54:52.875641	\N	\N	\N
 625	MUNJV2014	300MOBSFJV	f	2014-07-26	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-27 01:36:39.026511	\N	\N	\N
 627	GPPGV2014	3000MOBSFMY	f	2014-06-22	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-27 14:47:02.888642	\N	\N	\N
-629	GPARIC1996	SLLARGOFMY	f	1996-05-26	\N	f	FI	1	t	t	No se conoce el viento pero se sabe que fue valido	f	t	TESTUSER	2014-07-27 22:45:10.238465	\N	\N	\N
 631	MUNJV2014	10000MARMMJV	f	2014-07-22	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:29:51.814612	\N	\N	\N
-640	GPMUN1977	SLLARGOFMY	f	1977-06-14	\N	f	FI	1	t	t	No se tiene el viento pero se sabe que fue legal.	f	t	TESTUSER	2014-07-28 21:28:21.240928	\N	\N	\N
 642	BOL2013	SLLARGOFMY	f	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 22:45:20.96353	\N	\N	\N
 643	IBERO2014	3000MOBSFMY	f	2014-08-01	\N	f	FI	1	t	t		f	t	TESTUSER	2014-08-01 18:00:37.596604	\N	\N	\N
 645	IBERO2014	100MPMMY	f	2014-08-01	0.60	f	FI	1	t	t		f	t	TESTUSER	2014-08-02 17:51:35.218898	\N	\N	\N
-187	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SM	1	t	t		f	t	TESTUSER	2014-05-23 15:12:13.940767	\N	\N	\N
-193	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	2.00	f	SM	6	t	t		f	t	TESTUSER	2014-05-23 16:39:59.593517	\N	\N	\N
-165	GPBIRIARTE	100MPMMY	f	2013-05-10	2.00	f	SM	9	t	t		f	t	TESTUSER	2014-05-23 05:14:29.773319	TESTUSER	2014-05-23 22:37:18.503359	\N
-533	ODESUR2014	200MPFMY	f	2014-03-01	2.00	t	FI	1	t	t		f	t	TESTUSER	2014-06-07 02:54:22.394027	TESTUSER	2014-06-07 02:54:51.500813	\N
-624	MUNJV2014	300MOBSFJV	f	2014-07-22	\N	f	SM	1	t	t		f	t	TESTUSER	2014-07-26 15:05:47.826234	\N	\N	\N
-626	GPCC2014	3000MOBSFMY	f	2014-06-25	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-27 14:16:34.798897	\N	\N	\N
-195	GPBIRIARTE	100MPMMY	f	2013-05-10	3.00	t	SM	7	t	t		f	t	TESTUSER	2014-05-23 16:53:25.383245	TESTUSER	2014-05-24 04:28:53.059496	\N
+854	XXXXX	400MPFMY	f	2016-01-01	\N	f	FI	1	t	t	test	f	t	TESTUSER	2016-03-18 03:25:01.6442	TESTUSER	2016-03-18 13:43:18.543509	\N
+877	XXXXX	SLALTOMMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-19 15:47:11.752565	\N	\N	\N
+641	UNIVPM1999	SLLARGOFMY	f	1999-07-12	\N	f	SM	1	t	t	Se desconoce el viento se sabe fue correcto	f	t	TESTUSER	2014-07-28 22:10:49.166631	TESTUSER	2016-03-18 17:21:30.455559	\N
+629	GPARIC1996	SLLARGOFMY	f	1996-05-26	\N	f	FI	1	t	t	No se conoce el viento pero se sabe que fue valido	f	t	TESTUSER	2014-07-27 22:45:10.238465	TESTUSER	2016-03-20 14:29:10.460798	\N
 628	PANMEX1975	SLLARGOFMY	f	1975-10-12	\N	f	FI	1	t	t	No se conoce el viento real , se sabe que fue legal	f	t	TESTUSER	2014-07-27 21:12:12.354983	TESTUSER	2014-07-27 21:34:21.424088	\N
+640	GPMUN1977	SLLARGOFMY	f	1977-06-14	\N	f	FI	1	t	t	No se tiene el viento pero se sabe que fue legal.	f	t	TESTUSER	2014-07-28 21:28:21.240928	TESTUSER	2016-03-20 14:19:18.577342	\N
+630	SUDAM1999	SLLARGOFMY	f	1999-06-25	\N	f	SM	1	t	t	No se conoce el viento pero se sabe que fue reglamentario	f	t	TESTUSER	2014-07-28 03:11:37.207778	TESTUSER	2016-03-20 14:29:04.727622	\N
+533	ODESUR2014	200MPFMY	f	2014-03-01	2.00	t	FI	1	t	t		f	t	TESTUSER	2014-06-07 02:54:22.394027	TESTUSER	2014-06-07 02:54:51.500813	\N
+633	NACJUV2014	100MVFJVHEP	t	2014-05-16	-1.30	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2016-03-15 12:15:14.427666	632
+624	MUNJV2014	300MOBSFJV	f	2014-07-22	\N	f	SM	1	t	t		f	t	TESTUSER	2014-07-26 15:05:47.826234	\N	\N	\N
+195	GPBIRIARTE	100MPMMY	f	2013-05-10	3.00	t	SM	7	t	t		f	t	TESTUSER	2014-05-23 16:53:25.383245	TESTUSER	2014-05-24 04:28:53.059496	\N
 197	GPBIRIARTE	100MPMMY	f	2013-05-10	2.50	f	SM	5	t	t		f	t	TESTUSER	2014-05-23 17:08:37.891251	TESTUSER	2014-05-24 04:34:02.304046	\N
-630	SUDAM1999	SLLARGOFMY	f	1999-06-25	\N	f	SM	1	t	t	No se conoce el viento pero se sabe que fue reglamentario	f	t	TESTUSER	2014-07-28 03:11:37.207778	\N	\N	\N
 204	GPBIRIARTE	100MPMMY	f	2013-05-10	3.00	t	HT	1	t	t		f	t	TESTUSER	2014-05-24 04:34:27.79928	\N	\N	\N
-633	NACJUV2014	100MVFJVHEP	t	2014-05-16	-1.30	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 16:59:08.520638	632
+632	NACJUV2014	HEPTAFJV	f	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	atluser	2016-03-15 12:15:14.427666	\N
 634	NACJUV2014	SALTOFJVHEP	t	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 16:59:26.55692	632
 567	BOL2013	SALTOFMYHEP	t	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:43.877491	565
 635	NACJUV2014	IBALAFJVHEP	t	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 16:59:42.038764	632
@@ -9253,16 +9684,12 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 638	NACJUV2014	JABALFJVHEP	t	2014-05-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:01:12.930891	632
 571	BOL2013	JABALFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:41:15.799022	565
 639	NACJUV2014	800MPFJVHEP	t	2014-05-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	TESTUSER	2014-07-28 17:01:31.360077	632
-632	NACJUV2014	HEPTAFJV	f	2014-05-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-28 16:58:35.082982	\N	\N	\N
-641	UNIVPM1999	SLLARGOFMY	f	1999-07-12	\N	f	SM	1	t	t		f	t	TESTUSER	2014-07-28 22:10:49.166631	\N	\N	\N
+873	XXXXX	1500MPFMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-19 00:00:30.33452	TESTUSER	2016-03-20 15:43:36.831787	\N
 569	BOL2013	200MPFMYHEP	t	2013-11-28	-1.10	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2016-02-17 23:47:38.406094	565
-779	XXXXX	1500MPFMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-08 15:05:02.143198	\N	\N	\N
-782	XXXXX	HEPTAFMY	f	2016-01-01	\N	f	FI	1	t	t	sssssdsfdsfsd	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:52:15.773657	\N
-783	XXXXX	100MVFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
-784	XXXXX	SALTOFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
-785	XXXXX	IBALAFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
-786	XXXXX	200MPFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
-787	XXXXX	SLARGOFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
+607	PANPC2014J	200MPFJVHEP	t	2014-07-16	1.80	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2016-03-15 12:34:22.07976	603
+852	XXXXX	400MVFMY	f	2016-01-01	\N	t	FI	1	t	t		f	t	TESTUSER	2016-03-18 02:59:54.858396	TESTUSER	2016-03-20 16:04:05.266723	\N
+626	GPCC2014	3000MOBSFMY	f	2014-06-25	\N	f	FI	1	f	t	yrtyyt	f	t	TESTUSER	2014-07-27 14:16:34.798897	TESTUSER	2016-03-17 01:43:46.646752	\N
+883	SDQ	200MPFMY	f	2016-01-01	\N	f	FI	1	f	t		f	t	TESTUSER	2016-03-20 16:49:51.654928	TESTUSER	2016-03-21 16:45:16.146645	\N
 573	PANPC2014M	HEPTAFMY	f	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2016-03-09 18:10:27.17566	\N
 574	PANPC2014M	100MVFMYHEP	t	2014-07-17	2.20	f	FI	1	t	t	false	f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2014-07-17 09:50:46.067309	573
 575	PANPC2014M	SALTOFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2016-03-09 18:10:27.17566	573
@@ -9270,20 +9697,27 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 577	PANPC2014M	200MPFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2016-03-09 18:10:27.17566	573
 578	PANPC2014M	SLARGOFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2016-03-09 18:10:27.17566	573
 579	PANPC2014M	JABALFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2016-03-09 18:10:27.17566	573
+889	SDQ	SGARROCHAMMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-21 04:58:34.637645	\N	\N	\N
+885	SDQ	400MPFMY	f	2016-01-01	\N	f	SR	1	t	t	xxxxxxxx	f	t	TESTUSER	2016-03-20 16:56:24.589979	TESTUSER	2016-03-21 04:18:42.239387	\N
+887	SDQ	800MPFMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-21 04:53:32.455231	\N	\N	\N
+881	SDQ	100MVFMY	f	2016-01-01	2.00	f	FI	1	t	t	rertertreter sfewrwr sfdsfsdf	f	t	TESTUSER	2016-03-20 16:43:31.382639	TESTUSER	2016-03-21 17:52:20.954796	\N
 605	PANPC2014J	SALTOFJVHEP	t	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:11:36.932776	603
 606	PANPC2014J	IBALAFJVHEP	t	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:11:50.920194	603
-607	PANPC2014J	200MPFJVHEP	t	2014-07-16	1.80	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:12:16.581166	603
 609	PANPC2014J	JABALFJVHEP	t	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:03.397934	603
 610	PANPC2014J	800MPFJVHEP	t	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:13:22.259515	603
+891	XXXXX	100MPFMY	f	2016-01-01	\N	f	SR	1	f	t		f	t	TESTUSER	2016-03-21 17:54:52.644148	\N	\N	\N
+871	XXXXX	100MVFMY	f	2016-01-01	3.00	f	SR	3	t	f	utyu6utyu	f	t	TESTUSER	2016-03-18 23:50:01.084908	TESTUSER	2016-03-22 18:23:16.259894	\N
+895	XXXXX	SLLARGOMMY	f	2016-01-01	\N	f	SM	1	t	t		f	t	TESTUSER	2016-03-23 00:18:16.227865	\N	\N	\N
+901	XXXXX	SLLARGOMMY	f	2016-01-01	\N	f	SR	1	t	t		f	t	TESTUSER	2016-03-23 00:36:28.369266	\N	\N	\N
+905	XXXXX	SLLARGOMMY	f	2016-01-01	\N	f	SR	9	t	t		f	t	TESTUSER	2016-03-23 14:13:57.057312	\N	\N	\N
+907	XXXXX	3000MOBSFMY	f	2016-01-01	\N	f	SR	1	t	t		f	t	TESTUSER	2016-03-23 14:21:04.057099	\N	\N	\N
 572	BOL2013	800MPFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:41:21.795285	565
-644	IBERO2014	100MPMMY	f	2014-08-01	-0.20	f	SM	1	t	t		f	t	TESTUSER	2014-08-02 17:45:35.458328	\N	\N	\N
 648	GPCUEN2015	400MPFMY	f	2015-03-14	0.00	f	FI	1	t	t	Record Nacional Sub 23 y Mayores	f	t	TESTUSER	2015-03-14 16:31:52.311957	\N	\N	\N
 650	S232015	400MVFS23	f	2014-05-05	\N	f	FI	1	t	t		f	t	TESTUSER	2015-03-14 17:01:01.717668	\N	\N	\N
 651	GPCUEN2015	SLLARGOFMY	f	2015-03-15	\N	f	FI	1	t	t		f	t	TESTUSER	2015-03-15 17:54:47.066594	TESTUSER	2015-03-15 17:55:40.783741	\N
 654	GPPCOMBASU	SALTOFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:32:52.337993	652
 655	GPPCOMBASU	IBALAFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:33:07.661453	652
 656	GPPCOMBASU	200MPFMYHEP	t	2015-04-11	-1.10	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:33:35.035804	652
-657	GPPCOMBASU	SLARGOFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:34:06.309458	652
 658	GPPCOMBASU	JABALFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:34:37.414615	652
 659	GPPCOMBASU	800MPFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:34:56.151349	652
 660	GPORLG2015	SLLARGOFMY	f	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 20:12:25.326492	\N	\N	\N
@@ -9292,7 +9726,8 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 675	CTRL032015	SGARROCHAMME	f	2015-03-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-26 17:06:30.200271	\N	\N	\N
 662	GPCLIM2015	SLLARGOFMY	f	2015-04-25	\N	f	FI	1	t	t	Record Nacional Absoluto	f	t	TESTUSER	2015-04-26 12:40:05.470178	TESTUSER	2015-04-26 12:43:40.098072	\N
 647	GPCUEN2015	SLALTOFMY	f	2015-03-14	\N	f	FI	1	t	t	Record  de menores y juveniles	f	t	TESTUSER	2015-03-14 15:39:01.10463	TESTUSER	2015-03-14 15:42:17.511566	\N
-778	XXXXX	400MVFMY	f	2016-01-01	\N	f	FI	1	t	t	Prueba de test	f	t	TESTUSER	2016-03-01 14:03:13.504612	TESTUSER	2016-03-09 18:27:04.411696	\N
+898	XXXXX	SLLARGOMMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-23 00:29:16.535966	TESTUSER	2016-03-25 23:43:12.492317	\N
+791	GPBIRIARTE	SGARROCHAMMY	f	2013-05-10	\N	f	FI	1	t	t	tryrty	f	t	TESTUSER	2016-03-10 13:28:27.208087	\N	\N	\N
 548	GPBIRIARTE	HEPTAFMY	f	2013-05-10	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2016-03-09 23:57:39.788692	\N
 553	GPBIRIARTE	SLARGOFMYHEP	t	2013-05-11	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2014-07-16 16:55:30.993895	548
 554	GPBIRIARTE	JABALFMYHEP	t	2013-05-11	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2014-07-16 16:55:36.252744	548
@@ -9301,32 +9736,73 @@ COPY tb_competencias_pruebas (competencias_pruebas_id, competencias_codigo, prue
 551	GPBIRIARTE	IBALAFMYHEP	t	2013-05-10	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2016-03-09 18:20:43.196465	548
 552	GPBIRIARTE	200MPFMYHEP	t	2013-05-10	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2016-03-09 18:20:43.196465	548
 549	GPBIRIARTE	100MVFMYHEP	t	2013-05-10	0.00	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 15:16:33.816929	TESTUSER	2016-03-09 12:25:11.892059	548
-788	XXXXX	JABALFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
-789	XXXXX	800MPFMYHEP	t	2016-01-01	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-09 18:46:39.337597	TESTUSER	2016-03-10 01:41:11.18287	782
+793	GPBIRIARTE	100MPMMY	f	2013-05-10	2.50	f	SM	1	t	t		f	t	TESTUSER	2016-03-10 13:34:50.375272	\N	\N	\N
+906	XXXXX	100MVFMY	f	2016-01-01	3.00	f	FI	1	t	t		f	t	TESTUSER	2016-03-23 14:15:04.97606	TESTUSER	2016-03-28 04:32:50.233769	\N
 566	BOL2013	100MVFMYHEP	t	2013-11-28	0.30	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-07-28 22:40:25.366098	565
-781	XXXXX	100MVFMY	f	2016-01-01	-4.00	f	FI	1	t	t		f	t	TESTUSER	2016-03-09 18:31:06.38775	TESTUSER	2016-03-10 01:53:37.54649	\N
+884	SDQ	200MPMMY	f	2016-01-01	2.00	f	HT	1	t	t		f	t	TESTUSER	2016-03-20 16:53:54.104873	TESTUSER	2016-03-29 03:44:30.424102	\N
+790	GPBIRIARTE	SLLARGOMMY	f	2013-05-10	\N	f	FI	1	t	t	tyyu	f	t	TESTUSER	2016-03-10 13:22:17.83176	\N	\N	\N
+794	GPBIRIARTE	200MPMMY	f	2013-05-10	-3.00	f	FI	1	t	t		f	t	TESTUSER	2016-03-10 13:55:52.528913	TESTUSER	2016-03-10 14:09:38.66608	\N
+863	XXXXX	HEPTAFMY	f	2016-01-01	\N	f	FI	1	f	t	test 2	f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-30 14:24:48.619246	\N
+861	XXXXX	3000MOBSFMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:38:14.094751	\N	\N	\N
+855	XXXXX	800MPFMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 03:28:18.628588	TESTUSER	2016-03-18 13:43:30.132692	\N
+801	XXXXX	200MPMMY	f	2016-01-01	-100.00	f	FI	1	t	t		f	t	TESTUSER	2016-03-10 14:43:23.970463	\N	\N	\N
 570	BOL2013	SLARGOFMYHEP	t	2013-11-29	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-12-27 14:01:19.411617	565
 565	BOL2013	HEPTAFMY	f	2013-11-28	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-16 16:38:25.029369	TESTUSER	2014-12-27 14:01:19.411617	\N
 653	GPPCOMBASU	100MVFMYHEP	t	2015-04-11	0.90	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2015-04-19 19:32:23.938427	652
-652	GPPCOMBASU	HEPTAFMY	f	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	\N	\N	\N
+657	GPPCOMBASU	SLARGOFMYHEP	t	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	TESTUSER	2016-03-15 12:41:15.878566	652
 580	PANPC2014M	800MPFMYHEP	t	2014-07-17	0.00	f	FI	1	t	t	\N	f	t	TESTUSER	2014-07-16 19:16:49.62012	TESTUSER	2016-03-09 18:10:27.17566	573
-603	PANPC2014J	HEPTAFJV	f	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2016-03-09 18:22:28.889135	\N
+867	XXXXX	200MPFMYHEP	t	2016-01-01	-1.50	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 04:36:32.388135	863
 604	PANPC2014J	100MVFJVHEP	t	2014-07-16	2.60	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-12-27 14:15:41.686707	603
 608	PANPC2014J	SLARGOFJVHEP	t	2014-07-17	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2014-07-18 17:12:39.365828	603
+870	XXXXX	800MPFMYHEP	t	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 03:20:59.181577	863
+872	XXXXX	3000MOBSFMY	f	2016-01-01	\N	f	HT	1	t	t		f	t	TESTUSER	2016-03-18 23:53:35.132664	\N	\N	\N
+869	XXXXX	JABALFMYHEP	t	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 03:31:58.250326	863
+878	XXXXX	SGARROCHAMMY	f	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-19 15:51:30.254129	\N	\N	\N
+866	XXXXX	IBALAFMYHEP	t	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 00:13:50.666141	863
+851	XXXXX	200MPFMY	f	2016-01-02	2.60	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 02:42:06.302694	TESTUSER	2016-03-19 18:22:22.979831	\N
+874	XXXXX	100MPFMY	f	2016-01-01	\N	f	HT	1	f	t		f	t	TESTUSER	2016-03-19 04:59:43.861246	TESTUSER	2016-03-19 18:55:31.227189	\N
+865	XXXXX	SALTOFMYHEP	t	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-19 00:12:35.317581	863
+603	PANPC2014J	HEPTAFJV	f	2014-07-16	\N	f	FI	1	t	t		f	t	TESTUSER	2014-07-18 17:11:05.352493	TESTUSER	2016-03-15 12:34:22.07976	\N
+652	GPPCOMBASU	HEPTAFMY	f	2015-04-11	\N	f	FI	1	t	t		f	t	TESTUSER	2015-04-19 19:28:09.780435	atluser	2016-03-15 12:41:15.878566	\N
+888	SDQ	IBALAFMY	f	2016-01-01	\N	f	FI	1	t	t	dfsdfsd	f	t	TESTUSER	2016-03-21 04:54:38.531458	\N	\N	\N
+892	SDQ	200MPFMY	f	2016-01-01	2.00	f	SR	1	t	t		f	t	TESTUSER	2016-03-22 00:57:50.714696	\N	\N	\N
+880	SDQ	1500MPFMY	f	2016-02-01	\N	t	FI	1	t	t	sdsdfsdf	f	t	TESTUSER	2016-03-20 16:37:21.786637	TESTUSER	2016-03-22 00:32:27.601111	\N
+886	SDQ	3000MOBSFMY	f	2016-01-02	\N	f	FI	1	t	t	dddddd	f	t	TESTUSER	2016-03-21 04:34:20.455613	TESTUSER	2016-03-21 13:28:23.635998	\N
+644	IBERO2014	100MPMMY	f	2014-08-01	-0.20	t	SM	1	t	t		f	t	TESTUSER	2014-08-02 17:45:35.458328	TESTUSER	2016-03-22 00:58:18.560422	\N
+864	XXXXX	100MVFMYHEP	t	2016-01-01	2.00	f	FI	1	t	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-25 19:54:17.828832	863
+902	XXXXX	SLLARGOMMY	f	2016-01-01	\N	f	SR	3	t	t		f	t	TESTUSER	2016-03-23 03:33:27.84097	\N	\N	\N
+904	XXXXX	SLLARGOMMY	f	2016-01-01	\N	f	SR	4	t	t		f	t	TESTUSER	2016-03-23 04:00:58.475691	\N	\N	\N
+849	XXXXX	100MPFMY	f	2016-01-01	3.00	t	FI	1	t	t		f	t	TESTUSER	2016-03-18 02:30:41.714796	TESTUSER	2016-03-25 23:45:32.669067	\N
+909	SDQ	SLLARGOMMY	f	2016-01-01	\N	f	SM	1	t	t		f	t	TESTUSER	2016-03-25 03:16:32.876223	\N	\N	\N
+911	SDQ	SLLARGOMMY	f	2016-01-01	\N	f	SM	2	f	t		f	t	TESTUSER	2016-03-25 04:55:00.154468	TESTUSER	2016-03-25 04:57:29.725619	\N
+921	SDQ	100MPMMY	f	2016-01-01	\N	t	FI	1	t	t		f	t	TESTUSER	2016-03-29 00:55:32.176658	TESTUSER	2016-03-29 00:55:39.252815	\N
+922	SDQ	200MPMMY	f	2016-01-01	2.00	t	FI	1	t	t		f	t	TESTUSER	2016-03-29 03:14:20.527584	TESTUSER	2016-03-29 03:15:05.048916	\N
+923	SDQ	200MPMMY	f	2016-01-01	2.00	f	SR	1	t	t		f	t	TESTUSER	2016-03-29 03:42:09.717104	TESTUSER	2016-03-29 03:44:02.685462	\N
+917	SDQ	200MPFMYHEP	t	2016-01-01	\N	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-28 01:57:13.673707	913
+924	SDQ	200MPMMY	f	2016-01-01	2.00	f	SM	1	t	t		f	t	TESTUSER	2016-03-29 03:56:11.188948	TESTUSER	2016-03-29 03:56:23.700195	\N
+919	SDQ	JABALFMYHEP	t	2016-01-01	\N	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-28 01:57:13.673707	913
+920	SDQ	800MPFMYHEP	t	2016-01-01	\N	f	FI	1	t	t	\N	f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-28 01:57:13.673707	913
+915	SDQ	SALTOFMYHEP	t	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-28 01:56:08.340392	913
+918	SDQ	SLARGOFMYHEP	t	2016-01-01	\N	f	FI	1	f	t		f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-30 14:24:29.825278	913
+913	SDQ	HEPTAFMY	f	2016-01-01	\N	t	FI	1	f	t		f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-29 04:11:07.219776	\N
+868	XXXXX	SLARGOFMYHEP	t	2016-01-01	\N	f	FI	1	f	t		f	t	TESTUSER	2016-03-18 13:50:33.342962	TESTUSER	2016-03-30 14:24:48.619246	863
+916	SDQ	IBALAFMYHEP	t	2016-01-01	\N	f	FI	1	t	t		f	t	TESTUSER	2016-03-28 01:52:06.05888	TESTUSER	2016-03-28 03:42:44.56661	913
+890	SDQ	SLLARGOMMY	f	2016-01-01	\N	f	FI	1	f	f	le dolia el pie	f	t	TESTUSER	2016-03-21 05:16:06.462058	TESTUSER	2016-03-28 03:44:20.914336	\N
+862	XXXXX	100MVFMY	f	2016-01-01	3.00	t	SR	1	t	t		f	t	TESTUSER	2016-03-18 13:45:18.682267	TESTUSER	2016-03-28 04:33:57.847181	\N
 \.
 
 
 --
--- TOC entry 2654 (class 0 OID 0)
+-- TOC entry 2661 (class 0 OID 0)
 -- Dependencies: 188
 -- Name: tb_competencias_pruebas_competencias_pruebas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
 
-SELECT pg_catalog.setval('tb_competencias_pruebas_competencias_pruebas_id_seq', 789, true);
+SELECT pg_catalog.setval('tb_competencias_pruebas_competencias_pruebas_id_seq', 924, true);
 
 
 --
--- TOC entry 2586 (class 0 OID 16621)
+-- TOC entry 2592 (class 0 OID 16621)
 -- Dependencies: 189
 -- Data for Name: tb_entidad; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9337,7 +9813,7 @@ COPY tb_entidad (entidad_id, entidad_razon_social, entidad_ruc, entidad_titulo_a
 
 
 --
--- TOC entry 2655 (class 0 OID 0)
+-- TOC entry 2662 (class 0 OID 0)
 -- Dependencies: 190
 -- Name: tb_entidad_entidad_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9346,7 +9822,7 @@ SELECT pg_catalog.setval('tb_entidad_entidad_id_seq', 1, true);
 
 
 --
--- TOC entry 2588 (class 0 OID 16630)
+-- TOC entry 2594 (class 0 OID 16630)
 -- Dependencies: 191
 -- Data for Name: tb_entrenadores; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9359,18 +9835,18 @@ NOIND	No indicado	NA	NA	No indicado NA, NA	PROMO	t	atluser	2014-03-16 05:17:17.4
 
 
 --
--- TOC entry 2589 (class 0 OID 16637)
+-- TOC entry 2595 (class 0 OID 16637)
 -- Dependencies: 192
 -- Data for Name: tb_entrenadores_atletas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
 
 COPY tb_entrenadores_atletas (entrenadoresatletas_id, entrenadores_codigo, atletas_codigo, entrenadoresatletas_desde, entrenadoresatletas_hasta, activo, usuario, fecha_creacion, usuario_mod, fecha_modificacion) FROM stdin;
-1	00001	46658908	2007-01-01	2035-01-01	t	TESTUSER	2014-04-14 12:33:52.214018	TESTUSER	2016-02-12 02:31:53.796567
+1	00001	46658908	2007-01-01	2030-01-01	t	TESTUSER	2014-04-14 12:33:52.214018	TESTUSER	2016-03-12 16:24:16.048586
 \.
 
 
 --
--- TOC entry 2656 (class 0 OID 0)
+-- TOC entry 2663 (class 0 OID 0)
 -- Dependencies: 193
 -- Name: tb_entrenadores_atletas_entrenadoresatletas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9379,7 +9855,7 @@ SELECT pg_catalog.setval('tb_entrenadores_atletas_entrenadoresatletas_id_seq', 5
 
 
 --
--- TOC entry 2591 (class 0 OID 16643)
+-- TOC entry 2597 (class 0 OID 16643)
 -- Dependencies: 194
 -- Data for Name: tb_entrenadores_nivel; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9397,7 +9873,7 @@ PROMO	Promotor	f	t	TESTUSER	2014-03-06 03:02:33.722386	TESTUSER	2016-02-11 14:52
 
 
 --
--- TOC entry 2592 (class 0 OID 16648)
+-- TOC entry 2598 (class 0 OID 16648)
 -- Dependencies: 195
 -- Data for Name: tb_ligas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9411,7 +9887,7 @@ LSANLUIS	Liga De San Luis	Oscar Valiente				????		t	TESTUSER	2015-03-14 16:46:20
 
 
 --
--- TOC entry 2593 (class 0 OID 16655)
+-- TOC entry 2599 (class 0 OID 16655)
 -- Dependencies: 196
 -- Data for Name: tb_ligas_clubes; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9422,7 +9898,7 @@ COPY tb_ligas_clubes (ligasclubes_id, ligas_codigo, clubes_codigo, ligasclubes_d
 
 
 --
--- TOC entry 2657 (class 0 OID 0)
+-- TOC entry 2664 (class 0 OID 0)
 -- Dependencies: 197
 -- Name: tb_ligas_clubes_ligasclubes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9431,7 +9907,7 @@ SELECT pg_catalog.setval('tb_ligas_clubes_ligasclubes_id_seq', 16, true);
 
 
 --
--- TOC entry 2595 (class 0 OID 16661)
+-- TOC entry 2601 (class 0 OID 16661)
 -- Dependencies: 198
 -- Data for Name: tb_paises; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9460,7 +9936,7 @@ BRA	Brasil	f	t	TESTUSER	2014-01-15 04:09:48.671663	TESTUSER	2016-02-07 21:57:32.
 
 
 --
--- TOC entry 2596 (class 0 OID 16667)
+-- TOC entry 2602 (class 0 OID 16667)
 -- Dependencies: 199
 -- Data for Name: tb_pruebas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -9534,7 +10010,7 @@ SGARROCHAMME	Salto Con Garrocha	SGARROCHA	M	MEN	MAY		f	t	TESTUSER	2015-04-26 17:
 
 
 --
--- TOC entry 2597 (class 0 OID 16673)
+-- TOC entry 2603 (class 0 OID 16673)
 -- Dependencies: 200
 -- Data for Name: tb_pruebas_clasificacion; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9550,7 +10026,7 @@ FONDO	Fondo	PIS	HMS	t	TESTUSER	2014-03-21 02:54:21.520442	TESTUSER	2016-02-09 00
 
 
 --
--- TOC entry 2598 (class 0 OID 16677)
+-- TOC entry 2604 (class 0 OID 16677)
 -- Dependencies: 201
 -- Data for Name: tb_pruebas_detalle; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -9574,7 +10050,7 @@ COPY tb_pruebas_detalle (pruebas_detalle_id, pruebas_codigo, pruebas_detalle_pru
 
 
 --
--- TOC entry 2658 (class 0 OID 0)
+-- TOC entry 2665 (class 0 OID 0)
 -- Dependencies: 202
 -- Name: tb_pruebas_detalle_pruebas_detalle_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -9583,7 +10059,7 @@ SELECT pg_catalog.setval('tb_pruebas_detalle_pruebas_detalle_id_seq', 103, true)
 
 
 --
--- TOC entry 2600 (class 0 OID 16684)
+-- TOC entry 2606 (class 0 OID 16684)
 -- Dependencies: 203
 -- Data for Name: tb_pruebas_tipo; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9598,7 +10074,7 @@ CROSC	Cross Country	t	TESTUSER	2014-03-03 17:26:07.839675	TESTUSER	2016-02-08 17
 
 
 --
--- TOC entry 2601 (class 0 OID 16688)
+-- TOC entry 2607 (class 0 OID 16688)
 -- Dependencies: 204
 -- Data for Name: tb_records; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9641,7 +10117,7 @@ COPY tb_records (records_id, records_tipo_codigo, atletas_resultados_id, categor
 
 
 --
--- TOC entry 2602 (class 0 OID 16693)
+-- TOC entry 2608 (class 0 OID 16693)
 -- Dependencies: 205
 -- Data for Name: tb_records_pase; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -9673,7 +10149,7 @@ COPY tb_records_pase (records_id, records_tipo_codigo, atletas_resultados_id, ca
 
 
 --
--- TOC entry 2659 (class 0 OID 0)
+-- TOC entry 2666 (class 0 OID 0)
 -- Dependencies: 206
 -- Name: tb_records_records_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9682,7 +10158,7 @@ SELECT pg_catalog.setval('tb_records_records_id_seq', 24, true);
 
 
 --
--- TOC entry 2604 (class 0 OID 16698)
+-- TOC entry 2610 (class 0 OID 16698)
 -- Dependencies: 207
 -- Data for Name: tb_records_tipo; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9698,7 +10174,7 @@ REGIONAL	Record Regional	RR	A	R	600	t	t	TESTUSER	2015-01-05 00:40:42.112712	post
 
 
 --
--- TOC entry 2605 (class 0 OID 16708)
+-- TOC entry 2611 (class 0 OID 16708)
 -- Dependencies: 208
 -- Data for Name: tb_records_tipo_pase; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -9714,7 +10190,7 @@ RCOMPETEN	Record Competencia	RC	C	X	10	f	t	TESTUSER	2014-07-01 16:51:23.649336	T
 
 
 --
--- TOC entry 2606 (class 0 OID 16711)
+-- TOC entry 2612 (class 0 OID 16711)
 -- Dependencies: 209
 -- Data for Name: tb_regiones; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9727,7 +10203,7 @@ SAMERICA	Sud America	t	TESTUSER	2014-06-27 16:15:35.642623	TESTUSER	2016-02-07 1
 
 
 --
--- TOC entry 2607 (class 0 OID 16715)
+-- TOC entry 2613 (class 0 OID 16715)
 -- Dependencies: 210
 -- Data for Name: tb_sys_menu; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9775,7 +10251,7 @@ ATLETISMO	56	mn_admin	Administrador	A         	4	5	t	ADMIN	2015-10-04 14:59:17.3
 
 
 --
--- TOC entry 2660 (class 0 OID 0)
+-- TOC entry 2667 (class 0 OID 0)
 -- Dependencies: 211
 -- Name: tb_sys_menu_menu_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9784,7 +10260,7 @@ SELECT pg_catalog.setval('tb_sys_menu_menu_id_seq', 58, true);
 
 
 --
--- TOC entry 2609 (class 0 OID 16722)
+-- TOC entry 2615 (class 0 OID 16722)
 -- Dependencies: 212
 -- Data for Name: tb_sys_perfil; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9797,7 +10273,7 @@ COPY tb_sys_perfil (perfil_id, sys_systemcode, perfil_codigo, perfil_descripcion
 
 
 --
--- TOC entry 2610 (class 0 OID 16726)
+-- TOC entry 2616 (class 0 OID 16726)
 -- Dependencies: 213
 -- Data for Name: tb_sys_perfil_detalle; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9921,7 +10397,7 @@ COPY tb_sys_perfil_detalle (perfdet_id, perfdet_accessdef, perfdet_accleer, perf
 
 
 --
--- TOC entry 2661 (class 0 OID 0)
+-- TOC entry 2668 (class 0 OID 0)
 -- Dependencies: 214
 -- Name: tb_sys_perfil_detalle_perfdet_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9930,7 +10406,7 @@ SELECT pg_catalog.setval('tb_sys_perfil_detalle_perfdet_id_seq', 608, true);
 
 
 --
--- TOC entry 2662 (class 0 OID 0)
+-- TOC entry 2669 (class 0 OID 0)
 -- Dependencies: 215
 -- Name: tb_sys_perfil_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9939,7 +10415,7 @@ SELECT pg_catalog.setval('tb_sys_perfil_id_seq', 18, true);
 
 
 --
--- TOC entry 2613 (class 0 OID 16739)
+-- TOC entry 2619 (class 0 OID 16739)
 -- Dependencies: 216
 -- Data for Name: tb_sys_sistemas; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9950,7 +10426,7 @@ ATLETISMO	Sistema Deportivo de la Federacion Deportiva de Atletismo	t	ADMIN	2014
 
 
 --
--- TOC entry 2614 (class 0 OID 16743)
+-- TOC entry 2620 (class 0 OID 16743)
 -- Dependencies: 217
 -- Data for Name: tb_sys_usuario_perfiles; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9962,7 +10438,7 @@ COPY tb_sys_usuario_perfiles (usuario_perfil_id, perfil_id, usuarios_id, activo,
 
 
 --
--- TOC entry 2663 (class 0 OID 0)
+-- TOC entry 2670 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: tb_sys_usuario_perfiles_usuario_perfil_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -9971,7 +10447,7 @@ SELECT pg_catalog.setval('tb_sys_usuario_perfiles_usuario_perfil_id_seq', 6, tru
 
 
 --
--- TOC entry 2616 (class 0 OID 16749)
+-- TOC entry 2622 (class 0 OID 16749)
 -- Dependencies: 219
 -- Data for Name: tb_unidad_medida; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9986,7 +10462,7 @@ MTSCM	Metros,Centimetros	^([1-9]?[0-9]{1})\\.([0-9]?[0-9])$	^([1-9]?[0-9]{1})\\.
 
 
 --
--- TOC entry 2617 (class 0 OID 16755)
+-- TOC entry 2623 (class 0 OID 16755)
 -- Dependencies: 220
 -- Data for Name: tb_usuarios; Type: TABLE DATA; Schema: public; Owner: atluser
 --
@@ -9998,7 +10474,7 @@ COPY tb_usuarios (usuarios_id, usuarios_code, usuarios_password, usuarios_nombre
 
 
 --
--- TOC entry 2664 (class 0 OID 0)
+-- TOC entry 2671 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: tb_usuarios_usuarios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: atluser
 --
@@ -10007,7 +10483,18 @@ SELECT pg_catalog.setval('tb_usuarios_usuarios_id_seq', 14, true);
 
 
 --
--- TOC entry 2619 (class 0 OID 16762)
+-- TOC entry 2626 (class 0 OID 37545)
+-- Dependencies: 223
+-- Data for Name: v_count; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY v_count (count) FROM stdin;
+1
+\.
+
+
+--
+-- TOC entry 2625 (class 0 OID 16762)
 -- Dependencies: 222
 -- Data for Name: v_peso_desde; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -10024,7 +10511,7 @@ COPY v_peso_desde (appcat_peso) FROM stdin;
 
 
 --
--- TOC entry 2250 (class 2606 OID 16805)
+-- TOC entry 2256 (class 2606 OID 16805)
 -- Name: pk_app_categorias; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10033,7 +10520,7 @@ ALTER TABLE ONLY tb_app_categorias_values
 
 
 --
--- TOC entry 2253 (class 2606 OID 16807)
+-- TOC entry 2259 (class 2606 OID 16807)
 -- Name: pk_app_pruebas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10042,7 +10529,7 @@ ALTER TABLE ONLY tb_app_pruebas_values
 
 
 --
--- TOC entry 2257 (class 2606 OID 16809)
+-- TOC entry 2263 (class 2606 OID 16809)
 -- Name: pk_atletas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10051,7 +10538,7 @@ ALTER TABLE ONLY tb_atletas
 
 
 --
--- TOC entry 2260 (class 2606 OID 16811)
+-- TOC entry 2266 (class 2606 OID 16811)
 -- Name: pk_atletas_carnets; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10060,7 +10547,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2268 (class 2606 OID 16813)
+-- TOC entry 2274 (class 2606 OID 16813)
 -- Name: pk_atletas_resultados; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10069,7 +10556,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2274 (class 2606 OID 16815)
+-- TOC entry 2280 (class 2606 OID 16815)
 -- Name: pk_atletas_resultados_detalle; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10078,7 +10565,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle
 
 
 --
--- TOC entry 2281 (class 2606 OID 16817)
+-- TOC entry 2287 (class 2606 OID 16817)
 -- Name: pk_categorias; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10087,7 +10574,7 @@ ALTER TABLE ONLY tb_categorias
 
 
 --
--- TOC entry 2284 (class 2606 OID 16819)
+-- TOC entry 2290 (class 2606 OID 16819)
 -- Name: pk_ciudades; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10096,7 +10583,7 @@ ALTER TABLE ONLY tb_ciudades
 
 
 --
--- TOC entry 2289 (class 2606 OID 16821)
+-- TOC entry 2295 (class 2606 OID 16821)
 -- Name: pk_clubes; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10105,7 +10592,7 @@ ALTER TABLE ONLY tb_clubes
 
 
 --
--- TOC entry 2293 (class 2606 OID 16823)
+-- TOC entry 2299 (class 2606 OID 16823)
 -- Name: pk_clubesatletas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10114,7 +10601,7 @@ ALTER TABLE ONLY tb_clubes_atletas
 
 
 --
--- TOC entry 2296 (class 2606 OID 16825)
+-- TOC entry 2302 (class 2606 OID 16825)
 -- Name: pk_competencia_clasificacion; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10123,7 +10610,7 @@ ALTER TABLE ONLY tb_competencia_tipo
 
 
 --
--- TOC entry 2302 (class 2606 OID 16827)
+-- TOC entry 2308 (class 2606 OID 16827)
 -- Name: pk_competencias; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10132,7 +10619,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2306 (class 2606 OID 16829)
+-- TOC entry 2312 (class 2606 OID 16829)
 -- Name: pk_competencias_pruebas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10141,7 +10628,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2312 (class 2606 OID 16831)
+-- TOC entry 2318 (class 2606 OID 16831)
 -- Name: pk_entrenadores; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10150,7 +10637,7 @@ ALTER TABLE ONLY tb_entrenadores
 
 
 --
--- TOC entry 2318 (class 2606 OID 16833)
+-- TOC entry 2324 (class 2606 OID 16833)
 -- Name: pk_entrenadores_nivel; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10159,7 +10646,7 @@ ALTER TABLE ONLY tb_entrenadores_nivel
 
 
 --
--- TOC entry 2316 (class 2606 OID 16835)
+-- TOC entry 2322 (class 2606 OID 16835)
 -- Name: pk_entrenadoresatletas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10168,7 +10655,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas
 
 
 --
--- TOC entry 2321 (class 2606 OID 16837)
+-- TOC entry 2327 (class 2606 OID 16837)
 -- Name: pk_ligas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10177,7 +10664,7 @@ ALTER TABLE ONLY tb_ligas
 
 
 --
--- TOC entry 2323 (class 2606 OID 16839)
+-- TOC entry 2329 (class 2606 OID 16839)
 -- Name: pk_ligasclubes; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10186,7 +10673,7 @@ ALTER TABLE ONLY tb_ligas_clubes
 
 
 --
--- TOC entry 2359 (class 2606 OID 16841)
+-- TOC entry 2365 (class 2606 OID 16841)
 -- Name: pk_menu; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10195,7 +10682,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2325 (class 2606 OID 16843)
+-- TOC entry 2331 (class 2606 OID 16843)
 -- Name: pk_paises; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10204,7 +10691,7 @@ ALTER TABLE ONLY tb_paises
 
 
 --
--- TOC entry 2370 (class 2606 OID 16845)
+-- TOC entry 2376 (class 2606 OID 16845)
 -- Name: pk_perfdet_id; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10213,7 +10700,7 @@ ALTER TABLE ONLY tb_sys_perfil_detalle
 
 
 --
--- TOC entry 2337 (class 2606 OID 16847)
+-- TOC entry 2343 (class 2606 OID 16847)
 -- Name: pk_pruebas_clasificacion; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10222,7 +10709,7 @@ ALTER TABLE ONLY tb_pruebas_clasificacion
 
 
 --
--- TOC entry 2341 (class 2606 OID 16849)
+-- TOC entry 2347 (class 2606 OID 16849)
 -- Name: pk_pruebas_detalle; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10231,7 +10718,7 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2345 (class 2606 OID 16851)
+-- TOC entry 2351 (class 2606 OID 16851)
 -- Name: pk_pruebas_tipo; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10240,7 +10727,7 @@ ALTER TABLE ONLY tb_pruebas_tipo
 
 
 --
--- TOC entry 2348 (class 2606 OID 16853)
+-- TOC entry 2354 (class 2606 OID 16853)
 -- Name: pk_records; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10249,7 +10736,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2353 (class 2606 OID 16855)
+-- TOC entry 2359 (class 2606 OID 16855)
 -- Name: pk_records_tipos_codigo; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10258,7 +10745,7 @@ ALTER TABLE ONLY tb_records_tipo
 
 
 --
--- TOC entry 2355 (class 2606 OID 16857)
+-- TOC entry 2361 (class 2606 OID 16857)
 -- Name: pk_regiones; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10267,7 +10754,7 @@ ALTER TABLE ONLY tb_regiones
 
 
 --
--- TOC entry 2372 (class 2606 OID 16859)
+-- TOC entry 2378 (class 2606 OID 16859)
 -- Name: pk_sistemas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10276,7 +10763,7 @@ ALTER TABLE ONLY tb_sys_sistemas
 
 
 --
--- TOC entry 2364 (class 2606 OID 16861)
+-- TOC entry 2370 (class 2606 OID 16861)
 -- Name: pk_sys_perfil; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10285,7 +10772,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2378 (class 2606 OID 16863)
+-- TOC entry 2384 (class 2606 OID 16863)
 -- Name: pk_unidad_medida; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10294,7 +10781,7 @@ ALTER TABLE ONLY tb_unidad_medida
 
 
 --
--- TOC entry 2376 (class 2606 OID 16865)
+-- TOC entry 2382 (class 2606 OID 16865)
 -- Name: pk_usuarioperfiles; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10303,7 +10790,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles
 
 
 --
--- TOC entry 2381 (class 2606 OID 16867)
+-- TOC entry 2387 (class 2606 OID 16867)
 -- Name: pk_usuarios; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10312,7 +10799,7 @@ ALTER TABLE ONLY tb_usuarios
 
 
 --
--- TOC entry 2331 (class 2606 OID 16869)
+-- TOC entry 2337 (class 2606 OID 16869)
 -- Name: tb_pruebas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10321,7 +10808,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2262 (class 2606 OID 16871)
+-- TOC entry 2268 (class 2606 OID 16871)
 -- Name: unq_atletas_carnets; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10330,7 +10817,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2264 (class 2606 OID 16873)
+-- TOC entry 2270 (class 2606 OID 16873)
 -- Name: unq_atletas_carnets_numero; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10339,7 +10826,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2270 (class 2606 OID 16875)
+-- TOC entry 2276 (class 2606 OID 16875)
 -- Name: unq_atletas_resultados; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10348,7 +10835,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2276 (class 2606 OID 16877)
+-- TOC entry 2282 (class 2606 OID 16877)
 -- Name: unq_atletas_resultados_detalle_pruebas_detalle; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10357,7 +10844,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle
 
 
 --
--- TOC entry 2286 (class 2606 OID 16879)
+-- TOC entry 2292 (class 2606 OID 16879)
 -- Name: unq_ciudades_paises; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10366,7 +10853,7 @@ ALTER TABLE ONLY tb_ciudades
 
 
 --
--- TOC entry 2361 (class 2606 OID 16881)
+-- TOC entry 2367 (class 2606 OID 16881)
 -- Name: unq_codigomenu; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10375,7 +10862,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2308 (class 2606 OID 16883)
+-- TOC entry 2314 (class 2606 OID 16883)
 -- Name: unq_competencias_pruebas; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10384,7 +10871,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2366 (class 2606 OID 16885)
+-- TOC entry 2372 (class 2606 OID 16885)
 -- Name: unq_perfil_syscode_codigo; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10393,7 +10880,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2368 (class 2606 OID 16887)
+-- TOC entry 2374 (class 2606 OID 16887)
 -- Name: unq_perfil_syscode_perfil_id; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10402,7 +10889,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2343 (class 2606 OID 16889)
+-- TOC entry 2349 (class 2606 OID 16889)
 -- Name: unq_pruebas_detalle; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10411,8 +10898,8 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2665 (class 0 OID 0)
--- Dependencies: 2343
+-- TOC entry 2672 (class 0 OID 0)
+-- Dependencies: 2349
 -- Name: CONSTRAINT unq_pruebas_detalle ON tb_pruebas_detalle; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -10420,7 +10907,7 @@ COMMENT ON CONSTRAINT unq_pruebas_detalle ON tb_pruebas_detalle IS 'No puede rep
 
 
 --
--- TOC entry 2333 (class 2606 OID 16891)
+-- TOC entry 2339 (class 2606 OID 16891)
 -- Name: unq_pruebas_nombre; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10429,7 +10916,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2350 (class 2606 OID 16893)
+-- TOC entry 2356 (class 2606 OID 16893)
 -- Name: unq_records; Type: CONSTRAINT; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10438,7 +10925,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2271 (class 1259 OID 16894)
+-- TOC entry 2277 (class 1259 OID 16894)
 -- Name: fk_atletas_resultados_pruebas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10446,7 +10933,7 @@ CREATE INDEX fk_atletas_resultados_pruebas_codigo ON tb_atletas_resultados_detal
 
 
 --
--- TOC entry 2251 (class 1259 OID 16895)
+-- TOC entry 2257 (class 1259 OID 16895)
 -- Name: fki_app_pruebas_pruebas_clasificacion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10454,7 +10941,7 @@ CREATE INDEX fki_app_pruebas_pruebas_clasificacion ON tb_app_pruebas_values USIN
 
 
 --
--- TOC entry 2254 (class 1259 OID 16896)
+-- TOC entry 2260 (class 1259 OID 16896)
 -- Name: fki_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10462,7 +10949,7 @@ CREATE INDEX fki_atletas ON tb_atletas USING btree (atletas_codigo);
 
 
 --
--- TOC entry 2258 (class 1259 OID 16897)
+-- TOC entry 2264 (class 1259 OID 16897)
 -- Name: fki_atletas_carnets_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10470,7 +10957,7 @@ CREATE INDEX fki_atletas_carnets_atletas ON tb_atletas_carnets USING btree (atle
 
 
 --
--- TOC entry 2265 (class 1259 OID 16898)
+-- TOC entry 2271 (class 1259 OID 16898)
 -- Name: fki_atletas_resultados_atletas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10478,7 +10965,7 @@ CREATE INDEX fki_atletas_resultados_atletas_codigo ON tb_atletas_resultados USIN
 
 
 --
--- TOC entry 2266 (class 1259 OID 16899)
+-- TOC entry 2272 (class 1259 OID 16899)
 -- Name: fki_atletas_resultados_competencias_pruebas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10486,7 +10973,7 @@ CREATE INDEX fki_atletas_resultados_competencias_pruebas ON tb_atletas_resultado
 
 
 --
--- TOC entry 2272 (class 1259 OID 16900)
+-- TOC entry 2278 (class 1259 OID 16900)
 -- Name: fki_atletas_resultados_detalle_resultados_id; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10494,7 +10981,7 @@ CREATE INDEX fki_atletas_resultados_detalle_resultados_id ON tb_atletas_resultad
 
 
 --
--- TOC entry 2279 (class 1259 OID 16901)
+-- TOC entry 2285 (class 1259 OID 16901)
 -- Name: fki_categorias_appcat; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10502,7 +10989,7 @@ CREATE INDEX fki_categorias_appcat ON tb_categorias USING btree (categorias_vali
 
 
 --
--- TOC entry 2282 (class 1259 OID 16902)
+-- TOC entry 2288 (class 1259 OID 16902)
 -- Name: fki_ciudad_pais; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10510,7 +10997,7 @@ CREATE INDEX fki_ciudad_pais ON tb_ciudades USING btree (paises_codigo);
 
 
 --
--- TOC entry 2290 (class 1259 OID 16903)
+-- TOC entry 2296 (class 1259 OID 16903)
 -- Name: fki_clubesatletas_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10518,7 +11005,7 @@ CREATE INDEX fki_clubesatletas_atletas ON tb_clubes_atletas USING btree (atletas
 
 
 --
--- TOC entry 2291 (class 1259 OID 16904)
+-- TOC entry 2297 (class 1259 OID 16904)
 -- Name: fki_clubesatletas_clubes; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10526,7 +11013,7 @@ CREATE INDEX fki_clubesatletas_clubes ON tb_clubes_atletas USING btree (clubes_c
 
 
 --
--- TOC entry 2297 (class 1259 OID 16905)
+-- TOC entry 2303 (class 1259 OID 16905)
 -- Name: fki_competencias_categorias_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10534,7 +11021,7 @@ CREATE INDEX fki_competencias_categorias_codigo ON tb_competencias USING btree (
 
 
 --
--- TOC entry 2298 (class 1259 OID 16906)
+-- TOC entry 2304 (class 1259 OID 16906)
 -- Name: fki_competencias_ciudades_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10542,7 +11029,7 @@ CREATE INDEX fki_competencias_ciudades_codigo ON tb_competencias USING btree (pa
 
 
 --
--- TOC entry 2299 (class 1259 OID 16907)
+-- TOC entry 2305 (class 1259 OID 16907)
 -- Name: fki_competencias_competencia_tipo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10550,7 +11037,7 @@ CREATE INDEX fki_competencias_competencia_tipo ON tb_competencias USING btree (c
 
 
 --
--- TOC entry 2300 (class 1259 OID 16908)
+-- TOC entry 2306 (class 1259 OID 16908)
 -- Name: fki_competencias_paises_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10558,7 +11045,7 @@ CREATE INDEX fki_competencias_paises_codigo ON tb_competencias USING btree (pais
 
 
 --
--- TOC entry 2309 (class 1259 OID 16909)
+-- TOC entry 2315 (class 1259 OID 16909)
 -- Name: fki_entrenadores_nivel; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10566,7 +11053,7 @@ CREATE INDEX fki_entrenadores_nivel ON tb_entrenadores USING btree (entrenadores
 
 
 --
--- TOC entry 2313 (class 1259 OID 16910)
+-- TOC entry 2319 (class 1259 OID 16910)
 -- Name: fki_entrenadoresatletas_atletas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10574,7 +11061,7 @@ CREATE INDEX fki_entrenadoresatletas_atletas ON tb_entrenadores_atletas USING bt
 
 
 --
--- TOC entry 2314 (class 1259 OID 16911)
+-- TOC entry 2320 (class 1259 OID 16911)
 -- Name: fki_entrenadoresatletas_entrenadores; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10582,7 +11069,7 @@ CREATE INDEX fki_entrenadoresatletas_entrenadores ON tb_entrenadores_atletas USI
 
 
 --
--- TOC entry 2356 (class 1259 OID 16912)
+-- TOC entry 2362 (class 1259 OID 16912)
 -- Name: fki_menu_parent_id; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10590,7 +11077,7 @@ CREATE INDEX fki_menu_parent_id ON tb_sys_menu USING btree (menu_parent_id);
 
 
 --
--- TOC entry 2357 (class 1259 OID 16913)
+-- TOC entry 2363 (class 1259 OID 16913)
 -- Name: fki_menu_sistemas; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10598,7 +11085,7 @@ CREATE INDEX fki_menu_sistemas ON tb_sys_menu USING btree (sys_systemcode);
 
 
 --
--- TOC entry 2362 (class 1259 OID 16914)
+-- TOC entry 2368 (class 1259 OID 16914)
 -- Name: fki_perfil_sistema; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10606,7 +11093,7 @@ CREATE INDEX fki_perfil_sistema ON tb_sys_perfil USING btree (sys_systemcode);
 
 
 --
--- TOC entry 2373 (class 1259 OID 16915)
+-- TOC entry 2379 (class 1259 OID 16915)
 -- Name: fki_perfil_usuario; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10614,7 +11101,7 @@ CREATE INDEX fki_perfil_usuario ON tb_sys_usuario_perfiles USING btree (perfil_i
 
 
 --
--- TOC entry 2326 (class 1259 OID 16916)
+-- TOC entry 2332 (class 1259 OID 16916)
 -- Name: fki_pruebas_apppruebas; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10622,7 +11109,7 @@ CREATE INDEX fki_pruebas_apppruebas ON tb_pruebas USING btree (pruebas_generica_
 
 
 --
--- TOC entry 2327 (class 1259 OID 16917)
+-- TOC entry 2333 (class 1259 OID 16917)
 -- Name: fki_pruebas_categoria; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10630,7 +11117,7 @@ CREATE INDEX fki_pruebas_categoria ON tb_pruebas USING btree (categorias_codigo)
 
 
 --
--- TOC entry 2328 (class 1259 OID 16918)
+-- TOC entry 2334 (class 1259 OID 16918)
 -- Name: fki_pruebas_categorias_hasta; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10638,7 +11125,7 @@ CREATE INDEX fki_pruebas_categorias_hasta ON tb_pruebas USING btree (pruebas_rec
 
 
 --
--- TOC entry 2334 (class 1259 OID 16919)
+-- TOC entry 2340 (class 1259 OID 16919)
 -- Name: fki_pruebas_clasificacion_pruebas_tipo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10646,7 +11133,7 @@ CREATE INDEX fki_pruebas_clasificacion_pruebas_tipo ON tb_pruebas_clasificacion 
 
 
 --
--- TOC entry 2335 (class 1259 OID 16920)
+-- TOC entry 2341 (class 1259 OID 16920)
 -- Name: fki_pruebas_clasificacion_um; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10654,7 +11141,7 @@ CREATE INDEX fki_pruebas_clasificacion_um ON tb_pruebas_clasificacion USING btre
 
 
 --
--- TOC entry 2346 (class 1259 OID 16921)
+-- TOC entry 2352 (class 1259 OID 16921)
 -- Name: fki_record_id_origen; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10662,7 +11149,7 @@ CREATE INDEX fki_record_id_origen ON tb_records USING btree (records_id_origen);
 
 
 --
--- TOC entry 2277 (class 1259 OID 16922)
+-- TOC entry 2283 (class 1259 OID 16922)
 -- Name: fki_tb_atletas_resultados_competencias_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10670,7 +11157,7 @@ CREATE INDEX fki_tb_atletas_resultados_competencias_codigo ON tb_atletas_resulta
 
 
 --
--- TOC entry 2278 (class 1259 OID 16923)
+-- TOC entry 2284 (class 1259 OID 16923)
 -- Name: fki_tb_atletas_resultados_pruebas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10678,7 +11165,7 @@ CREATE INDEX fki_tb_atletas_resultados_pruebas_codigo ON tb_atletas_resultados_o
 
 
 --
--- TOC entry 2303 (class 1259 OID 16924)
+-- TOC entry 2309 (class 1259 OID 16924)
 -- Name: fki_tb_competencias_pruebas_competencias_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10686,7 +11173,7 @@ CREATE INDEX fki_tb_competencias_pruebas_competencias_codigo ON tb_competencias_
 
 
 --
--- TOC entry 2304 (class 1259 OID 16925)
+-- TOC entry 2310 (class 1259 OID 16925)
 -- Name: fki_tb_competencias_pruebas_pruebas_codigo; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10694,7 +11181,7 @@ CREATE INDEX fki_tb_competencias_pruebas_pruebas_codigo ON tb_competencias_prueb
 
 
 --
--- TOC entry 2338 (class 1259 OID 16926)
+-- TOC entry 2344 (class 1259 OID 16926)
 -- Name: fki_tb_pruebas_detalle_prueba_detalle_codigo; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10702,7 +11189,7 @@ CREATE INDEX fki_tb_pruebas_detalle_prueba_detalle_codigo ON tb_pruebas_detalle 
 
 
 --
--- TOC entry 2339 (class 1259 OID 16927)
+-- TOC entry 2345 (class 1259 OID 16927)
 -- Name: fki_tb_pruebas_detalle_pruebas; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10710,7 +11197,7 @@ CREATE INDEX fki_tb_pruebas_detalle_pruebas ON tb_pruebas_detalle USING btree (p
 
 
 --
--- TOC entry 2374 (class 1259 OID 16928)
+-- TOC entry 2380 (class 1259 OID 16928)
 -- Name: fki_usuarioperfiles; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10718,7 +11205,7 @@ CREATE INDEX fki_usuarioperfiles ON tb_sys_usuario_perfiles USING btree (usuario
 
 
 --
--- TOC entry 2255 (class 1259 OID 16929)
+-- TOC entry 2261 (class 1259 OID 16929)
 -- Name: idx_atletas_nmcompleto; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10726,7 +11213,7 @@ CREATE UNIQUE INDEX idx_atletas_nmcompleto ON tb_atletas USING btree (upper((atl
 
 
 --
--- TOC entry 2294 (class 1259 OID 16930)
+-- TOC entry 2300 (class 1259 OID 16930)
 -- Name: idx_competencia_tipo_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10734,7 +11221,7 @@ CREATE UNIQUE INDEX idx_competencia_tipo_descripcion ON tb_competencia_tipo USIN
 
 
 --
--- TOC entry 2310 (class 1259 OID 16931)
+-- TOC entry 2316 (class 1259 OID 16931)
 -- Name: idx_entrenadores_nmcompleto; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10742,7 +11229,7 @@ CREATE UNIQUE INDEX idx_entrenadores_nmcompleto ON tb_entrenadores USING btree (
 
 
 --
--- TOC entry 2351 (class 1259 OID 16932)
+-- TOC entry 2357 (class 1259 OID 16932)
 -- Name: idx_records_tipo_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10750,7 +11237,7 @@ CREATE UNIQUE INDEX idx_records_tipo_descripcion ON tb_records_tipo USING btree 
 
 
 --
--- TOC entry 2379 (class 1259 OID 16933)
+-- TOC entry 2385 (class 1259 OID 16933)
 -- Name: idx_unique_usuarios; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10758,7 +11245,7 @@ CREATE UNIQUE INDEX idx_unique_usuarios ON tb_usuarios USING btree (upper((usuar
 
 
 --
--- TOC entry 2287 (class 1259 OID 16934)
+-- TOC entry 2293 (class 1259 OID 16934)
 -- Name: idx_unq_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10766,7 +11253,7 @@ CREATE UNIQUE INDEX idx_unq_descripcion ON tb_clubes USING btree (upper((clubes_
 
 
 --
--- TOC entry 2319 (class 1259 OID 16935)
+-- TOC entry 2325 (class 1259 OID 16935)
 -- Name: idx_unq_ligas_descripcion; Type: INDEX; Schema: public; Owner: atluser; Tablespace:
 --
 
@@ -10774,7 +11261,7 @@ CREATE UNIQUE INDEX idx_unq_ligas_descripcion ON tb_ligas USING btree (upper((li
 
 
 --
--- TOC entry 2329 (class 1259 OID 16936)
+-- TOC entry 2335 (class 1259 OID 16936)
 -- Name: pk_pruebas; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
@@ -10782,7 +11269,7 @@ CREATE UNIQUE INDEX pk_pruebas ON tb_pruebas USING btree (pruebas_codigo);
 
 
 --
--- TOC entry 2458 (class 2620 OID 16937)
+-- TOC entry 2464 (class 2620 OID 16937)
 -- Name: sptrg_verify_usuario_code_change; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10790,7 +11277,7 @@ CREATE TRIGGER sptrg_verify_usuario_code_change BEFORE INSERT OR DELETE OR UPDAT
 
 
 --
--- TOC entry 2441 (class 2620 OID 16938)
+-- TOC entry 2447 (class 2620 OID 16938)
 -- Name: t__entrenadores_nivel; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10798,7 +11285,7 @@ CREATE TRIGGER t__entrenadores_nivel BEFORE INSERT OR UPDATE ON tb_entrenadores_
 
 
 --
--- TOC entry 2457 (class 2620 OID 16939)
+-- TOC entry 2463 (class 2620 OID 16939)
 -- Name: tb_unidad_medida; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10806,7 +11293,7 @@ CREATE TRIGGER tb_unidad_medida BEFORE INSERT OR UPDATE ON tb_unidad_medida FOR 
 
 
 --
--- TOC entry 2424 (class 2620 OID 16940)
+-- TOC entry 2430 (class 2620 OID 16940)
 -- Name: tr_app_categorias_values; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10814,7 +11301,7 @@ CREATE TRIGGER tr_app_categorias_values BEFORE INSERT OR UPDATE ON tb_app_catego
 
 
 --
--- TOC entry 2425 (class 2620 OID 16941)
+-- TOC entry 2431 (class 2620 OID 16941)
 -- Name: tr_app_pruebas_values; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10822,7 +11309,7 @@ CREATE TRIGGER tr_app_pruebas_values BEFORE INSERT OR UPDATE ON tb_app_pruebas_v
 
 
 --
--- TOC entry 2426 (class 2620 OID 16942)
+-- TOC entry 2432 (class 2620 OID 16942)
 -- Name: tr_atletas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10830,7 +11317,7 @@ CREATE TRIGGER tr_atletas BEFORE INSERT OR UPDATE ON tb_atletas FOR EACH ROW EXE
 
 
 --
--- TOC entry 2427 (class 2620 OID 16943)
+-- TOC entry 2433 (class 2620 OID 16943)
 -- Name: tr_atletas_carnets; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10838,7 +11325,7 @@ CREATE TRIGGER tr_atletas_carnets BEFORE INSERT OR UPDATE ON tb_atletas_carnets 
 
 
 --
--- TOC entry 2430 (class 2620 OID 16944)
+-- TOC entry 2436 (class 2620 OID 16944)
 -- Name: tr_atletas_resultados; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10846,7 +11333,7 @@ CREATE TRIGGER tr_atletas_resultados BEFORE INSERT OR UPDATE ON tb_atletas_resul
 
 
 --
--- TOC entry 2428 (class 2620 OID 16945)
+-- TOC entry 2434 (class 2620 OID 16945)
 -- Name: tr_atletas_resultados; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10854,7 +11341,7 @@ CREATE TRIGGER tr_atletas_resultados BEFORE INSERT OR UPDATE ON tb_atletas_resul
 
 
 --
--- TOC entry 2429 (class 2620 OID 16946)
+-- TOC entry 2435 (class 2620 OID 16946)
 -- Name: tr_atletas_resultados_detalle; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10862,7 +11349,7 @@ CREATE TRIGGER tr_atletas_resultados_detalle BEFORE INSERT OR UPDATE ON tb_atlet
 
 
 --
--- TOC entry 2431 (class 2620 OID 16947)
+-- TOC entry 2437 (class 2620 OID 16947)
 -- Name: tr_categorias; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10870,7 +11357,7 @@ CREATE TRIGGER tr_categorias BEFORE INSERT OR UPDATE ON tb_categorias FOR EACH R
 
 
 --
--- TOC entry 2432 (class 2620 OID 16948)
+-- TOC entry 2438 (class 2620 OID 16948)
 -- Name: tr_ciudades; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10878,7 +11365,7 @@ CREATE TRIGGER tr_ciudades BEFORE INSERT OR UPDATE ON tb_ciudades FOR EACH ROW E
 
 
 --
--- TOC entry 2433 (class 2620 OID 16949)
+-- TOC entry 2439 (class 2620 OID 16949)
 -- Name: tr_clubes; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10886,7 +11373,7 @@ CREATE TRIGGER tr_clubes BEFORE INSERT OR UPDATE ON tb_clubes FOR EACH ROW EXECU
 
 
 --
--- TOC entry 2434 (class 2620 OID 16950)
+-- TOC entry 2440 (class 2620 OID 16950)
 -- Name: tr_clubes_atletas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10894,7 +11381,7 @@ CREATE TRIGGER tr_clubes_atletas BEFORE INSERT OR UPDATE ON tb_clubes_atletas FO
 
 
 --
--- TOC entry 2435 (class 2620 OID 16951)
+-- TOC entry 2441 (class 2620 OID 16951)
 -- Name: tr_competencia_clasificacion; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10902,7 +11389,7 @@ CREATE TRIGGER tr_competencia_clasificacion BEFORE INSERT OR UPDATE ON tb_compet
 
 
 --
--- TOC entry 2436 (class 2620 OID 16952)
+-- TOC entry 2442 (class 2620 OID 16952)
 -- Name: tr_competencias; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10910,7 +11397,7 @@ CREATE TRIGGER tr_competencias BEFORE INSERT OR UPDATE ON tb_competencias FOR EA
 
 
 --
--- TOC entry 2437 (class 2620 OID 16953)
+-- TOC entry 2443 (class 2620 OID 16953)
 -- Name: tr_competencias_pruebas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10918,7 +11405,7 @@ CREATE TRIGGER tr_competencias_pruebas BEFORE INSERT OR UPDATE ON tb_competencia
 
 
 --
--- TOC entry 2438 (class 2620 OID 16954)
+-- TOC entry 2444 (class 2620 OID 16954)
 -- Name: tr_entidad; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10926,7 +11413,7 @@ CREATE TRIGGER tr_entidad BEFORE INSERT OR UPDATE ON tb_entidad FOR EACH ROW EXE
 
 
 --
--- TOC entry 2439 (class 2620 OID 16955)
+-- TOC entry 2445 (class 2620 OID 16955)
 -- Name: tr_entrenadores; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10934,7 +11421,7 @@ CREATE TRIGGER tr_entrenadores BEFORE INSERT OR UPDATE ON tb_entrenadores FOR EA
 
 
 --
--- TOC entry 2440 (class 2620 OID 16956)
+-- TOC entry 2446 (class 2620 OID 16956)
 -- Name: tr_entrenadores_atletas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10942,7 +11429,7 @@ CREATE TRIGGER tr_entrenadores_atletas BEFORE INSERT OR UPDATE ON tb_entrenadore
 
 
 --
--- TOC entry 2442 (class 2620 OID 16957)
+-- TOC entry 2448 (class 2620 OID 16957)
 -- Name: tr_ligas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10950,7 +11437,7 @@ CREATE TRIGGER tr_ligas BEFORE INSERT OR UPDATE ON tb_ligas FOR EACH ROW EXECUTE
 
 
 --
--- TOC entry 2443 (class 2620 OID 16958)
+-- TOC entry 2449 (class 2620 OID 16958)
 -- Name: tr_ligasclubes; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10958,7 +11445,7 @@ CREATE TRIGGER tr_ligasclubes BEFORE INSERT OR UPDATE ON tb_ligas_clubes FOR EAC
 
 
 --
--- TOC entry 2444 (class 2620 OID 16959)
+-- TOC entry 2450 (class 2620 OID 16959)
 -- Name: tr_paises; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10966,7 +11453,7 @@ CREATE TRIGGER tr_paises BEFORE INSERT OR UPDATE ON tb_paises FOR EACH ROW EXECU
 
 
 --
--- TOC entry 2445 (class 2620 OID 16960)
+-- TOC entry 2451 (class 2620 OID 16960)
 -- Name: tr_pruebas; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -10974,7 +11461,7 @@ CREATE TRIGGER tr_pruebas BEFORE INSERT OR UPDATE ON tb_pruebas FOR EACH ROW EXE
 
 
 --
--- TOC entry 2446 (class 2620 OID 16961)
+-- TOC entry 2452 (class 2620 OID 16961)
 -- Name: tr_pruebas_clasificacion; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10982,7 +11469,7 @@ CREATE TRIGGER tr_pruebas_clasificacion BEFORE INSERT OR UPDATE ON tb_pruebas_cl
 
 
 --
--- TOC entry 2447 (class 2620 OID 16962)
+-- TOC entry 2453 (class 2620 OID 16962)
 -- Name: tr_pruebas_detalle; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -10990,7 +11477,7 @@ CREATE TRIGGER tr_pruebas_detalle BEFORE INSERT OR UPDATE ON tb_pruebas_detalle 
 
 
 --
--- TOC entry 2448 (class 2620 OID 16963)
+-- TOC entry 2454 (class 2620 OID 16963)
 -- Name: tr_pruebas_tipo; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -10998,7 +11485,7 @@ CREATE TRIGGER tr_pruebas_tipo BEFORE INSERT OR UPDATE ON tb_pruebas_tipo FOR EA
 
 
 --
--- TOC entry 2449 (class 2620 OID 16964)
+-- TOC entry 2455 (class 2620 OID 16964)
 -- Name: tr_records; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11006,7 +11493,7 @@ CREATE TRIGGER tr_records BEFORE INSERT OR UPDATE ON tb_records FOR EACH ROW EXE
 
 
 --
--- TOC entry 2450 (class 2620 OID 16965)
+-- TOC entry 2456 (class 2620 OID 16965)
 -- Name: tr_records_save; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11014,7 +11501,7 @@ CREATE TRIGGER tr_records_save BEFORE INSERT OR UPDATE ON tb_records FOR EACH RO
 
 
 --
--- TOC entry 2451 (class 2620 OID 16966)
+-- TOC entry 2457 (class 2620 OID 16966)
 -- Name: tr_records_tipo; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11022,7 +11509,7 @@ CREATE TRIGGER tr_records_tipo BEFORE INSERT OR UPDATE ON tb_records_tipo FOR EA
 
 
 --
--- TOC entry 2452 (class 2620 OID 16967)
+-- TOC entry 2458 (class 2620 OID 16967)
 -- Name: tr_regiones; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11030,7 +11517,7 @@ CREATE TRIGGER tr_regiones BEFORE INSERT OR UPDATE ON tb_regiones FOR EACH ROW E
 
 
 --
--- TOC entry 2453 (class 2620 OID 16968)
+-- TOC entry 2459 (class 2620 OID 16968)
 -- Name: tr_sys_perfil; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11038,7 +11525,7 @@ CREATE TRIGGER tr_sys_perfil BEFORE INSERT OR UPDATE ON tb_sys_perfil FOR EACH R
 
 
 --
--- TOC entry 2454 (class 2620 OID 16969)
+-- TOC entry 2460 (class 2620 OID 16969)
 -- Name: tr_sys_perfil_detalle; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11046,7 +11533,7 @@ CREATE TRIGGER tr_sys_perfil_detalle BEFORE INSERT OR UPDATE ON tb_sys_perfil_de
 
 
 --
--- TOC entry 2455 (class 2620 OID 16970)
+-- TOC entry 2461 (class 2620 OID 16970)
 -- Name: tr_sys_sistemas; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11054,7 +11541,7 @@ CREATE TRIGGER tr_sys_sistemas BEFORE INSERT OR UPDATE ON tb_sys_sistemas FOR EA
 
 
 --
--- TOC entry 2456 (class 2620 OID 16971)
+-- TOC entry 2462 (class 2620 OID 16971)
 -- Name: tr_sys_usuario_perfiles; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11062,7 +11549,7 @@ CREATE TRIGGER tr_sys_usuario_perfiles BEFORE INSERT OR UPDATE ON tb_sys_usuario
 
 
 --
--- TOC entry 2459 (class 2620 OID 16972)
+-- TOC entry 2465 (class 2620 OID 16972)
 -- Name: tr_usuarios; Type: TRIGGER; Schema: public; Owner: atluser
 --
 
@@ -11070,7 +11557,7 @@ CREATE TRIGGER tr_usuarios BEFORE INSERT OR UPDATE ON tb_usuarios FOR EACH ROW E
 
 
 --
--- TOC entry 2414 (class 2606 OID 16973)
+-- TOC entry 2420 (class 2606 OID 16973)
 -- Name: categorias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11079,7 +11566,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2382 (class 2606 OID 16978)
+-- TOC entry 2388 (class 2606 OID 16978)
 -- Name: fk_app_pruebas_pruebas_clasificacion; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11088,7 +11575,7 @@ ALTER TABLE ONLY tb_app_pruebas_values
 
 
 --
--- TOC entry 2384 (class 2606 OID 16983)
+-- TOC entry 2390 (class 2606 OID 16983)
 -- Name: fk_atletas_carnets_atletas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11097,7 +11584,7 @@ ALTER TABLE ONLY tb_atletas_carnets
 
 
 --
--- TOC entry 2383 (class 2606 OID 16988)
+-- TOC entry 2389 (class 2606 OID 16988)
 -- Name: fk_atletas_pais; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11106,7 +11593,7 @@ ALTER TABLE ONLY tb_atletas
 
 
 --
--- TOC entry 2385 (class 2606 OID 16993)
+-- TOC entry 2391 (class 2606 OID 16993)
 -- Name: fk_atletas_resultados_atletas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11115,7 +11602,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2386 (class 2606 OID 16998)
+-- TOC entry 2392 (class 2606 OID 16998)
 -- Name: fk_atletas_resultados_competencias_pruebas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11124,7 +11611,7 @@ ALTER TABLE ONLY tb_atletas_resultados
 
 
 --
--- TOC entry 2387 (class 2606 OID 17003)
+-- TOC entry 2393 (class 2606 OID 17003)
 -- Name: fk_atletas_resultados_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11133,7 +11620,7 @@ ALTER TABLE ONLY tb_atletas_resultados_detalle
 
 
 --
--- TOC entry 2390 (class 2606 OID 17008)
+-- TOC entry 2396 (class 2606 OID 17008)
 -- Name: fk_categorias_appcat; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11142,7 +11629,7 @@ ALTER TABLE ONLY tb_categorias
 
 
 --
--- TOC entry 2391 (class 2606 OID 17013)
+-- TOC entry 2397 (class 2606 OID 17013)
 -- Name: fk_ciudad_pais; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11151,7 +11638,7 @@ ALTER TABLE ONLY tb_ciudades
 
 
 --
--- TOC entry 2392 (class 2606 OID 17018)
+-- TOC entry 2398 (class 2606 OID 17018)
 -- Name: fk_clubesatletas_atletas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11160,7 +11647,7 @@ ALTER TABLE ONLY tb_clubes_atletas
 
 
 --
--- TOC entry 2393 (class 2606 OID 17023)
+-- TOC entry 2399 (class 2606 OID 17023)
 -- Name: fk_clubesatletas_clubes; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11169,7 +11656,7 @@ ALTER TABLE ONLY tb_clubes_atletas
 
 
 --
--- TOC entry 2394 (class 2606 OID 17028)
+-- TOC entry 2400 (class 2606 OID 17028)
 -- Name: fk_competencias_categorias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11178,7 +11665,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2395 (class 2606 OID 17033)
+-- TOC entry 2401 (class 2606 OID 17033)
 -- Name: fk_competencias_ciudades_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11187,7 +11674,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2396 (class 2606 OID 17038)
+-- TOC entry 2402 (class 2606 OID 17038)
 -- Name: fk_competencias_competencia_tipo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11196,7 +11683,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2397 (class 2606 OID 17043)
+-- TOC entry 2403 (class 2606 OID 17043)
 -- Name: fk_competencias_paises_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11205,7 +11692,7 @@ ALTER TABLE ONLY tb_competencias
 
 
 --
--- TOC entry 2400 (class 2606 OID 17153)
+-- TOC entry 2406 (class 2606 OID 17153)
 -- Name: fk_competencias_pruebas_competencias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11214,7 +11701,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2398 (class 2606 OID 17048)
+-- TOC entry 2404 (class 2606 OID 17048)
 -- Name: fk_competencias_pruebas_origen_id; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11223,7 +11710,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2399 (class 2606 OID 17158)
+-- TOC entry 2405 (class 2606 OID 17158)
 -- Name: fk_competencias_pruebas_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11232,7 +11719,7 @@ ALTER TABLE ONLY tb_competencias_pruebas
 
 
 --
--- TOC entry 2401 (class 2606 OID 17053)
+-- TOC entry 2407 (class 2606 OID 17053)
 -- Name: fk_entrenadores_nivel; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11241,7 +11728,7 @@ ALTER TABLE ONLY tb_entrenadores
 
 
 --
--- TOC entry 2402 (class 2606 OID 17058)
+-- TOC entry 2408 (class 2606 OID 17058)
 -- Name: fk_entrenadoresatletas_atletas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11250,7 +11737,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas
 
 
 --
--- TOC entry 2403 (class 2606 OID 17063)
+-- TOC entry 2409 (class 2606 OID 17063)
 -- Name: fk_entrenadoresatletas_entrenadores; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11259,7 +11746,7 @@ ALTER TABLE ONLY tb_entrenadores_atletas
 
 
 --
--- TOC entry 2404 (class 2606 OID 17068)
+-- TOC entry 2410 (class 2606 OID 17068)
 -- Name: fk_ligasclubes_clubes; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11268,7 +11755,7 @@ ALTER TABLE ONLY tb_ligas_clubes
 
 
 --
--- TOC entry 2405 (class 2606 OID 17073)
+-- TOC entry 2411 (class 2606 OID 17073)
 -- Name: fk_ligasclubes_ligas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11277,7 +11764,7 @@ ALTER TABLE ONLY tb_ligas_clubes
 
 
 --
--- TOC entry 2418 (class 2606 OID 17078)
+-- TOC entry 2424 (class 2606 OID 17078)
 -- Name: fk_menu_parent; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11286,7 +11773,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2419 (class 2606 OID 17083)
+-- TOC entry 2425 (class 2606 OID 17083)
 -- Name: fk_menu_sistemas; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11295,7 +11782,7 @@ ALTER TABLE ONLY tb_sys_menu
 
 
 --
--- TOC entry 2406 (class 2606 OID 17088)
+-- TOC entry 2412 (class 2606 OID 17088)
 -- Name: fk_paises_regiones; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11304,7 +11791,7 @@ ALTER TABLE ONLY tb_paises
 
 
 --
--- TOC entry 2421 (class 2606 OID 17093)
+-- TOC entry 2427 (class 2606 OID 17093)
 -- Name: fk_perfdet_perfil; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11313,7 +11800,7 @@ ALTER TABLE ONLY tb_sys_perfil_detalle
 
 
 --
--- TOC entry 2420 (class 2606 OID 17098)
+-- TOC entry 2426 (class 2606 OID 17098)
 -- Name: fk_perfil_sistema; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11322,7 +11809,7 @@ ALTER TABLE ONLY tb_sys_perfil
 
 
 --
--- TOC entry 2407 (class 2606 OID 17103)
+-- TOC entry 2413 (class 2606 OID 17103)
 -- Name: fk_pruebas_apppruebas; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11331,7 +11818,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2410 (class 2606 OID 17108)
+-- TOC entry 2416 (class 2606 OID 17108)
 -- Name: fk_pruebas_clasificacion_pruebas_tipo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11340,7 +11827,7 @@ ALTER TABLE ONLY tb_pruebas_clasificacion
 
 
 --
--- TOC entry 2411 (class 2606 OID 17113)
+-- TOC entry 2417 (class 2606 OID 17113)
 -- Name: fk_pruebas_clasificacion_um; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11349,7 +11836,7 @@ ALTER TABLE ONLY tb_pruebas_clasificacion
 
 
 --
--- TOC entry 2415 (class 2606 OID 17118)
+-- TOC entry 2421 (class 2606 OID 17118)
 -- Name: fk_record_id_origen; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11358,7 +11845,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2416 (class 2606 OID 17123)
+-- TOC entry 2422 (class 2606 OID 17123)
 -- Name: fk_records_atletas_resultados; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11367,7 +11854,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2417 (class 2606 OID 17128)
+-- TOC entry 2423 (class 2606 OID 17128)
 -- Name: fk_records_tipo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11376,7 +11863,7 @@ ALTER TABLE ONLY tb_records
 
 
 --
--- TOC entry 2422 (class 2606 OID 17133)
+-- TOC entry 2428 (class 2606 OID 17133)
 -- Name: fk_usuarioperfiles; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11385,7 +11872,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles
 
 
 --
--- TOC entry 2423 (class 2606 OID 17138)
+-- TOC entry 2429 (class 2606 OID 17138)
 -- Name: fk_usuarioperfiles_usuario; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11394,7 +11881,7 @@ ALTER TABLE ONLY tb_sys_usuario_perfiles
 
 
 --
--- TOC entry 2388 (class 2606 OID 17143)
+-- TOC entry 2394 (class 2606 OID 17143)
 -- Name: tb_atletas_resultados_competencias_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11403,7 +11890,7 @@ ALTER TABLE ONLY tb_atletas_resultados_old
 
 
 --
--- TOC entry 2389 (class 2606 OID 17148)
+-- TOC entry 2395 (class 2606 OID 17148)
 -- Name: tb_atletas_resultados_pruebas_codigo; Type: FK CONSTRAINT; Schema: public; Owner: atluser
 --
 
@@ -11412,7 +11899,7 @@ ALTER TABLE ONLY tb_atletas_resultados_old
 
 
 --
--- TOC entry 2408 (class 2606 OID 17163)
+-- TOC entry 2414 (class 2606 OID 17163)
 -- Name: tb_pruebas_categorias_codigo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11421,7 +11908,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2412 (class 2606 OID 17168)
+-- TOC entry 2418 (class 2606 OID 17168)
 -- Name: tb_pruebas_detalle_prueba_detalle_codigo; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11430,7 +11917,7 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2413 (class 2606 OID 17173)
+-- TOC entry 2419 (class 2606 OID 17173)
 -- Name: tb_pruebas_detalle_pruebas_codigo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11439,7 +11926,7 @@ ALTER TABLE ONLY tb_pruebas_detalle
 
 
 --
--- TOC entry 2409 (class 2606 OID 17178)
+-- TOC entry 2415 (class 2606 OID 17178)
 -- Name: tb_pruebas_pruebas_record_hasta_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11448,7 +11935,7 @@ ALTER TABLE ONLY tb_pruebas
 
 
 --
--- TOC entry 2626 (class 0 OID 0)
+-- TOC entry 2633 (class 0 OID 0)
 -- Dependencies: 6
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
@@ -11459,7 +11946,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2016-03-10 04:34:13 PET
+-- Completed on 2016-03-30 14:29:04 PET
 
 --
 -- PostgreSQL database dump complete
