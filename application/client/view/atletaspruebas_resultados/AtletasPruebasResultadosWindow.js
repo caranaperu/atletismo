@@ -1,3 +1,5 @@
+/* global mdl_atletaspruebas_resultados */
+
 /**
  * Clase especifica para la definicion de la ventana para
  * la grilla de registro de los resultados de los atletas,
@@ -32,9 +34,15 @@ isc.WinAtletasPruebasResultadosWindow.addProperties({
                 {name: "atletas_resultados_resultado", align: 'right', width: 60},
                 {name: "competencias_pruebas_fecha", align: 'center', width: 70},
                 {name: "categorias_codigo", width: 50},
-                //    {name: "obs", width: 40, filterOperator: 'equals'},
                 {name: "obs", width: 40, filterOperator: 'equals'},
-                {name: "competencias_pruebas_viento", title: 'V', decimalPad: 2, width: 30},
+                {name: "competencias_pruebas_viento", title: 'V', decimalPad: 2, width: 30,
+                formatCellValue: function (value) {
+                        if (value === null) {
+                            return '';
+                        } else {
+                            return value;
+                        }
+                }},
                 {name: "competencias_descripcion", width: 150},
                 {name: "paises_descripcion", width: 100},
                 {name: "ciudades_descripcion", width: 100}
@@ -52,6 +60,14 @@ isc.WinAtletasPruebasResultadosWindow.addProperties({
             canMultiSort: false,
             autoSize: true,
             autoFitWidthApproach: 'both'
+//            dataArrived: function(startRow,endRow) {
+//                console.log('DATA ARRIVED');
+//                //this.resort();
+//                this.setSort([{
+//                        property: 'competencias_descripcion'
+//                    }]);
+//
+//            }
         });
     },
     initWidget: function() {
