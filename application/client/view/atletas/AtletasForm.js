@@ -120,7 +120,7 @@ isc.WinAtletasForm.addProperties({
                     formAtletas.getField('atletas_foto').canvas.setSrc(record.atletas_url_foto);
                 }
             },
-            postSaveData: function(record) {
+            postSaveData: function(mode,record) {
                 record.atletas_agno = formAtletas._atletas_agno;
             },
             setEditMode: function(mode) {
