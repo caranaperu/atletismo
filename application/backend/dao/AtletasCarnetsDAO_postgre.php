@@ -25,14 +25,15 @@ class AtletasCarnetsDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * {@inheritdoc}
+     * @see TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'delete from tb_atletas_carnets where atletas_carnets_id = \'' . $id . '\'  and xmin =' . $versionId;
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getAddRecordQuery()
+     * @see TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  AtletasCarnetsModel  */
@@ -47,7 +48,7 @@ class AtletasCarnetsDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getFetchQuery()
+     * @see TSLBasicRecordDAO::getFetchQuery()
      */
     protected function getFetchQuery(\TSLDataModel &$record = NULL, \TSLRequestConstraints &$constraints = NULL, $subOperation = NULL) {
         // Si la busqueda permite buscar solo activos e inactivos
@@ -86,7 +87,7 @@ class AtletasCarnetsDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQuery()
+     * @see TSLBasicRecordDAO::getRecordQuery()
      */
     protected function getRecordQuery($id) {
         // en este caso el codigo es la llave primaria
@@ -94,7 +95,7 @@ class AtletasCarnetsDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQueryByCode()
+     * @see TSLBasicRecordDAO::getRecordQueryByCode()
      */
     protected function getRecordQueryByCode($code) {
         return 'select atletas_carnets_id,atletas_carnets_agno,atletas_carnets_numero,atletas_codigo,atletas_carnets_fecha,activo,' .
@@ -103,7 +104,7 @@ class AtletasCarnetsDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
 
     /**
      * Aqui el id es el codigo
-     * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
+     * @see TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
         /* @var $record  AtletasCarnetsModel  */

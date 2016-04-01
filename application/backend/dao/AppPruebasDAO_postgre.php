@@ -25,14 +25,15 @@ class AppPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * {@inheritdoc}
+     * @see TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'delete from tb_app_pruebas_values where apppruebas_codigo = \'' . $id . '\'  and xmin =' . $versionId;
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getAddRecordQuery()
+     * @see TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  AppPruebasModel  */
@@ -58,7 +59,7 @@ class AppPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getFetchQuery()
+     * @see TSLBasicRecordDAO::getFetchQuery()
      */
     protected function getFetchQuery(\TSLDataModel &$record = NULL, \TSLRequestConstraints &$constraints = NULL, $subOperation = NULL) {
         // Si la busqueda permite buscar solo activos e inactivos
@@ -99,7 +100,7 @@ class AppPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQuery()
+     * @see TSLBasicRecordDAO::getRecordQuery()
      */
     protected function getRecordQuery($id) {
         // en este caso el codigo es la llave primaria
@@ -107,7 +108,7 @@ class AppPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQueryByCode()
+     * @see TSLBasicRecordDAO::getRecordQueryByCode()
      */
     protected function getRecordQueryByCode($code) {
         return 'select apppruebas_codigo,apppruebas_descripcion,pruebas_clasificacion_codigo,apppruebas_marca_menor,apppruebas_marca_mayor,'
@@ -118,7 +119,7 @@ class AppPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
 
     /**
      * Aqui el id es el codigo
-     * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
+     * @see TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
         /* @var $record  AppPruebasModel  */

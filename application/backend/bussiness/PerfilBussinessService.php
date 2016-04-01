@@ -23,7 +23,7 @@ class PerfilBussinessService extends \app\common\bussiness\TSLAppCRUDBussinessSe
     /**
      *
      * @param \TSLIDataTransferObj $dto
-     * @return \shared\model\UsuariosModel
+     * @return UsuariosModel
      */
     protected function &getModelToAdd(\TSLIDataTransferObj $dto) {
         $model = new \app\common\model\impl\TSLAppPerfilModel();
@@ -42,7 +42,7 @@ class PerfilBussinessService extends \app\common\bussiness\TSLAppCRUDBussinessSe
     /**
      *
      * @param \TSLIDataTransferObj $dto
-     * @return \shared\model\UsuariosModel
+     * @return UsuariosModel
      */
     protected function &getModelToUpdate(\TSLIDataTransferObj $dto) {
         $model = new \app\common\model\impl\TSLAppPerfilModel();
@@ -61,7 +61,7 @@ class PerfilBussinessService extends \app\common\bussiness\TSLAppCRUDBussinessSe
 
     /**
      *
-     * @return \shared\model\UsuariosModel
+     * @return UsuariosModel
      */
     protected function &getEmptyModel() {
         $model = new \app\common\model\impl\TSLAppPerfilModel();

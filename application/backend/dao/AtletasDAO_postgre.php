@@ -25,14 +25,15 @@ class AtletasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * {@inheritdoc}
+     * @see TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'delete from tb_atletas where atletas_codigo = \'' . $id . '\'  and xmin =' . $versionId;
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getAddRecordQuery()
+     * @see TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  AtletasModel  */
@@ -64,7 +65,7 @@ class AtletasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getFetchQuery()
+     * @see TSLBasicRecordDAO::getFetchQuery()
      */
     protected function getFetchQuery(\TSLDataModel &$record = NULL, \TSLRequestConstraints &$constraints = NULL, $subOperation = NULL) {
         if ($subOperation == 'fetchForList') {
@@ -125,7 +126,7 @@ class AtletasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQuery()
+     * @see TSLBasicRecordDAO::getRecordQuery()
      */
     protected function getRecordQuery($id) {
         // en este caso el codigo es la llave primaria
@@ -133,7 +134,7 @@ class AtletasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQueryByCode()
+     * @see TSLBasicRecordDAO::getRecordQueryByCode()
      */
     protected function getRecordQueryByCode($code) {
         return 'select atletas_codigo ,atletas_ap_paterno ,atletas_ap_materno,atletas_nombres,atletas_nombre_completo,atletas_sexo,' .
@@ -145,7 +146,7 @@ class AtletasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
 
     /**
      * Aqui el id es el codigo
-     * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
+     * @see TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
         /* @var $record  AtletasModel  */

@@ -55,7 +55,7 @@ class SystemMenuDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
     protected function getRecordQuery($id) {
         $sql = 'select sys_systemcode,menu_id,menu_codigo,menu_descripcion,menu_accesstype,menu_parent_id,menu_orden,activo,xmin as "versionId" from  tb_sys_menu ';
         $sql .= 'where menu_id=' . $id;
-        return sql;
+        return $sql;
     }
 
     /**
@@ -64,7 +64,7 @@ class SystemMenuDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre
     protected function getRecordQueryByCode($code) {
         $sql = 'select sys_systemcode,menu_id,menu_codigo,menu_descripcion,menu_accesstype,menu_parent_id,menu_orden,activo,xmin as "versionId" from  tb_sys_menu ';
         $sql .= 'where menu_codigo=' . $code;
-        return sql;
+        return $sql;
     }
 
     /***********************************************************

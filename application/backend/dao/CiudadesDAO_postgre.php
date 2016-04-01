@@ -25,6 +25,7 @@ class CiudadesDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
     }
 
     /**
+     * {@inheritdoc}
      * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {

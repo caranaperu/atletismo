@@ -23,7 +23,7 @@ class PerfilDetalleBussinessService extends \app\common\bussiness\TSLAppCRUDBuss
 
     /**
      *
-     * @return \shared\model\AsigPersonalModel()
+     * @return \app\common\model\impl\TSLAppPerfilDetalleModel()
      */
     protected function &getEmptyModel() {
         $model = new \app\common\model\impl\TSLAppPerfilDetalleModel();

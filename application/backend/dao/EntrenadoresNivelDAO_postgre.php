@@ -25,14 +25,15 @@ class EntrenadoresNivelDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * {@inheritdoc}
+     * @see TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'delete from tb_entrenadores_nivel where entrenadores_nivel_codigo = \'' . $id . '\'  and xmin =' . $versionId;
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getAddRecordQuery()
+     * @see TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  EntrenadoresNivelModel  */
@@ -44,7 +45,7 @@ class EntrenadoresNivelDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getFetchQuery()
+     * @see TSLBasicRecordDAO::getFetchQuery()
      */
     protected function getFetchQuery(\TSLDataModel &$record = NULL, \TSLRequestConstraints &$constraints = NULL, $subOperation = NULL) {
         // Si la busqueda permite buscar solo activos e inactivos
@@ -71,7 +72,7 @@ class EntrenadoresNivelDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQuery()
+     * @see TSLBasicRecordDAO::getRecordQuery()
      */
     protected function getRecordQuery($id) {
         // en este caso el codigo es la llave primaria
@@ -79,7 +80,7 @@ class EntrenadoresNivelDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQueryByCode()
+     * @see TSLBasicRecordDAO::getRecordQueryByCode()
      */
     protected function getRecordQueryByCode($code) {
         return 'select entrenadores_nivel_codigo,entrenadores_nivel_descripcion,entrenadores_nivel_protected,activo,' .
@@ -88,7 +89,7 @@ class EntrenadoresNivelDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_
 
     /**
      * Aqui el id es el codigo
-     * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
+     * @see TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
         /* @var $record  EntrenadoresNivelModel  */

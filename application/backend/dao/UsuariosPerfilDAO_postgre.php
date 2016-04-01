@@ -36,7 +36,7 @@ class UsuariosPerfilDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
      * @see \TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
-        /* @var $record \shared\model\UsuariosPerfilModel */
+        /* @var $record UsuariosPerfilModel */
         $sql = 'insert into tb_sys_usuario_perfiles (usuarios_id,perfil_id,activo,usuario) values(' .
                 $record->get_usuarios_id() . ',' .
                 $record->get_perfil_id() . ',\'' .
@@ -110,7 +110,7 @@ class UsuariosPerfilDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_pos
      * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
-        /* @var $record \shared\model\UsuariosPerfilModel */
+        /* @var $record UsuariosPerfilModel */
         $sql = 'update tb_sys_usuario_perfiles set ' .
                 'usuario_perfil_id=' . $record->get_usuario_perfil_id() . ',' .
                 'usuarios_id=' . $record->get_usuarios_id() . ',' .

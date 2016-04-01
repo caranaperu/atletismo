@@ -36,7 +36,7 @@ class ClubesDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
      * @see \TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
-        /* @var $record  LigasModel  */
+        /* @var $record  ClubesModel  */
         return 'insert into tb_clubes (clubes_codigo,clubes_descripcion,clubes_persona_contacto,clubes_telefono_oficina,clubes_telefono_celular,clubes_email,clubes_direccion,clubes_web_url,activo,usuario) values(\'' .
                 $record->get_clubes_codigo() . '\',\'' .
                 $record->get_clubes_descripcion() . '\',\'' .
@@ -107,7 +107,7 @@ class ClubesDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
      * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
-        /* @var $record  LigasModel  */
+        /* @var $record  ClubesModel  */
         return 'update tb_clubes set clubes_codigo=\'' . $record->get_clubes_codigo() . '\',' .
                 'clubes_descripcion=\'' . $record->get_clubes_descripcion() . '\',' .
               'clubes_persona_contacto=\'' . $record->get_clubes_persona_contacto() . '\',' .

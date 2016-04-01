@@ -25,14 +25,15 @@ class CompetenciaTipoDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_po
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * {@inheritdoc}
+     * @see TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'delete from tb_competencia_tipo where competencia_tipo_codigo = \'' . $id . '\'  and xmin =' . $versionId;
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getAddRecordQuery()
+     * @see TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  CompetenciaTipoModel  */
@@ -45,7 +46,7 @@ class CompetenciaTipoDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_po
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getFetchQuery()
+     * @see TSLBasicRecordDAO::getFetchQuery()
      */
     protected function getFetchQuery(\TSLDataModel &$record = NULL, \TSLRequestConstraints &$constraints = NULL, $subOperation = NULL) {
         // Si la busqueda permite buscar solo activos e inactivos
@@ -72,7 +73,7 @@ class CompetenciaTipoDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_po
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQuery()
+     * @see TSLBasicRecordDAO::getRecordQuery()
      */
     protected function getRecordQuery($id) {
         // en este caso el codigo es la llave primaria
@@ -80,7 +81,7 @@ class CompetenciaTipoDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_po
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQueryByCode()
+     * @see TSLBasicRecordDAO::getRecordQueryByCode()
      */
     protected function getRecordQueryByCode($code) {
         return 'select competencia_tipo_codigo,competencia_tipo_descripcion,activo,' .
@@ -89,7 +90,7 @@ class CompetenciaTipoDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_po
 
     /**
      * Aqui el id es el codigo
-     * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
+     * @see TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
         /* @var $record  CompetenciaTipoModel  */

@@ -38,7 +38,7 @@ class EntidadDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
      */
     protected function getAddRecordQuery(\TSLDataModel &$record,\TSLRequestConstraints &$constraints=NULL) {
         /**
-         * @var \shared\model\EntidadModel $record
+         * @var EntidadModel $record
          */
         $sql = 'insert into tb_entidad (entidad_razon_social,entidad_ruc,entidad_titulo_alterno,entidad_direccion,entidad_web_url,' .
                 'entidad_telefonos,entidad_fax,entidad_eslogan,entidad_siglas,entidad_correo,activo,usuario) values(' .
@@ -90,6 +90,7 @@ class EntidadDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
      * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
+        /* @var $record  EntidadModel  */
         $sql = 'update tb_entidad set entidad_razon_social=\'' . $record->get_entidad_razon_social() . '\'' .
                 ',entidad_ruc=\'' . $record->get_entidad_ruc() . '\'' .
                 ',entidad_titulo_alterno=\'' . $record->get_entidad_titulo_alterno() . '\'' .

@@ -25,6 +25,7 @@ class CompetenciasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postg
     }
 
     /**
+     * {@inheritdoc}
      * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {

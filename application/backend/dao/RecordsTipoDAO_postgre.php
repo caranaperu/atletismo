@@ -110,7 +110,7 @@ class RecordsTipoDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgr
      * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
-        /* @var $record  PaisesModel  */
+        /* @var $record  RecordsTipoModel  */
         $sql = 'select * from (select sp_records_tipo_save_record(' .
                 '\'' . $record->get_records_tipo_codigo() . '\'::character varying,' .
                 '\'' . $record->get_records_tipo_descripcion() . '\'::character varying,' .

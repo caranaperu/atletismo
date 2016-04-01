@@ -26,14 +26,14 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getDeleteRecordQuery()
+     * @see TSLBasicRecordDAO::getDeleteRecordQuery()
      */
     protected function getDeleteRecordQuery($id, $versionId) {
         return 'select * from ( select sp_atletas_resultados_delete_record( ' . $id . '::integer,TRUE,null::character varying,' . $versionId . ')  as updins) as ans where updins is not null';
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getAddRecordQuery()
+     * @see TSLBasicRecordDAO::getAddRecordQuery()
      */
     protected function getAddRecordQuery(\TSLDataModel &$record, \TSLRequestConstraints &$constraints = NULL) {
         /* @var $record  AtletasPruebasResultadosModel  */
@@ -62,7 +62,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getFetchQuery()
+     * @see TSLBasicRecordDAO::getFetchQuery()
      */
     protected function getFetchQuery(\TSLDataModel &$record = NULL, \TSLRequestConstraints &$constraints = NULL, $subOperation = NULL) {
         /* @var $record  AtletasPruebasResultadosModel  */
@@ -227,7 +227,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQuery()
+     * @see TSLBasicRecordDAO::getRecordQuery()
      */
     protected function getRecordQuery($id) {
         // en este caso el codigo es la llave primaria
@@ -235,7 +235,7 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
     }
 
     /**
-     * @see \TSLBasicRecordDAO::getRecordQueryByCode()
+     * @see TSLBasicRecordDAO::getRecordQueryByCode()
      */
     protected function getRecordQueryByCode($code) {
         return 'select atletas_resultados_id,cp.pruebas_codigo,eatl.atletas_codigo,eatl.competencias_pruebas_id,cp.competencias_pruebas_tipo_serie,' .
@@ -254,7 +254,10 @@ class AtletasPruebasResultadosDAO_postgre extends \app\common\dao\TSLAppBasicRec
 
     /**
      * Aqui el id es el codigo
-     * @see \TSLBasicRecordDAO::getUpdateRecordQuery()
+     *
+     * @{inheritdoc}
+     * 
+     * @see TSLBasicRecordDAO::getUpdateRecordQuery()
      */
     protected function getUpdateRecordQuery(\TSLDataModel &$record) {
 
