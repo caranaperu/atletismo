@@ -14,8 +14,9 @@ isc.defineClass("WinAtletasPruebasResultadosWindow", "WindowGridListExt");
 isc.WinAtletasPruebasResultadosWindow.addProperties({
     ID: "winAtletasPruebasResultadosWindow",
     title: "Resultados de Pruebas",
-    width: 980, height: 400,
-    createGridList: function() {
+    width: 980,
+    height: 400,
+    createGridList: function () {
         return isc.ListGrid.create({
             ID: "AtletasPruebasResultadosList",
             alternateRecordStyles: true,
@@ -28,30 +29,76 @@ isc.WinAtletasPruebasResultadosWindow.addProperties({
             drawAllMaxCells: 0,
             fetchOperation: 'fetchJoined',
             fields: [
-                {name: "atletas_nombre_completo", width: 150},
-                {name: "pruebas_descripcion", width: 150},
-                {name: "serie", width: 40},
-                {name: "atletas_resultados_resultado", align: 'right', width: 60},
-                {name: "competencias_pruebas_fecha", align: 'center', width: 70},
-                {name: "categorias_codigo", width: 50},
-                {name: "obs", width: 40, filterOperator: 'equals'},
-                {name: "competencias_pruebas_viento", title: 'V', decimalPad: 2, width: 30,
-                formatCellValue: function (value) {
+                {
+                    name: "atletas_nombre_completo",
+                    width: 150
+                },
+                {
+                    name: "pruebas_descripcion",
+                    width: 150
+                },
+                {
+                    name: "serie",
+                    width: 40
+                },
+                {
+                    name: "atletas_resultados_resultado",
+                    align: 'right',
+                    width: 60
+                },
+                {
+                    name: "competencias_pruebas_fecha",
+                    align: 'center',
+                    width: 70
+                },
+                {
+                    name: "categorias_codigo",
+                    width: 50
+                },
+                {
+                    name: "obs",
+                    width: 40,
+                    filterOperator: 'equals'
+                },
+                {
+                    name: "competencias_pruebas_viento",
+                    title: 'V',
+                    decimalPad: 2,
+                    width: 30,
+                    formatCellValue: function (value) {
                         if (value === null) {
                             return '';
                         } else {
                             return value;
                         }
-                }},
-                {name: "competencias_descripcion", width: 150},
-                {name: "paises_descripcion", width: 100},
-                {name: "ciudades_descripcion", width: 100}
+                    }
+                },
+                {
+                    name: "competencias_descripcion",
+                    width: 150
+                },
+                {
+                    name: "paises_descripcion",
+                    width: 100
+                },
+                {
+                    name: "ciudades_descripcion",
+                    width: 100
+                }
 
             ],
-            getCellCSSText: function(record, rowNum, colNum) {
+            getCellCSSText: function (record, rowNum, colNum) {
                 if (record.obs === true) {
                     return "color:red;";
                 }
+            },
+            isAllowedToDelete: function() {
+              var record = this.getSelectedRecord();
+                if (record && record.postas_id) {
+                    isc.warn('No es posible eliminar postas aqui , ir a mantenimiento de competencias');
+                    return false;
+                }
+                return true;
             },
             canReorderFields: false,
             showFilterEditor: true,
@@ -60,17 +107,9 @@ isc.WinAtletasPruebasResultadosWindow.addProperties({
             canMultiSort: false,
             autoSize: true,
             autoFitWidthApproach: 'both'
-//            dataArrived: function(startRow,endRow) {
-//                console.log('DATA ARRIVED');
-//                //this.resort();
-//                this.setSort([{
-//                        property: 'competencias_descripcion'
-//                    }]);
-//
-//            }
         });
     },
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
     }
 });

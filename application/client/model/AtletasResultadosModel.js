@@ -14,26 +14,94 @@ isc.RestDataSource.create({
     sendExtraFields: false,
     dropExtraFields: true,
     fields: [
-        {name: "atletas_resultados_id", primaryKey: "true", type: 'integer', required: true},
-        {name: "atletas_codigo", title: 'Atleta', required: true},
-        {name: "atletas_resultados_resultado", title: 'Marca', required: true},
-        {name: "atletas_resultados_puntos", title: "Puntos", type: 'integer', required: true,
-            validators: [{type: "lengthRange", max: 4}, {type: 'integerRange', min: 0, max: 1400}]},
-        {name: "atletas_resultados_puesto", title: "Puesto", type: 'integer', required: true,
-            validators: [{type: 'integerRange', min: 0, max: 100}]},
-        {name: "atletas_resultados_viento", title: "Viento", type: 'double',
-            validators: [{type: "lengthRange", min: 1}, {type: 'floatRange', min: -20.00, max: 20.00}]},
-        {name: "competencias_pruebas_id", type: 'integer'},
-        {name: "versionId", type: 'integer', nullReplacementValue: null},
+        {
+            name: "atletas_resultados_id",
+            primaryKey: "true",
+            type: 'integer',
+            required: true
+        },
+        {
+            name: "atletas_codigo",
+            title: 'Atleta',
+            required: true
+        },
+        {
+            name: "atletas_resultados_resultado",
+            title: 'Marca',
+            required: true
+        },
+        {
+            name: "atletas_resultados_puntos",
+            title: "Puntos",
+            type: 'integer',
+            required: true,
+            validators: [{
+                type: "lengthRange",
+                max: 4
+            },
+                {
+                    type: 'integerRange',
+                    min: 0,
+                    max: 1400
+                }]
+        },
+        {
+            name: "atletas_resultados_puesto",
+            title: "Puesto",
+            type: 'integer',
+            required: true,
+            validators: [{
+                type: 'integerRange',
+                min: 0,
+                max: 100
+            }]
+        },
+        {
+            name: "atletas_resultados_viento",
+            title: "Viento",
+            type: 'double',
+            validators: [{
+                type: "lengthRange",
+                min: 1
+            },
+                {
+                    type: 'floatRange',
+                    min: -20.00,
+                    max: 20.00
+                }]
+        },
+        {
+            name: "competencias_pruebas_id",
+            type: 'integer'
+        },
+        {
+            name: "postas_id",
+            title: 'Posta',
+            type: 'integer',
+            required: true,
+            foreignKey: "mdl_postas.postas_id"
+        },
+        {
+            name: "versionId",
+            type: 'integer',
+            nullReplacementValue: null
+        },
         // Virtuales producto de un join
         // Solo para efectos de GUI no se grabaran
-        {name: "atletas_nombre_completo", title: 'Atleta'}
+        {
+            name: "atletas_nombre_completo",
+            title: 'Atleta'
+        },
+        {
+            name: "postas_atletas",
+            title: 'Atletas'
+        }
     ],
     /**
      * Normalizador de valores booleanos ya que el backend pude devolver de diversas formas
      * segun la base de datos.
      */
-    _getBooleanFieldValue: function(value) {
+    _getBooleanFieldValue: function (value) {
         //  console.log(value);
         if (value !== 't' && value !== 'T' && value !== 'Y' && value !== 'y' && value !== 'TRUE' && value !== 'true' && value !== true) {
             return false;
@@ -47,10 +115,22 @@ isc.RestDataSource.create({
     updateDataURL: glb_dataUrl + 'atletasResultadosController?op=upd&libid=SmartClient',
     removeDataURL: glb_dataUrl + 'atletasResultadosController?op=del&libid=SmartClient',
     operationBindings: [
-        {operationType: "fetch", dataProtocol: "postParams"},
-        {operationType: "add", dataProtocol: "postParams"},
-        {operationType: "update", dataProtocol: "postParams"},
-        {operationType: "remove", dataProtocol: "postParams"}
+        {
+            operationType: "fetch",
+            dataProtocol: "postParams"
+        },
+        {
+            operationType: "add",
+            dataProtocol: "postParams"
+        },
+        {
+            operationType: "update",
+            dataProtocol: "postParams"
+        },
+        {
+            operationType: "remove",
+            dataProtocol: "postParams"
+        }
     ],
     /**
      * Dado que cuando se esita en grilla no se pasan todos los valores
@@ -58,7 +138,7 @@ isc.RestDataSource.create({
      * de oldValues a la data a transmitir siempre que oldvalues este
      * este definida , lo cual sucede solo para el update.
      */
-    transformRequest: function(dsRequest) {
+    transformRequest: function (dsRequest) {
         var data = this.Super("transformRequest", arguments);
 
         if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {

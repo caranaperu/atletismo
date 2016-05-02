@@ -36,6 +36,12 @@ isc.WindowBasicFormExt.addProperties({
      */
     efficientDetailGrid: true,
     /**
+     * @cfg {boolean} useDeleteButton
+     * Si la forma requiere boton de eliminacion. (Usado usualmente cuando no es creada desde una grilla)
+     * yaque la grilla debe eliminar.
+     */
+    useDeleteButton: false,
+    /**
      * @cfg {array de objetos} joinKeyFields
      * Un arreglo conteiendo las llaves de join entre la forma
      * y el grid de detalle.
@@ -114,6 +120,9 @@ isc.WindowBasicFormExt.addProperties({
         } else if (btnType === 'save') {
             //return btnSave;
             return this._formButtons.getMember('btnSave' + this.ID);
+        } else if (btnType === 'delete' && this.useDeleteButton === true) {
+            //return btnSave;
+            return this._formButtons.getMember('btnDelete' + this.ID);
         }
         return undefined;
     },
@@ -204,6 +213,8 @@ isc.WindowBasicFormExt.addProperties({
                 this._detailGridContainer.getDetailGrid().show();
             }
             // Se reajusta el tamaño de la ventana para que soporte la aparicion de la grilla
+            console.log(this.minHeight);
+            console.log(this._detailGridContainer.getHeight());
             this.resizeTo(this.getWidth(), this.minHeight + this._detailGridContainer.getHeight());
         }
     },
@@ -318,15 +329,15 @@ isc.WindowBasicFormExt.addProperties({
      * Esta segun los parametros chequeara tanto si la forma principal tiene cambios
      * o la forma interior de edicion de items tiene cambios , de haberlos consultara
      * el cierre de la ventana.
-     * 
+     *
      * @private
-     * 
+     *
      * @param {boolean} checkMainForm , si es true se verificara si hay cambios en la forma principal.
      * @param {boolean} doRealClose si es true la ventana se cerrara de lo contrario la forma interna solo
      * se escondera,
      *
      */
-   _close: function (checkMainForm, doRealClose) {
+    _close: function (checkMainForm, doRealClose) {
         console.log('//////////////////////////////////////////////////////////')
         console.log(this._form.getOldValues())
         console.log(this._form.getValues())
@@ -474,6 +485,7 @@ isc.WindowBasicFormExt.addProperties({
      *
      * @param {int} field posicion en el arreglo de join keys.
      * @param {mixed} fieldValue , valor de la llave de join a los detalles.
+     * @TODO: NO FUNCIONA.
      */
     setJoinKeyFieldValue: function (field, fieldValue) {
         this.joinKeyFields[field].fieldValue = fieldValue;
@@ -554,9 +566,12 @@ isc.WindowBasicFormExt.addProperties({
         this._formButtons = isc.HStack.create({
             membersMargin: 10,
             height: 24, // width: '100%',
-            layoutAlign: "center", padding: 5, autoDraw: false,
+            layoutAlign: "center",
+            padding: 5,
+            autoDraw: false,
             align: 'center',
-            members: [isc.Button.create({
+            members: [
+                isc.Button.create({
                     ID: "btnExit" + this.ID,
                     width: '100',
                     autoDraw: false,
@@ -571,6 +586,14 @@ isc.WindowBasicFormExt.addProperties({
             ]
         });
 
+        if (this.useDeleteButton === true) {
+            this._formButtons.addMember(isc.Button.create({
+                ID: "btnDelete" + this.ID,
+                width: '100',
+                autoDraw: false,
+                title: "Eliminar"
+            }));
+        }
 
         // LA funcion createForm debe sobrescribirse por la clase
         // que extiende a esta.
@@ -589,4 +612,5 @@ isc.WindowBasicFormExt.addProperties({
         // la cual ocultaremos o mostraremos segun el modo.
         this.showWithMode(this.formMode);
     }
-});
+})
+;

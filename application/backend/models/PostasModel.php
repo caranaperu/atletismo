@@ -80,4 +80,12 @@ class PostasModel extends \app\common\model\TSLAppCommonBaseModel {
         return $pk;
     }
 
+    /**
+     * Indica que su pk o id es una secuencia o campo identity
+     *
+     * @return boolean true
+     */
+    public function isPKSequenceOrIdentity() {
+        return true;
+    }
 }

@@ -18,14 +18,14 @@
 
         protected $postas_detalle_id;
         protected $postas_id;
-        protected $atletas_id;
+        protected $atletas_codigo;
 
         /**
          * Setea el id del detalle de posta
          *
          * @param int $postas_detalle_id id del detalle de posta
          */
-        public function setPostasDetalleId($postas_detalle_id) {
+        public function set_postas_detalle_id($postas_detalle_id) {
             $this->postas_detalle_id = $postas_detalle_id;
             $this->setId($postas_detalle_id);
         }
@@ -35,7 +35,7 @@
          *
          * @return int
          */
-        public function getPostasDetalleId() {
+        public function get_postas_detalle_id() {
             return $this->postas_detalle_id;
         }
 
@@ -60,10 +60,10 @@
         /**
          * Setea el id que identifica al atleta que pertenece a la posta.
          *
-         * @param int $atletas_id id del atleta.
+         * @param int $atletas_codigo id del atleta.
          */
-        public function setAtletasId($atletas_id) {
-            $this->atletas_id = $atletas_id;
+        public function set_atletas_codigo($atletas_codigo) {
+            $this->atletas_codigo = $atletas_codigo;
         }
 
 
@@ -72,8 +72,8 @@
          *
          * @return int con el id del atleta.
          */
-        public function getAtletasId() {
-            return $this->atletas_id;
+        public function get_atletas_codigo() {
+            return $this->atletas_codigo;
         }
 
 
@@ -86,4 +86,13 @@
             return $pk;
         }
 
+
+        /**
+         * Indica que su pk o id es una secuencia o campo identity
+         *
+         * @return boolean true
+         */
+        public function isPKSequenceOrIdentity() {
+            return TRUE;
+        }
     }

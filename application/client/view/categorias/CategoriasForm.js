@@ -58,7 +58,7 @@ isc.WinCategoriasForm.addProperties({
                 {name: "categorias_validacion", editorType: "selectExt", showPending: true, width: "100",
                     valueField: "appcat_codigo", displayField: "appcat_codigo",
                     optionDataSource: mdl_appcategorias
-                },
+                }
             ],
             /**
              * Override , ver clase base ,aprovechamos en dar valor default a la fecha,
@@ -68,10 +68,9 @@ isc.WinCategoriasForm.addProperties({
             setupFieldsToAdd: function(fieldsToAdd) {
                 formCategorias.setValue("categorias_valido_desde", '01/01/1940');
             },
-            isAllowedToSave: function() {
-                var record = this.getValues();
+            isAllowedToSave: function(values,oldValues) {
                 // Si el registro tienen flag de protegido no se permite la grabacacion desde el GUI.
-                if (record.categorias_protected == true) {
+                if (values.categorias_protected == true) {
                     isc.say('No puede actualizarse el registro  debido a que es un registro del sistema y esta protegido');
                     return false;
                 } else {

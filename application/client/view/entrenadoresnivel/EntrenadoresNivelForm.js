@@ -29,10 +29,9 @@ isc.WinEntrenadoresNivelForm.addProperties({
                 {name: "entrenadores_nivel_codigo", title: "Codigo", type: "text",showPending: true, width: "80", mask: "AAAAAAAAAA"},
                 {name: "entrenadores_nivel_descripcion", title: "Descripcion",showPending: true, length: 60, width: "260"}
             ],
-            isAllowedToSave: function() {
-                var record = this.getValues();
+            isAllowedToSave: function(values,oldValues) {
                 // Si el registro tienen flag de protegido no se permite la grabacacion desde el GUI.
-                if (record.entrenadores_nivel_protected == true) {
+                if (values.entrenadores_nivel_protected == true) {
                     isc.say('No puede actualizarse el registro  debido a que es un registro del sistema y esta protegido');
                     return false;
                 } else {

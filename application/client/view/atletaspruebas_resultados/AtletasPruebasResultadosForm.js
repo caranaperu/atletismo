@@ -158,6 +158,7 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 }],
                 pickListWidth: 260,
                 completeOnTab: true,
+                optionOperationId: 'fetchForListForResultados',
                 optionDataSource: mdl_atletas,
                 textMatchStyle: 'substring',
                 sortField: "atletas_nombre_completo",
@@ -453,7 +454,6 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 formatValue: function (value, record, form, item) {
                     if (value !== true) {
                         return 'No';
-                        Va
                     }
                     else {
                         return '<b style = "color:#FF6699;">Si</b>';
@@ -491,6 +491,24 @@ isc.WinAtletasPruebasResultadosForm.addProperties({
                 name: "competencias_pruebas_id",
                 visible: false
             }],
+            isAllowedToEdit: function(record) {
+                if (record)  {
+                    if (record.postas_id) {
+                        isc.warn('No es posible modificar postas por aqui , ir a mantenimiento de competencias');
+                        return false;
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            isAllowedToSave: function(values,oldValues) {
+                if (oldValues && oldValues.postas_id) {
+                    isc.warn('No es posible modificar o agregar resultados de postas aqui , ir a mantenimiento de competencias');
+                    return false;
+                }
+                return true;
+            },
             preSaveData: function(mode,currentValues) {
                 // Si es prueba multiple ponemos cero para cumplir con las reglas
                 // del servidor que este valor debe existir

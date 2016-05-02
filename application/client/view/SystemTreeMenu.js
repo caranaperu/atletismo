@@ -17,7 +17,7 @@ isc.SystemTreeMenu.addProperties({
     recordsNacReport: null,
     atletasResultadosReport: null,
     _controllersList: {},
-    leafClick: function(viewer, leaf, recordNum) {
+    leafClick: function (viewer, leaf, recordNum) {
         if (leaf.menu_codigo === 'smn_atletasResultadosGraph') {
             if (this.atletasResultadosGraph == null) {
                 this.atletasResultadosGraph = AtletasResultadosGraphWindow.create();
@@ -49,62 +49,146 @@ isc.SystemTreeMenu.addProperties({
                 this.atletasResultadosReport.show();
             }
 
-        } else {
+        }
+        // else if (leaf.menu_codigo === 'smn_entidad') {
+        //     if (this.atletasResultadosReport == null) {
+        //         this.atletasResultadosReport = WinPostasForm.create();
+        //         this.atletasResultadosReport.show();
+        //     } else {
+        //         this.atletasResultadosReport.show();
+        //     }
+        //}
+        else {
             if (!this._controllersList[leaf.menu_codigo]) {
                 this._controllersList[leaf.menu_codigo] = this._getController(leaf.menu_codigo);
             }
-            this._controllersList[leaf.menu_codigo].doSetup(leaf.menu_codigo === 'smn_entidad' ? true : false);
+            if (leaf.menu_codigo === 'smn_entidad') {
+//                this._controllersList[leaf.menu_codigo].doSetup(true,null);
+                this._controllersList[leaf.menu_codigo].doSetup(true, {competencias_pruebas_id: '926'});
+            } else {
+                this._controllersList[leaf.menu_codigo].doSetup(false, null);
+            }
         }
     },
-    _getController: function(menuId) {
+    _getController: function (menuId) {
         var controller;
 
         if (menuId === 'smn_entidad') {
-            controller = isc.DefaultController.create({mainWindowClass: undefined, formWindowClass: 'WinEntidadForm'});
+//            controller = isc.DefaultController.create({mainWindowClass: undefined, formWindowClass: 'WinEntidadForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: undefined,
+                formWindowClass: 'WinPostasForm'
+            });
         } else if (menuId === 'smn_paises') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinPaisesWindow', formWindowClass: 'WinPaisesForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinPaisesWindow',
+                formWindowClass: 'WinPaisesForm'
+            });
         } else if (menuId === 'smn_ciudades') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinCiudadesWindow', formWindowClass: 'WinCiudadesForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinCiudadesWindow',
+                formWindowClass: 'WinCiudadesForm'
+            });
         } else if (menuId === 'smn_unidadmedida') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinUnidadMedidaWindow', formWindowClass: 'WinUnidadMedidaForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinUnidadMedidaWindow',
+                formWindowClass: 'WinUnidadMedidaForm'
+            });
         } else if (menuId === 'smn_categorias') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinCategoriasWindow', formWindowClass: 'WinCategoriasForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinCategoriasWindow',
+                formWindowClass: 'WinCategoriasForm'
+            });
         } else if (menuId === 'smn_ligas') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinLigasWindow', formWindowClass: 'WinLigasForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinLigasWindow',
+                formWindowClass: 'WinLigasForm'
+            });
         } else if (menuId === 'smn_clubes') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinClubesWindow', formWindowClass: 'WinClubesForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinClubesWindow',
+                formWindowClass: 'WinClubesForm'
+            });
         } else if (menuId === 'smn_niveles') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinEntrenadoresNivelWindow', formWindowClass: 'WinEntrenadoresNivelForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinEntrenadoresNivelWindow',
+                formWindowClass: 'WinEntrenadoresNivelForm'
+            });
         } else if (menuId === 'smn_entrenadores') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinEntrenadoresWindow', formWindowClass: 'WinEntrenadoresForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinEntrenadoresWindow',
+                formWindowClass: 'WinEntrenadoresForm'
+            });
         } else if (menuId === 'smn_atletas') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinAtletasWindow', formWindowClass: 'WinAtletasForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinAtletasWindow',
+                formWindowClass: 'WinAtletasForm'
+            });
         } else if (menuId === 'smn_competenciatipo') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinCompetenciaTipoWindow', formWindowClass: 'WinCompetenciaTipoForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinCompetenciaTipoWindow',
+                formWindowClass: 'WinCompetenciaTipoForm'
+            });
         } else if (menuId === 'smn_competencias') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinCompetenciasWindow', formWindowClass: 'WinCompetenciasForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinCompetenciasWindow',
+                formWindowClass: 'WinCompetenciasForm'
+            });
         } else if (menuId === 'smn_pruebastipo') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinPruebasTipoWindow', formWindowClass: 'WinPruebasTipoForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinPruebasTipoWindow',
+                formWindowClass: 'WinPruebasTipoForm'
+            });
         } else if (menuId === 'smn_pruebasclasificacion') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinPruebasClasificacionWindow', formWindowClass: 'WinPruebasClasificacionForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinPruebasClasificacionWindow',
+                formWindowClass: 'WinPruebasClasificacionForm'
+            });
         } else if (menuId === 'smn_pruebas') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinPruebasWindow', formWindowClass: 'WinPruebasForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinPruebasWindow',
+                formWindowClass: 'WinPruebasForm'
+            });
         } else if (menuId === 'smn_carnets') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinAtletasCarnetsWindow', formWindowClass: 'WinAtletasCarnetsForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinAtletasCarnetsWindow',
+                formWindowClass: 'WinAtletasCarnetsForm'
+            });
         } else if (menuId === 'smn_atletasresultados') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinAtletasPruebasResultadosWindow', formWindowClass: 'WinAtletasPruebasResultadosForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinAtletasPruebasResultadosWindow',
+                formWindowClass: 'WinAtletasPruebasResultadosForm'
+            });
         } else if (menuId === 'smn_pruebasgenericas') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinAppPruebasWindow', formWindowClass: 'WinAppPruebasForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinAppPruebasWindow',
+                formWindowClass: 'WinAppPruebasForm'
+            });
         } else if (menuId === 'smn_regiones') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinRegionesWindow', formWindowClass: 'WinRegionesForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinRegionesWindow',
+                formWindowClass: 'WinRegionesForm'
+            });
         } else if (menuId === 'smn_recordstipo') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinRecordsTipoWindow', formWindowClass: 'WinRecordsTipoForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinRecordsTipoWindow',
+                formWindowClass: 'WinRecordsTipoForm'
+            });
         } else if (menuId === 'smn_records') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinRecordsWindow', formWindowClass: 'WinRecordsForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinRecordsWindow',
+                formWindowClass: 'WinRecordsForm'
+            });
         } else if (menuId === 'smn_usuarios') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinUsuariosWindow', formWindowClass: 'WinUsuariosForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinUsuariosWindow',
+                formWindowClass: 'WinUsuariosForm'
+            });
         } else if (menuId === 'smn_perfiles') {
-            controller = isc.DefaultController.create({mainWindowClass: 'WinPerfilWindow', formWindowClass: 'WinPerfilForm'});
+            controller = isc.DefaultController.create({
+                mainWindowClass: 'WinPerfilWindow',
+                formWindowClass: 'WinPerfilForm'
+            });
         }
 
         return controller;

@@ -62,10 +62,9 @@ isc.WinPruebasForm.addProperties({
                 {name: "pruebas_sexo", type: "select", showPending: true, defaultValue: "M", width: 50},
                 {name: "pruebas_anotaciones", showPending: true, length: 180, width: 350}
             ],
-            isAllowedToSave: function () {
-                var record = this.getValues();
+            isAllowedToSave: function (values,oldValues) {
                 // Si el registro tienen flag de protegido no se permite la grabacacion desde el GUI.
-                if (record.pruebas_protected == true) {
+                if (values.pruebas_protected == true) {
                     isc.say('No puede actualizarse el registro  debido a que es un registro del sistema y esta protegido');
                     return false;
                 } else {

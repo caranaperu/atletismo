@@ -34,10 +34,9 @@ isc.WinRecordsTipoForm.addProperties({
                 {name: "records_tipo_peso", showPending: true, length: 4, width: "60"},
                 {name: "records_tipo_protected", showPending: true, visible: false, defaultValue: false}
             ],
-            isAllowedToSave: function() {
-                var record = this.getValues();
+            isAllowedToSave: function(values,oldValues) {
                 // Si el registro tienen flag de protegido no se permite la grabacacion desde el GUI.
-                if (record.records_tipo_protected == true) {
+                if (values.records_tipo_protected == true) {
                     isc.say('No puede actualizarse el registro  debido a que es un registro del sistema y esta protegido');
                     return false;
                 } else {

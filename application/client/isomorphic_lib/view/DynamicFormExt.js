@@ -47,6 +47,17 @@ isc.DynamicFormExt.addProperties({
      */
     formMode: "edit",
     /**
+     * @cfg {String} openFormMode
+     * Puede ser 'add','edit' y representa el modo incial en que se abrira la forma
+     * al margen de lo que diga fomMode, es util cuando la forma siempre debe abrirse
+     * en el mismo modo y en el caso que no se cierre  se haga edicion continua
+     * sea formMode el que indique el status.
+     * Solo sera respetado si esta forma no es invocada desde una grilla donde podria estarse
+     * editando un registro por default sino mas bien cuando la forma es autonoma de otros
+     * controles, ver caso de Empres o Postas.
+     */
+    openFormMode: "edit",
+    /**
      * @cfg {String} focusInEditFld
      * El ID del campo que sera usado como default para tomar el foco
      * a iniciarse la edicion de un registro.
@@ -67,6 +78,13 @@ isc.DynamicFormExt.addProperties({
      */
     saveButton: undefined,
     /**
+     * @cfg {String} deleteButton
+     * ID del boton a usarse para eliminar el registro , esto le indicara
+     * a esta clase que boton encender o apagar segun se este editando o no
+     * un registro.
+     */
+    deleteButton: undefined,
+    /**
      * @cfg {properties} requestParams
      * Lista de propiedades a enviar como parametros adicionales
      * a las operaciones CRUD , seran apendeados a cada una de ellas.
@@ -84,7 +102,7 @@ isc.DynamicFormExt.addProperties({
      * de tal forma que provea la data inicial para inicializar la pantalla de ser necesario exista alguna.
      *
      */
-    getInitialFormData: function() {
+    getInitialFormData: function () {
         //  console.log('implementame si deseas que haga algo');
     },
     /**
@@ -94,7 +112,7 @@ isc.DynamicFormExt.addProperties({
      *
      * @param Object fields conteniendo un record con los datos.
      */
-    preSetFieldsToEdit: function(fields) {
+    preSetFieldsToEdit: function (fields) {
         //  console.log('implementame si deseas que haga algo');
     },
     /**
@@ -102,7 +120,7 @@ isc.DynamicFormExt.addProperties({
      * este metodo sera llamado luego de que los valores originales son cargados a la forma ,
      * dando oportunidad de modificar o armar campos especiales.
      */
-    postSetFieldsToEdit: function() {
+    postSetFieldsToEdit: function () {
         //  console.log('implementame si deseas que haga algo');
     },
     /**
@@ -112,23 +130,40 @@ isc.DynamicFormExt.addProperties({
      * del registro del modelo a grabar, o de pasar algunos valores que se requieren para inicializar el
      * mode = 'add'
      */
-    setupFieldsToAdd: function(fieldsToAdd) {
+    setupFieldsToAdd: function (fieldsToAdd) {
         //  console.log('implementame si deseas que haga algo');
     },
     /**
      * Metodo a ser implementado el cual sera llamado antes de grabar o hacer update
      * retorna true si se permite la grabacion false de lo contrario.
      * Por default retorna true.
+     *
+     * @param Object record el registro que se esta editando. (Valores actuales)
+     * @param Object oldRecord el registro que se esta editando. (Valores Originales no modificados)
      */
-    isAllowedToSave: function() {
+    isAllowedToSave: function (record, oldRecord) {
         return true;
+    },
+    /**
+     * Metodo a ser implementado el cual sera llamado antes de abrir la pantalla de la forma
+     * para edicion.
+     * retorna true si se permite la edicion false de lo contrario.
+     * Por default retorna true si hay un registro valido a editar.
+     *
+     * @param Object record el registro que se intenta editar.
+     */
+    isAllowedToEdit: function (record) {
+        if (record) {
+            return true;
+        }
+        return false;
     },
     /**
      * Metodo a ser implementado el cual sera llamado antes de eliminar un registro
      * retorna true si se permite la eliminacion false de lo contrario.
      * Por default retorna true.
      */
-    isAllowedToDelete: function() {
+    isAllowedToDelete: function () {
         return true;
     },
     /**
@@ -138,7 +173,7 @@ isc.DynamicFormExt.addProperties({
      * @param String 'add' agregar,'edit' en update
      * @param Object record conteniendo los valores que se van a guardar en la persistencia.
      */
-    preSaveData: function(mode,record) {
+    preSaveData: function (mode, record) {
         //console.log('implementame si deseas que haga algo');
     },
     /**
@@ -160,7 +195,7 @@ isc.DynamicFormExt.addProperties({
      *
      * @param Object record conteniendo los valores que se van a guardar en la persistencia.
      */
-    prepareDataAfterSave: function(record) {
+    prepareDataAfterSave: function (record) {
         // Por default no hace nada
     },
     /**
@@ -170,7 +205,7 @@ isc.DynamicFormExt.addProperties({
      * @param String mode 'add¡ agregar , 'edit' update.
      * @param Object record conteniendo los valores que se van a guardar en la persistencia.
      */
-    postSaveData: function(mode,record) {
+    postSaveData: function (mode, record) {
         //console.log('implementame si deseas que haga algo');
     },
     /**
@@ -186,7 +221,7 @@ isc.DynamicFormExt.addProperties({
      *  @param string operationType puese ser 'add','update','remove'
      *  @return boolean true si requiere repintarse , de lo contrario false.
      */
-    isPostOperationDataRefreshMainListRequired: function(operationType) {
+    isPostOperationDataRefreshMainListRequired: function (operationType) {
         return false;
     },
     /**
@@ -198,7 +233,7 @@ isc.DynamicFormExt.addProperties({
      * Los parametros son los mismos que el metodo editComplete de un ListGrid, ademas
      * se envia la instancia del gridList principal .
      */
-    afterDetailGridRecordSaved: function(listControl, rowNum, colNum, newValues, oldValues) {
+    afterDetailGridRecordSaved: function (listControl, rowNum, colNum, newValues, oldValues) {
         // Sin implemetacion default
     },
     /**
@@ -208,7 +243,7 @@ isc.DynamicFormExt.addProperties({
      *
      * @param {String} mode puede ser 'add','edit'
      */
-    canCloseWindow: function(mode) {
+    canCloseWindow: function (mode) {
         return true;
     },
     /**
@@ -223,26 +258,56 @@ isc.DynamicFormExt.addProperties({
      * @param {object} que representa el registro leido o null si no existe registro.
      *
      */
-    fieldDataFetched: function(formFieldName,record) {
+    fieldDataFetched: function (formFieldName, record) {
         return;
+    },
+    /**
+     * Retorna el set de valores en edicion , en el caso de edit retornara los valores
+     * originales , no los valores actualmente mostrados en la forma.
+     *
+     * @returns {object} Representados el set de valores en edicion.
+     */
+    getEditedRecord: function () {
+        if (this.isNewRecord() === true) {
+            return this.getValues();
+        } else {
+            return this.getOldValues();
+        }
+    },
+    /**
+     * Las operaciones permiten pasar parametros adicionales a las operaciones de
+     * add,update o remove aqui puede retornarse los adicionales qe se desean psar al request.
+     *
+     * Importante , para que esto sea pasado  como partedel request el formato debe ser :
+     * {'params': {'field1': fieldValue}}
+     *
+     * o
+     *
+     * {'params': {'params': [{'field1': fieldValue1},{'field2': fieldValue2}]}
+     *
+     * @param operation
+     * @returns {null}
+     */
+    getAditionalPropertiesForOperation: function (operation) {
+        return null;
     },
     /**
      * Metodo hook llamado desde el controlador cada vez que un item en la forma principal
      * es cambiado , aqui podra tomarse decisiones por ejemplo de cambiar la visibilidad
      * de campos en la forma que depena de un determinado valor de la forma principal.
-     * 
+     *
      * IMPORTANTE: Solo sera invocado cuando esta forma sea la forma que edita los campos de una grilla de
      * detalle. Si la forma es justo la forma principal usar simplemente itemChanged o changed en los
      * form items.
-     * 
+     *
      * @param {FormItem} item este tambien puede ser un combobox
      * @param {any} newValue
      * @returns true , SIEMPRE DEBE RETORNA TRUE
      */
-    mainFormItemChanged: function(item,newValue) {
+    mainFormItemChanged: function (item, newValue) {
         return true;
     },
-    initWidget: function(parms) {
+    initWidget: function (parms) {
         this.Super("initWidget", arguments);
         this.setEditMode(this.formMode);
     },
@@ -253,15 +318,22 @@ isc.DynamicFormExt.addProperties({
      *
      * @param {String} mode puede ser 'add','edit'
      */
-    setEditMode: function(mode) {
+    setEditMode: function (mode) {
         this.formMode = mode;
         this._setFields();
         //console.log(this.saveButton)
         if (this.saveButton !== undefined) {
             this.saveButton.disable();
         }
+        if (this.deleteButton !== undefined) {
+            if (mode !== 'edit') {
+                this.deleteButton.disable();
+            } else {
+                this.deleteButton.enable();
+            }
+        }
     },
-    _disableProtectedFields: function() {
+    _disableProtectedFields: function () {
         if (this.keyFields.size() > 0) {
             var size = this.keyFields.size();
             for (i = 0; i < size; i++) {
@@ -269,8 +341,9 @@ isc.DynamicFormExt.addProperties({
                 this.getItem(this.keyFields[i]).canFocus = false;
             }
         }
-    },
-    _enableProtectedFields: function() {
+    }
+    ,
+    _enableProtectedFields: function () {
         if (this.keyFields.size() > 0) {
             var size = this.keyFields.size();
             for (i = 0; i < size; i++) {
@@ -279,8 +352,9 @@ isc.DynamicFormExt.addProperties({
 
             }
         }
-    },
-    _setFields: function() {
+    }
+    ,
+    _setFields: function () {
         this.clearErrors();
         if (this.formMode === 'edit') {
             this._disableProtectedFields();
@@ -293,8 +367,10 @@ isc.DynamicFormExt.addProperties({
             }
 
         }
-    },
-    handleHiddenValidationErrors: function(errors) {
+    }
+    ,
+    handleHiddenValidationErrors: function (errors) {
         console.log(errors);
     }
-});
+})
+;

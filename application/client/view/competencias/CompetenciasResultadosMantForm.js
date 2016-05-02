@@ -49,41 +49,47 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
             keyFields: ['pruebas_codigo'],
             saveButton: this.getFormButton('save'),
             focusInEditFld: 'competencias_pruebas_fecha',
+            _postasController: undefined,
             // Para cache solamente datos de la competencia para validar o presentacion
             // unicamente.
             _vcache_competencias_fecha_inicio: undefined,
             _vcache_competencias_fecha_final: undefined,
             _vcache_competencias_descripcion_visual: undefined,
             _vcache_apppruebas_multiple: undefined,
-            fields: [{
+            fields: [
+                {
                     name: "competencias_codigo",
                     type: 'staticText',
                     showPending: true,
                     endRow: true,
                     colSpan: 8,
                     width: "*",
- //                   defaultValue: this._vcache_competencias_codigo,
                     formatValue: function (value, record, form, item) {
                         return formCompetenciasPruebasResultadosMantForm._vcache_competencias_descripcion_visual;
                     }
-            }, {
+                },
+                {
                     ID: "fcr_cb_pruebas",
                     name: "pruebas_codigo",
                     editorType: "comboBoxExt",
                     showPending: true,
                     width: "250",
+                    colSpan: 2,
                     valueField: "pruebas_codigo",
                     displayField: "pruebas_descripcion",
-                    pickListFields: [{
-                        name: "pruebas_descripcion",
-                        width: '60%'
-                }, {
-                        name: "pruebas_sexo",
-                        width: '10%'
-                }, {
-                        name: "apppruebas_multiple",
-                        width: '10%'
-                }],
+                    pickListFields: [
+                        {
+                            name: "pruebas_descripcion",
+                            width: '60%'
+                        },
+                        {
+                            name: "pruebas_sexo",
+                            width: '10%'
+                        },
+                        {
+                            name: "apppruebas_multiple",
+                            width: '10%'
+                        }],
                     pickListWidth: 360,
                     completeOnTab: true,
                     optionOperationId: 'fetchPruebasValidasForCompetencia',
@@ -106,8 +112,8 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                         if (filter == null) {
                             filter = {};
                         }
-                        
-                        var filterSearchExact =  (filter.filterSearchExact ? filter.filterSearchExact : false);
+
+                        var filterSearchExact = (filter.filterSearchExact ? filter.filterSearchExact : false);
                         if (filterSearchExact === false) {
                             filter = this.Super("getPickListFilterCriteria", arguments);
                         }
@@ -118,7 +124,7 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                         // 
                         // Si existe una  prueba en el filtro estamos en un edit por ende solo buscamos dicha prueba
                         // esto por eficiencia y no jalamaos todo innecesariamente.
-                        if ((filter.pruebas_codigo  && !filter.pruebas_descripcion) || filterSearchExact === true) {
+                        if ((filter.pruebas_codigo && !filter.pruebas_descripcion) || filterSearchExact === true) {
                             filter = {
                                 _constructor: "AdvancedCriteria",
                                 operator: "and",
@@ -126,11 +132,12 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                     fieldName: "pruebas_codigo",
                                     operator: "equals",
                                     value: filter.pruebas_codigo
-                            }, {
-                                    fieldName: "competencias_codigo",
-                                    operator: "equals",
-                                    value: competenciaCodigo
-                            }]
+                                },
+                                    {
+                                        fieldName: "competencias_codigo",
+                                        operator: "equals",
+                                        value: competenciaCodigo
+                                    }]
                             };
                         } else if (filter.pruebas_descripcion) {
                             filter = {
@@ -140,11 +147,12 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                     fieldName: "pruebas_descripcion",
                                     operator: "iContains",
                                     value: filter.pruebas_descripcion
-                            }, {
-                                    fieldName: 'competencias_codigo',
-                                    operator: 'equals',
-                                    value: competenciaCodigo
-                            }]
+                                },
+                                    {
+                                        fieldName: 'competencias_codigo',
+                                        operator: 'equals',
+                                        value: competenciaCodigo
+                                    }]
                             };
                         } else {
                             filter = {
@@ -154,7 +162,7 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                     fieldName: 'competencias_codigo',
                                     operator: 'equals',
                                     value: competenciaCodigo
-                            }]
+                                }]
                             };
                         }
                         return filter;
@@ -182,7 +190,30 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                         }
 
                     }
-            }, {
+                },
+                {
+                    name: 'fcr_btn_postas',
+                    type: "button",
+                    title: "Postas",
+                    width: '*',
+                    // Los botones vienen con estos 2 atributos definidos por
+                    // eso hay que indicarlos
+                    endRow: false,
+                    startRow: false,
+                    click: function () {
+                        if (!formCompetenciasPruebasResultadosMantForm._postasController) {
+                            formCompetenciasPruebasResultadosMantForm._postasController = isc.DefaultController.create({
+                                mainWindowClass: undefined,
+                                formWindowClass: 'WinPostasForm'
+                            });
+                        }
+                        formCompetenciasPruebasResultadosMantForm._postasController.doSetup(true, {
+                            competencias_pruebas_id: formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_id').getValue()
+                        });
+
+                    }
+                },
+                {
                     name: "competencias_pruebas_fecha",
                     useTextField: true,
                     showPickerIcon: false,
@@ -200,7 +231,8 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                         }
                         return true;
                     }
-            }, {
+                },
+                {
                     name: "competencias_pruebas_tipo_serie",
                     type: "select",
                     showPending: true,
@@ -209,7 +241,8 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     changed: function (form, item, value) {
                         formCompetenciasPruebasResultadosMantForm._updateSeriesValues(value);
                     }
-            }, {
+                },
+                {
                     name: "competencias_pruebas_nro_serie",
                     showPending: true,
                     width: 50,
@@ -219,8 +252,9 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                         type: "requiredIf",
                         expression: "formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie') != 'SU' && formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_tipo_serie') != 'FI'",
                         errorMessage: "Indique el nro de hit,serie,etc"
-                }]
-            }, {
+                    }]
+                },
+                {
                     name: 'cprf_sep_obs',
                     defaultValue: "Datos y Observaciones",
                     type: "section",
@@ -228,8 +262,13 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     width: "*",
                     canCollapse: false,
                     align: 'center',
-                    itemIds: ["competencias_pruebas_manual", "competencias_pruebas_viento", "competencias_pruebas_anemometro", "competencias_pruebas_material_reglamentario", "competencias_pruebas_observaciones"]
-            }, {
+                    itemIds: ["competencias_pruebas_manual",
+                              "competencias_pruebas_viento",
+                              "competencias_pruebas_anemometro",
+                              "competencias_pruebas_material_reglamentario",
+                              "competencias_pruebas_observaciones"]
+                },
+                {
                     name: "competencias_pruebas_manual",
                     defaultValue: false,
                     showPending: true,
@@ -239,14 +278,16 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                         // asociados al resultado ya que el formato del input depende de este valor.
                         formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord(), true, false);
                     }
-            }, {
+                },
+                {
                     name: "competencias_pruebas_viento",
                     showPending: true,
                     length: 12,
                     width: '50',
                     textAlign: 'right',
                     endRow: true
-            }, {
+                },
+                {
                     name: "competencias_pruebas_anemometro",
                     showPending: true,
                     width: '50',
@@ -262,39 +303,43 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                 isc.say('Si ya existen resultados al grabar sin anemometro cada resultado tendra el viento en blanco en forma auutomatica');
                             }
                             // Actualizamos el control del campo viento
-                            formCompetenciasPruebasResultadosMantForm._setupViento(value,pruebaRecord.apppruebas_viento_individual);
+                            formCompetenciasPruebasResultadosMantForm._setupViento(value, pruebaRecord.apppruebas_viento_individual);
                         } else {
-                            formCompetenciasPruebasResultadosMantForm._setupViento(value,false);
+                            formCompetenciasPruebasResultadosMantForm._setupViento(value, false);
                         }
                     }
-            }, {
+                },
+                {
                     name: "competencias_pruebas_material_reglamentario",
                     showPending: true,
                     width: '50',
                     defaultValue: true,
                     labelAsTitle: true,
                     endRow: true
-            }, {
+                },
+                {
                     name: "competencias_pruebas_observaciones",
                     showPending: true,
                     colSpan: '8',
                     width: '*',
                     endRow: true
-            }, {
+                },
+                {
                     name: "competencias_pruebas_origen_combinada",
                     visible: false,
                     defaultValue: false
-            },
-            // Para join con detalles , no es visible
+                },
+                // Para join con detalles , no es visible
                 {
                     name: "competencias_pruebas_id",
                     visible: false,
                     defaultValue: null
-            }, {
+                },
+                {
                     name: "competencias_pruebas_origen_id",
                     visible: false,
                     defaultValue: null
-            }],
+                }],
             setupFieldsToAdd: function (fieldsToAdd) {
                 formCompetenciasPruebasResultadosMantForm._vcache_competencias_descripcion_visual = fieldsToAdd.competencias_descripcion_visual;
                 // Para validar fecha de la prueba a crear.
@@ -302,7 +347,10 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 formCompetenciasPruebasResultadosMantForm._vcache_competencias_fecha_final = fieldsToAdd.competencias_fecha_final;
 
 
-                formCompetenciasPruebasResultadosMantForm.setValues({'competencias_codigo':fieldsToAdd.competencias_codigo,'competencias_pruebas_fecha':fieldsToAdd.competencias_fecha_inicio })
+                formCompetenciasPruebasResultadosMantForm.setValues({
+                    'competencias_codigo': fieldsToAdd.competencias_codigo,
+                    'competencias_pruebas_fecha': fieldsToAdd.competencias_fecha_inicio
+                })
                 formCompetenciasPruebasResultadosMantForm.setValue('competencias_codigo', fieldsToAdd.competencias_codigo);
                 formCompetenciasPruebasResultadosMantForm.setValue('competencias_pruebas_fecha', fieldsToAdd.competencias_fecha_inicio);
 
@@ -341,10 +389,12 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
 
                     formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(null, null, null);
                     formCompetenciasPruebasResultadosMantForm._updateSeriesValues('FI');
+                    formCompetenciasPruebasResultadosMantForm._setupPostasBtn(null);
 
                 } else {
                     formCompetenciasPruebasResultadosMantForm._updateSeriesValues(formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_tipo_serie').getValue());
-                 //   formCompetenciasPruebasResultadosMantForm._setupViento(formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_anemometro'));
+                    formCompetenciasPruebasResultadosMantForm._setupPostasBtn(formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord());
+                    //   formCompetenciasPruebasResultadosMantForm._setupViento(formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_anemometro'));
 
                 }
             },
@@ -384,12 +434,16 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 // Aqui forzamos solo a leer un registro justo el que corresponde a la prueba
                 // de este registro.
                 // 
-                winCompetenciasResultadosMantForm.fetchFieldRecord('pruebas_codigo',{"pruebas_codigo": record.pruebas_codigo,"pruebas_descripcion":undefined});
+                winCompetenciasResultadosMantForm.fetchFieldRecord('pruebas_codigo', {
+                    "pruebas_codigo": record.pruebas_codigo,
+                    "pruebas_descripcion": undefined
+                });
             },
-            fieldDataFetched: function(formFieldName,record) {
+            fieldDataFetched: function (formFieldName, record) {
                 if (formFieldName === 'pruebas_codigo') {
                     formCompetenciasPruebasResultadosMantForm._updateMarcasFieldsStatus(record, false, false);
-                } 
+                    formCompetenciasPruebasResultadosMantForm._setupPostasBtn(record);
+                }
             },
             canShowTheDetailGrid: function (mode) {
                 if (mode == 'add') {
@@ -403,7 +457,18 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
              *
              * FUNCIONES DE SOPORTE PARA LA FORMA
              */
-            _setupViento: function(withAnemometro,isVientoIndividual) {
+            _setupPostasBtn: function (record) {
+                if (record) {
+                    if (record.apppruebas_nro_atletas > 1) {
+                        formCompetenciasPruebasResultadosMantForm.getItem('fcr_btn_postas').enable();
+                    } else {
+                        formCompetenciasPruebasResultadosMantForm.getItem('fcr_btn_postas').disable();
+                    }
+                } else {
+                    formCompetenciasPruebasResultadosMantForm.getItem('fcr_btn_postas').disable();
+                }
+            },
+            _setupViento: function (withAnemometro, isVientoIndividual) {
                 var itViento = formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_viento');
                 if (withAnemometro === true && isVientoIndividual === false) {
                     itViento.enable();
@@ -472,16 +537,16 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 // Por ahora no se soporta anemometro en forma individual , en realidad si  apppruebas_viento_individual es true
                 // deberiamos permitir que el anemometro sea individual tambien , por ahora sera general a todos
                 // los participantes , esto debe ser mejorado.
-                if (apppruebas_verifica_viento == true &&   (unidad_medida_tipo == 'T' || unidad_medida_tipo == 'M')) {
-                        // Si la prueba verifica viento , veamos si esta encendido el anemometro
-                        thisForm._setFieldStatus(itAnemometro, true, false, false);
-                        // Si el viento es individual el viento debe ir en cada resultado individual.   
-                        thisForm._setupViento(itAnemometro.getValue(),apppruebas_viento_individual);
+                if (apppruebas_verifica_viento == true && (unidad_medida_tipo == 'T' || unidad_medida_tipo == 'M')) {
+                    // Si la prueba verifica viento , veamos si esta encendido el anemometro
+                    thisForm._setFieldStatus(itAnemometro, true, false, false);
+                    // Si el viento es individual el viento debe ir en cada resultado individual.
+                    thisForm._setupViento(itAnemometro.getValue(), apppruebas_viento_individual);
                 }
                 else {
                     // Si no se requiere se apaga y se indica no requerido.
                     thisForm._setFieldStatus(itAnemometro, false, true, true);
-                    thisForm._setupViento(false,false);
+                    thisForm._setupViento(false, false);
                 }
 
                 // Para el caso de pruebas multiples no se requiere mostrar o editar los resultados de la
@@ -494,32 +559,32 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
             },
             /**
              * Funcion de soporte para limpiar un campo , sus errores y activarlo o desactivarlo.
-             * 
+             *
              * Importante , si un campo viene de la base de datos en null o undefined , clearField
              * lo removera de los valores a crear en el nuevo record a editar.
-             * 
+             *
              * @param {FormItem} campo de la forma
              * @param {boolean} enable true para activar , false para desactivar.
              * @param {boolean} hide true para esconder , false para mostrar.
              * @param {boolean} clear true para limpiar campo, false no tocarlo.
              */
             _setFieldStatus: function (field, enable, hide, clear) {
-                    if (clear == true) {
-                        field.clearErrors();
-                        field.clearValue();
-                    }
-                    if (hide == true) {
-                        field.hide();
-                    } else {
-                        field.show();
-                    }
-                    if (enable == false) {
-                        field.disable();
-                    } else {
-                        field.enable();
-                    }
+                if (clear == true) {
+                    field.clearErrors();
+                    field.clearValue();
                 }
-                //  , cellBorder: 1
+                if (hide == true) {
+                    field.hide();
+                } else {
+                    field.show();
+                }
+                if (enable == false) {
+                    field.disable();
+                } else {
+                    field.enable();
+                }
+            }
+            // , cellBorder: 1
         });
     },
     createDetailGridContainer: function (mode) {
@@ -537,18 +602,28 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                 canSort: false,
                 canEdit: false,
                 canAdd: true,
-                fields: [{
-                    name: "atletas_nombre_completo"
-                }, {
-                    name: "atletas_resultados_resultado"
-                }, {
-                    name: "atletas_resultados_viento"
-                }, {
-                    name: "atletas_resultados_puntos"
-                }, {
-                    name: "atletas_resultados_puesto"
-                }],
-                mainFormItemChanged: function(item,newValue) {
+                fields: [
+                    {
+                        name: "atletas_nombre_completo",
+                        width: '50%'
+                    },
+                    {
+                        name: "postas_atletas",
+                        width: '50%'
+                    },
+                    {
+                        name: "atletas_resultados_resultado"
+                    },
+                    {
+                        name: "atletas_resultados_viento"
+                    },
+                    {
+                        name: "atletas_resultados_puntos"
+                    },
+                    {
+                        name: "atletas_resultados_puesto"
+                    }],
+                mainFormItemChanged: function (item, newValue) {
                     if (item.name === 'pruebas_codigo') {
                         var record = item.getSelectedRecord();
                         if (record) {
@@ -564,13 +639,13 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     }
                     return true;
                 },
-                fieldDataFetched: function(formFieldName,record) {
+                fieldDataFetched: function (formFieldName, record) {
                     if (formFieldName === 'pruebas_codigo') {
                         g_atletas_resultados._setupGridFields(record);
                     }
                 },
-                _setupGridFields: function(pruebasRecord) {
-                    if (pruebasRecord && pruebasRecord.competencias_pruebas_origen_id ) {
+                _setupGridFields: function (pruebasRecord) {
+                    if (pruebasRecord && pruebasRecord.competencias_pruebas_origen_id) {
                         g_atletas_resultados.showField('atletas_resultados_puntos');
                     } else {
                         g_atletas_resultados.hideField('atletas_resultados_puntos');
@@ -580,21 +655,32 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                     } else {
                         g_atletas_resultados.hideField('atletas_resultados_viento');
                     }
+                    if (pruebasRecord && pruebasRecord.apppruebas_nro_atletas > 1) {
+                        g_atletas_resultados.showField('postas_atletas');
+                        g_atletas_resultados.hideField('atletas_nombre_completo');
+                    } else {
+                        g_atletas_resultados.hideField('postas_atletas');
+                        g_atletas_resultados.showField('atletas_nombre_completo');
+                    }
                 }
             },
             getFormComponent: function () {
-                    var newGrid;
+                var newGrid;
 
-                    if (this.getChildForm() == undefined) {
-                        newGrid = isc.DynamicFormExt.create({
-                            numCols: 4,
-                            colWidths: ["200", "100", "*", "*"],
-                            fixedColWidths: false,
-                            padding: 5,
-                            dataSource: mdl_atletas_resultados,
-                            formMode: this.formMode, // parametro de inicializacion
-                            focusInEditFld: 'atletas_codigo',
-                            fields: [{
+                if (this.getChildForm() == undefined) {
+                    newGrid = isc.DynamicFormExt.create({
+                        numCols: 4,
+                        colWidths: ["200",
+                                    "100",
+                                    "*",
+                                    "*"],
+                        fixedColWidths: false,
+                        padding: 5,
+                        dataSource: mdl_atletas_resultados,
+                        formMode: this.formMode, // parametro de inicializacion
+                        focusInEditFld: 'atletas_codigo',
+                        fields: [
+                            {
                                 name: "atletas_codigo",
                                 editorType: "comboBoxExt",
                                 showPending: true,
@@ -602,13 +688,15 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                 displayField: "atletas_nombre_completo",
                                 pickListWidth: 360,
                                 endRow: true,
-                                pickListFields: [{
-                                    name: "atletas_codigo",
-                                    width: '20%'
-                                }, {
-                                    name: "atletas_nombre_completo",
-                                    width: '80%'
-                                }],
+                                pickListFields: [
+                                    {
+                                        name: "atletas_codigo",
+                                        width: '20%'
+                                    },
+                                    {
+                                        name: "atletas_nombre_completo",
+                                        width: '80%'
+                                    }],
                                 completeOnTab: true,
                                 colSpan: 4,
                                 width: 250,
@@ -639,11 +727,12 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                                     fieldName: "atletas_nombre_completo",
                                                     operator: "iContains",
                                                     value: filter.atletas_nombre_completo
-                                                }, {
-                                                    fieldName: 'atletas_sexo',
-                                                    operator: 'equals',
-                                                    value: record_prueba.pruebas_sexo
-                                                }]
+                                                },
+                                                    {
+                                                        fieldName: 'atletas_sexo',
+                                                        operator: 'equals',
+                                                        value: record_prueba.pruebas_sexo
+                                                    }]
                                             };
                                         } else {
                                             filter = {
@@ -653,47 +742,131 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                                     fieldName: 'atletas_sexo',
                                                     operator: 'equals',
                                                     value: record_prueba.pruebas_sexo
-                                    }]
+                                                }]
                                             };
                                         }
                                         return filter;
                                     }
                                 }
-                        }, {
+                            },
+                            {
+                                name: "postas_id",
+                                editorType: "comboBoxExt",
+                                showPending: true,
+                                required: false,
+                                length: 50,
+                                width: 180,
+                                valueField: "postas_id",
+                                displayField: "postas_descripcion",
+                                redrawOnChange: true,
+                                pickListFields: [
+                                    {
+                                        name: "postas_id",
+                                        width: '10%'
+                                    },
+                                    {
+                                        name: "postas_descripcion",
+                                        width: '25%'
+                                    },
+                                    {
+                                        name: "postas_atletas",
+                                        width: '65%'
+                                    }],
+                                pickListWidth: 350,
+                                optionOperationId: 'fetchJoinedWithNames',
+                                optionDataSource: mdl_postas,
+                                textMatchStyle: 'substring',
+                                initialSort: [{property: 'postas_descripcion'}],
+                                getPickListFilterCriteria: function () {
+                                    // Recogo primero el filtro si existe uno y luego le agrego
+                                    // id de la posta
+                                    var filter = this.Super("getPickListFilterCriteria", arguments);
+                                    if (filter == null) {
+                                        filter = {};
+                                    }
+
+                                    if (filter.postas_descripcion) {
+                                        filter = {
+                                            _constructor: "AdvancedCriteria",
+                                            operator: "and",
+                                            criteria: [
+                                                {
+                                                    fieldName: "postas_atletas",
+                                                    operator: "iContains",
+                                                    value: filter.postas_atletas
+                                                },
+                                                {
+                                                    fieldName: 'competencias_pruebas_id',
+                                                    operator: 'equals',
+                                                    value: formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_id').getValue()
+                                                }]
+                                        };
+                                    } else {
+                                        filter = {
+                                            _constructor: "AdvancedCriteria",
+                                            operator: "and",
+                                            criteria: [{
+                                                fieldName: 'competencias_pruebas_id',
+                                                operator: 'equals',
+                                                value: formCompetenciasPruebasResultadosMantForm.getItem('competencias_pruebas_id').getValue()
+                                            }]
+                                        };
+                                    }
+                                    return filter;
+                                },
+                                changed: function (form,item, newValue) {
+                                    var record = item.getSelectedRecord();
+                                    if (record) {
+                                        form.getItem('postas_atletas').setValue(record.postas_atletas);
+                                    } else {
+                                        form.getItem('postas_atletas').setValue(undefined);
+                                    }
+                                }
+                            },
+                            {
+                                name: "postas_atletas",
+                                type: 'staticText',
+                                startRow : true,
+                                endRow: true
+                            },
+                            {
                                 name: "atletas_resultados_resultado",
                                 showPending: true,
                                 validators: [{
-                                        type: "regexp",
-                                        showPending: true,
-                                        expression: '^$'
-                                    }],
+                                    type: "regexp",
+                                    showPending: true,
+                                    expression: '^$'
+                                }],
                                 width: 85
-                        }, {
+                            },
+                            {
                                 name: "atletas_resultados_viento",
                                 showPending: true,
-                                width:80,
+                                width: 80,
                                 endRow: true
-                        }, {
+                            },
+                            {
                                 name: "atletas_resultados_puntos",
                                 showPending: true,
                                 width: 60,
                                 endRow: true
-                        }, {
+                            },
+                            {
                                 name: "atletas_resultados_puesto",
                                 showPending: true,
                                 width: 45
+                            },
+                            {
+                                name: "competencias_pruebas_id",
+                                visible: false,
+                                defaultValue: null
+                            }],
+                        fieldDataFetched: function (formFieldName, record) {
+                            if (formFieldName === 'pruebas_codigo') {
+                                this._setupFields(record);
+                            }
                         },
-                        {
-                            name: "competencias_pruebas_id",
-                            visible: false,
-                            defaultValue: null
-                        }],
-                        fieldDataFetched: function(formFieldName,record) {
-                                if (formFieldName === 'pruebas_codigo') {
-                                    this._setupFields(record);
-                                }
-                        },
-                        mainFormItemChanged: function(item,newValue) {
+                        mainFormItemChanged: function (item, newValue) {
                             if (item.name === 'pruebas_codigo') {
                                 var record = item.getSelectedRecord();
                                 if (record) {
@@ -702,18 +875,38 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                             }
                             return true;
                         },
-                        postSaveData: function(mode,record) {
+                        postSaveData: function (mode, record) {
                             if (mode === 'edit') {
+                                //var record= this.getField('atletas_codigo').getSelectedRecord();
                                 g_atletas_resultados.getSelectedRecord().atletas_nombre_completo = this.getField('atletas_codigo').getDisplayValue();
+                                g_atletas_resultados.getSelectedRecord().postas_atletas = this.getField('postas_id').getSelectedRecord().postas_atletas;
                             } else {
                                 if (!record.hasOwnProperty('atletas_nombre_completo')) {
-                                    isc.addProperties(record,{'atletas_nombre_completo': this.getField('atletas_codigo').getDisplayValue()});
+                                    isc.addProperties(record, {'atletas_nombre_completo': this.getField('atletas_codigo').getDisplayValue()});
                                 } else {
                                     record.atletas_nombre_completo = this.getField('atletas_codigo').getDisplayValue();
                                 }
+
+                                if (!record.hasOwnProperty('postas_atletas')) {
+                                    isc.addProperties(record, {'postas_atletas': this.getField('postas_id').getSelectedRecord().postas_atletas});
+                                } else {
+                                    record.postas_atletas = this.getField('postas_id').getSelectedRecord().postas_atletas;
+                                }
                             }
                         },
-                        _setupFields: function(pruebasRecord) {
+                        setEditMode: function(mode) {
+                          this.Super('setEditMode',arguments) ;
+                            if (mode === 'add') {
+                                var record = formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord();
+                                if (record.apppruebas_nro_atletas > 1) {
+                                    this.setValue('atletas_codigo', (record.pruebas_sexo === 'F' ? 'POSTAF' : 'POSTAM'));
+                                } else {
+                                    this.setValue('atletas_codigo',undefined);
+                                }
+                            }
+
+                        },
+                        _setupFields: function (pruebasRecord) {
                             // De acuerdo a si es manual o no se cambia la expresion regular para el input,
                             // validator.
                             var itResultado = this.getField('atletas_resultados_resultado');
@@ -733,14 +926,24 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
 
 
                             if (pruebasRecord && pruebasRecord.apppruebas_viento_individual == true &&
-                                formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_anemometro')=== true) {
+                                formCompetenciasPruebasResultadosMantForm.getValue('competencias_pruebas_anemometro') === true) {
                                 this.showField('atletas_resultados_viento');
                             }
                             else {
                                 this.hideField('atletas_resultados_viento');
                             }
 
-                           var field = this.getField('atletas_resultados_resultado');
+                            if (pruebasRecord && pruebasRecord.apppruebas_nro_atletas > 1) {
+                                this.showField('postas_id');
+                                this.showField('postas_atletas');
+                                this.hideField('atletas_codigo');
+                            } else {
+                                this.hideField('postas_id');
+                                this.hideField('postas_atletas');
+                                this.showField('atletas_codigo');
+                            }
+
+                            var field = this.getField('atletas_resultados_resultado');
 
                             if (pruebasRecord && pruebasRecord.apppruebas_multiple === true) {
                                 field.setCanEdit(false);
@@ -749,16 +952,16 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                 field.setCanEdit(true);
                                 field.setRequired(true);
                             }
-                         }
-                        });
-                    } else {
-                        newGrid = cpr_detailGridContainer.getChildForm();
-                    }
-                    return newGrid;
+                        }
+                    });
+                } else {
+                    newGrid = cpr_detailGridContainer.getChildForm();
                 }
+                return newGrid;
+            }
         });
     },
-                    
+
     canShowTheDetailGrid: function (mode) {
         if (mode == 'add') {
             if (formCompetenciasPruebasResultadosMantForm._vcache_apppruebas_multiple !== false) {

@@ -1,4 +1,3 @@
-
 /**
  * Clase que crea el pane container para el tab de informacion de resultados de un atleta.
  * implementa infoKey , onInfoKeyChanged y getInfoMember para que el TabSetExt pueda coordinar los
@@ -25,7 +24,7 @@ isc.CompetenciasResultadosForm.addProperties({
      * Este metodo es llamado por el controller cuando en la forma de mantenimiento , en la
      * grilla de detalle , de existir ha ocurrido una operacion sobre alguno de sus registros.
      */
-    afterFormDetailGridRecordSaved: function(newValues, oldValues) {
+    afterFormDetailGridRecordSaved: function (newValues, oldValues) {
         competenciasResultadosList.invalidateCache();
 
 
@@ -33,27 +32,24 @@ isc.CompetenciasResultadosForm.addProperties({
     /**
      * Este metodo es llamado por el controller cuando en la forma de mantenimiento se agrega o modifica un registro.
      */
-    afterFormRecordSaved: function(newValues, oldValues) {
-        console.log('afterFormRecordSaved')
-        console.log(newValues,oldValues)
-
+    afterFormRecordSaved: function (newValues, oldValues) {
         competenciasResultadosList.setCriteria({
-                competencias_codigo: CompetenciasResultadosFormID.infoKey,
-                pruebas_codigo: newValues.pruebas_codigo,
-                pruebas_sexo: newValues.pruebas_sexo,
-                serie: newValues.serie,
-                origen: (newValues.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
-            });
+            competencias_codigo: CompetenciasResultadosFormID.infoKey,
+            pruebas_codigo: newValues.pruebas_codigo,
+            pruebas_sexo: newValues.pruebas_sexo,
+            serie: newValues.serie,
+            origen: (newValues.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
+        });
         competenciasResultadosList.invalidateCache();
     },
     /**
      * Llamada couando la llave principal indica que ha camado  en este caso
      * lo que hace es limpiar la grilla de resultados.
      */
-    onInfoKeyChanged: function(formRecord) {
-           //  _vcache_sourceRecord = formRecord;
-        var infLabelContents='<span style="font-weight:bold; font-size:16px">' + formRecord.competencias_descripcion + '</span> (' + formRecord.categorias_codigo + ' / ' + formRecord.agno + ' / ' + formRecord.ciudades_descripcion + '-' + formRecord.paises_descripcion + ')'
-        competenciasResultadosInfoLabel.setContents(infLabelContents)
+    onInfoKeyChanged: function (formRecord) {
+        //  _vcache_sourceRecord = formRecord;
+        var infLabelContents = '<span style="font-weight:bold; font-size:16px">' + formRecord.competencias_descripcion + '</span> (' + formRecord.categorias_codigo + ' / ' + formRecord.agno + ' / ' + formRecord.ciudades_descripcion + '-' + formRecord.paises_descripcion + ')';
+        competenciasResultadosInfoLabel.setContents(infLabelContents);
         // Limpio la grilla.
         var obj = [];
         competenciasResultadosList.setData(obj);
@@ -67,10 +63,10 @@ isc.CompetenciasResultadosForm.addProperties({
     /**
      * En este caso la forma
      */
-    getRequiredFieldsToAddOrEdit: function(mode) {
+    getRequiredFieldsToAddOrEdit: function (mode) {
         // La vista que agrega pruebas requiere datos de la competencia, se los retorna.
         //return _vcache_sourceRecord;
-       return {
+        return {
             competencias_codigo: this.infoKey,
             competencias_descripcion_visual: competenciasResultadosInfoLabel.getContents(),
             competencias_fecha_inicio: CompetenciasResultadosFormID._vcache_competencias_fecha_inicio,
@@ -80,39 +76,57 @@ isc.CompetenciasResultadosForm.addProperties({
     /**
      * Requerido por TabSetExt cuando necesita refresacar la lista de pruebas.
      */
-    getInfoMember: function() {
+    getInfoMember: function () {
         return this.getMember('competenciasResultadosContainer').getMember('competenciasPruebasList');
     },
-    createGridList: function() {
+    createGridList: function () {
         return isc.ListGrid.create({
             ID: "competenciasPruebasList",
-            width: '280px',
+            width: '260px',
             autoFetchData: false,
             dataSource: mdl_competencias_pruebas,
             fetchOperation: 'fetchPruebasPorCompetencia',
-            lastComptenciaPruebaVisitedId : undefined,
+            lastComptenciaPruebaVisitedId: undefined,
             fields: [
-                {name: 'competencias_pruebas_id', hidden: true},
-                {name: "pruebas_sexo", hidden: true,
-                    getGroupValue: function(value, record, field, fieldName, grid) {
-                        if (value == 'F')
+                {
+                    name: 'competencias_pruebas_id',
+                    hidden: true
+                },
+                {
+                    name: "pruebas_sexo",
+                    hidden: true,
+                    getGroupValue: function (value, record, field, fieldName, grid) {
+                        if (value == 'F') {
                             return "Damas";
-                        else
+                        } else {
                             return "Varones";
-                    }},
-                {name: "pruebas_generica_codigo", hidden: true,
-                    getGroupValue: function(value, record, field, fieldName, grid) {
+                        }
+                    }
+                },
+                {
+                    name: "pruebas_generica_codigo",
+                    hidden: true,
+                    getGroupValue: function (value, record, field, fieldName, grid) {
                         return record.apppruebas_descripcion;
-                    }},
-                {name: "pruebas_descripcion", width: '85%'},
+                    }
+                },
+                {
+                    name: "pruebas_descripcion",
+                    width: '85%'
+                },
                 {name: "serie"}
             ],
-            initialSort: [{property: 'pruebas_sexo'}, {property: 'apppruebas_descripcion'}],
+            initialSort: [
+                {property: 'pruebas_sexo'},
+                {property: 'apppruebas_descripcion'}],
             textMatchStyle: 'exact',
-            groupByField: ['pruebas_sexo', 'pruebas_generica_codigo'],
+            groupByField: ['pruebas_sexo',
+                           'pruebas_generica_codigo'],
             groupStartOpen: 'none',
-            gridComponents: [CompetenciasResultadosFormID._toolStrip, "header", "body"],
-            getCellCSSText: function(record, rowNum, colNum) {
+            gridComponents: [CompetenciasResultadosFormID._toolStrip,
+                             "header",
+                             "body"],
+            getCellCSSText: function (record, rowNum, colNum) {
                 var style = 'font-style:normal;';
                 if (record) {
                     if (record.competencias_pruebas_origen_id > 0) {
@@ -127,32 +141,48 @@ isc.CompetenciasResultadosForm.addProperties({
                 }
                 return style;
             },
-            rowClick: function(record, recordNum, fieldNum) {
+            rowClick: function (record, recordNum, fieldNum) {
                 this.Super("rowClick", arguments);
                 if (!record.groupMembers) {
                     // Solo releer si la relacion competencia-prueba es cambiada.
                     if (this.lastComptenciaPruebaVisitedId !== record.competencias_pruebas_id) {
                         this.lastComptenciaPruebaVisitedId = record.competencias_pruebas_id;
-                        
+
                         competenciasResultadosList.filterData({
-                            competencias_codigo: CompetenciasResultadosFormID.infoKey,
-                            pruebas_codigo: record.pruebas_codigo,
-                            pruebas_sexo: record.pruebas_sexo,
-                            serie: record.serie,
-                            origen: (record.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
-                        },
-                        undefined, {textMatchStyle: 'exact'});
+                                competencias_codigo: CompetenciasResultadosFormID.infoKey,
+                                pruebas_codigo: record.pruebas_codigo,
+                                pruebas_sexo: record.pruebas_sexo,
+                                serie: record.serie,
+                                origen: (record.competencias_pruebas_origen_id > 0 ? 'C' : 'D')
+                            },
+                            function (dsResponse, data, dsRequest) {
+                                console.log('--------------------------');
+                                console.log(data);
+                                if (data && data.length > 0) {
+                                    if (data[0].postas_atletas) {
+                                        competenciasResultadosList.hideField('atletas_nombre_completo');
+                                        competenciasResultadosList.showField('postas_atletas');
+                                    } else {
+                                        competenciasResultadosList.showField('atletas_nombre_completo');
+                                        competenciasResultadosList.hideField('postas_atletas');
+                                    }
+                                } else {
+                                    competenciasResultadosList.showField('atletas_nombre_completo');
+                                    competenciasResultadosList.hideField('postas_atletas');
+                                }
+                            },
+                            {textMatchStyle: 'exact'});
                     }
                 }
             },
             // Refrescamos la lista de resultados para la prueba e indicamos relectura de la lista de pruebas.
-            isPostRemoveDataRefreshMainListRequired: function(recordToDelete) {
+            isPostRemoveDataRefreshMainListRequired: function (recordToDelete) {
                 competenciasResultadosList.invalidateCache();
                 return true;
             }
         });
     },
-    initWidget: function() {
+    initWidget: function () {
         this.Super("initWidget", arguments);
 
         var toolStrip = this._createToolStrip();
@@ -163,12 +193,13 @@ isc.CompetenciasResultadosForm.addProperties({
         gridList.reselectOnUpdate = true;
 
         isc.Label.create({
-            ID: 'competenciasResultadosInfoLabel',
-            height: 30,
-            padding: 5,
-            valign: "center",
-            wrap: false,
-            contents: undefined}
+                ID: 'competenciasResultadosInfoLabel',
+                height: 30,
+                padding: 5,
+                valign: "center",
+                wrap: false,
+                contents: undefined
+            }
         );
         isc.HLayout.create({
             ID: 'competenciasResultadosContainer',
@@ -199,28 +230,66 @@ isc.CompetenciasResultadosForm.addProperties({
                                 isc.ToolStripButton.create({
                                     icon: "[SKIN]/actions/refresh.png",
                                     prompt: "Actualizar lista",
-                                    click: function() {
+                                    click: function () {
                                         competenciasResultadosList.invalidateCache();
                                     }
                                 })
                             ]
-                        }), "header", "filterEditor", "body"],
+                        }),
+                        "header",
+                        "filterEditor",
+                        "body"],
                     fields: [
-                        {name: "atletas_nombre_completo", width: '*'},
-                        {name: "serie", width: '8%', canFilter: false, filterOperator: 'equals'},
-                        {name: "atletas_resultados_resultado", width: '12%', align: 'right',
+                        {
+                            name: "atletas_nombre_completo",
+                            width: '*'
+                        },
+                        {
+                            name: "postas_atletas",
+                            width: '*',
+                            showHover:true,
+                            hoverHTML:"return record.postas_atletas"
+                        },
+                        {
+                            name: "serie",
+                            width: '8%',
+                            canFilter: false,
+                            filterOperator: 'equals'
+                        },
+                        {
+                            name: "atletas_resultados_resultado",
+                            width: '12%',
+                            align: 'right',
                             // Internamente el campo que se debe usar para ordenar los resultados
                             // es el campo norm_resultado.
-                            sortNormalizer: function(record) {
+                            sortNormalizer: function (record) {
                                 return record.norm_resultado;
-                            }},
-                        {name: "competencias_pruebas_viento", width: '10%', align: 'right'},
-                        {name: "obs", width: '9%'},
-                        {name: "categorias_codigo", width: '8%'},
-                        {name: "pruebas_record_hasta", width: '8%'},
-                        {name: "competencias_pruebas_fecha", width: '12%', align: 'right'}
+                            }
+                        },
+                        {
+                            name: "competencias_pruebas_viento",
+                            width: '10%',
+                            align: 'right'
+                        },
+                        {
+                            name: "obs",
+                            width: '9%'
+                        },
+                        {
+                            name: "categorias_codigo",
+                            width: '8%'
+                        },
+                        {
+                            name: "pruebas_record_hasta",
+                            width: '8%'
+                        },
+                        {
+                            name: "competencias_pruebas_fecha",
+                            width: '12%',
+                            align: 'right'
+                        }
                     ],
-                    getCellCSSText: function(record, rowNum, colNum) {
+                    getCellCSSText: function (record, rowNum, colNum) {
                         var style = 'font-style:normal;';
                         if (record.origen === 'C') {
                             style = 'font-style:italic;'
@@ -244,13 +313,32 @@ isc.CompetenciasResultadosForm.addProperties({
                         showHeaderMenuButton: false,
                         showHeaderContextMenu: false,
                         fields: [
-                            {name: 'pruebas_descripcion', width: '*'}
+                            {
+                                name: 'pruebas_descripcion',
+                                width: '*'
+                            }
                             ,
-                            {name: 'competencias_pruebas_fecha', width: '15%'},
-                            {name: 'atletas_resultados_resultado', align: 'right', width: '15%'},
-                            {name: 'competencias_pruebas_viento', width: '10%'},
-                            {name: 'obs', width: '12%'},
-                            {name: 'atletas_resultados_puntos', width: '12%'}
+                            {
+                                name: 'competencias_pruebas_fecha',
+                                width: '15%'
+                            },
+                            {
+                                name: 'atletas_resultados_resultado',
+                                align: 'right',
+                                width: '15%'
+                            },
+                            {
+                                name: 'competencias_pruebas_viento',
+                                width: '10%'
+                            },
+                            {
+                                name: 'obs',
+                                width: '12%'
+                            },
+                            {
+                                name: 'atletas_resultados_puntos',
+                                width: '12%'
+                            }
                         ]
                     }
                 })
@@ -261,7 +349,10 @@ isc.CompetenciasResultadosForm.addProperties({
         this.addMember(competenciasResultadosContainer);
         competenciasPruebasList.filterData({competencias_codigo: this.infoKey});
 
-        var controller = isc.DefaultController.create({mainWindowClass: null, formWindowClass: 'WinCompetenciasResultadosMantForm'});
+        var controller = isc.DefaultController.create({
+            mainWindowClass: null,
+            formWindowClass: 'WinCompetenciasResultadosMantForm'
+        });
         controller.doSetupWithInstance(this, false);
     }
 });

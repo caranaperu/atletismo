@@ -14,27 +14,67 @@ isc.RestDataSource.create({
     fields: [
         {name: "atletas_resultados_id"},
         {name: "atletas_codigo"},
-        {name: "atletas_nombre_completo", title: 'Atleta'},
-        {name: "pruebas_codigo", title: "Prueba"},
-        {name: "atletas_resultados_puesto", title: "Puesto", type: 'integer'},
-        {name: "atletas_resultados_resultado", title: "Marca"},
-        {name: "competencias_pruebas_viento", title: "Viento"},
-        {name: "competencias_pruebas_fecha", title: "Fecha", type: 'date'},
-        {name: "obs", title: "Obs"},
-        {name: "serie", title: "Sr."},
-        {name: "categorias_codigo", title: "Cat."},
-        {name: "pruebas_record_hasta", title: "Rank"},
+        {
+            name: "atletas_nombre_completo",
+            title: 'Atleta'
+        },
+        {
+            name: "postas_atletas",
+            title: 'Posta/Atletas'
+        },
+        {
+            name: "pruebas_codigo",
+            title: "Prueba"
+        },
+        {
+            name: "atletas_resultados_puesto",
+            title: "Puesto",
+            type: 'integer'
+        },
+        {
+            name: "atletas_resultados_resultado",
+            title: "Marca"
+        },
+        {
+            name: "competencias_pruebas_viento",
+            title: "Viento"
+        },
+        {
+            name: "competencias_pruebas_fecha",
+            title: "Fecha",
+            type: 'date'
+        },
+        {
+            name: "obs",
+            title: "Obs"
+        },
+        {
+            name: "serie",
+            title: "Sr."
+        },
+        {
+            name: "categorias_codigo",
+            title: "Cat."
+        },
+        {
+            name: "pruebas_record_hasta",
+            title: "Rank"
+        },
         {name: "pruebas_generica_codigo"},
-        {name: "apppruebas_multiple", type: 'boolean', getFieldValue: function(r, v, f, fn) {
+        {
+            name: "apppruebas_multiple",
+            type: 'boolean',
+            getFieldValue: function (r, v, f, fn) {
                 return mdl_competenciasresultados._getBooleanFieldValue(v);
-            }}
+            }
+        }
 
     ],
     /**
      * Normalizador de valores booleanos ya que el backend pude devolver de diversas formas
      * segun la base de datos.
      */
-    _getBooleanFieldValue: function(value) {
+    _getBooleanFieldValue: function (value) {
         //  console.log(value);
         if (value !== 't' && value !== 'T' && value !== 'Y' && value !== 'y' && value !== 'TRUE' && value !== 'true' && value !== true) {
             return false;
@@ -45,13 +85,16 @@ isc.RestDataSource.create({
     },
     fetchDataURL: glb_dataUrl + 'competenciasPruebasController?op=fetch&libid=SmartClient',
     operationBindings: [
-        {operationType: "fetch", dataProtocol: "postParams"}
+        {
+            operationType: "fetch",
+            dataProtocol: "postParams"
+        }
     ],
     /**
      * Caso especial para generar el JSON de un advanced criteria para ser pasada como parte del
      * POST.
      */
-    transformRequest: function(dsRequest) {
+    transformRequest: function (dsRequest) {
         var data = this.Super("transformRequest", arguments);
         // Si esxiste criteria y se define que proviene de un advanced filter y la operacion es fetch,
         // construimos un objeto JSON serializado como texto para que el lado servidor lo interprete correctamente.
@@ -69,7 +112,6 @@ isc.RestDataSource.create({
             // finalmente se coloca como data del request para que siga su proceso estandard.
             var jsonCriteria = isc.JSON.encode(advFilter, {prettyPrint: false});
             if (jsonCriteria) {
-                //console.log(jsonCriteria);
                 data._acriteria = jsonCriteria;
             }
         }

@@ -117,6 +117,7 @@ class CompetenciasPruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDA
                         pg.apppruebas_verifica_viento,
                         pg.apppruebas_descripcion,
                         pg.apppruebas_viento_individual,
+                        pg.apppruebas_nro_atletas,
                         unidad_medida_tipo,
                         unidad_medida_regex_e,
                         unidad_medida_regex_m,

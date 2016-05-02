@@ -89,7 +89,7 @@ isc.RestDataSource.create({
      */
     transformRequest: function(dsRequest) {
         var data = this.Super("transformRequest", arguments);
-        console.log(this._noTransformFields)
+        
         if (dsRequest.operationType == 'add' || dsRequest.operationType == 'update') {
             //  var data = isc.addProperties({}, dsRequest.data);
             // Solo para los valores que se encuentran en oldValues de no existir

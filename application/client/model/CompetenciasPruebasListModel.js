@@ -31,6 +31,7 @@ isc.RestDataSource.create({
             }},
         {name: "competencias_pruebas_origen_id", type: 'integer'},
         {name: "apppruebas_descripcion"},
+        {name: "apppruebas_nro_atletas"},
         {name: "unidad_medida_tipo"},
         {name: "unidad_medida_regex_e"},
         {name: "unidad_medida_regex_m"}

@@ -92,12 +92,15 @@ class PruebasDAO_postgre extends \app\common\dao\TSLAppBasicRecordDAO_postgre {
 
         // Para la sub operacion fetchJoinedFull acotamos que no se presenten la pruebas que pertenecen
         // a combinadas , ya que estan no pueden ser agregadas independientemente a un resultado.
+        // Asi mismo no mostramos las postas ya que no se soporta operaciones sobre ellas en este DAO
+        // eso debe hacerse por los resultados de competencias/pruebas.
         if ($subOperation == 'fetchJoinedFull') {
             // ya existe where
             if (strpos($sql,'where') !== false) {
-                $sql = str_replace('where', 'where pr.pruebas_codigo not in (select pruebas_detalle_prueba_codigo from tb_pruebas_detalle) and ', $sql);
+                $sql = str_replace('where', 'where apppruebas_nro_atletas <= 1 and pr.pruebas_codigo not in (select pruebas_detalle_prueba_codigo from tb_pruebas_detalle) and ', $sql);
+
             } else {
-                $sql .= ' where pr.pruebas_codigo not in (select pruebas_detalle_prueba_codigo from tb_pruebas_detalle)';
+                $sql .= ' where apppruebas_nro_atletas <= 1 and pr.pruebas_codigo not in (select pruebas_detalle_prueba_codigo from tb_pruebas_detalle)';
             }
         }
  //       echo $sql;

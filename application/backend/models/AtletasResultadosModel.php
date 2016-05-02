@@ -19,6 +19,7 @@ class AtletasResultadosModel extends \app\common\model\TSLAppCommonBaseModel {
 
     use AtletasResultadosModelTraits;
     protected $competencias_pruebas_id;
+    protected $postas_id;
 
     /**
      * Setea el id unico de competencia / prueba a la que pertenece
@@ -36,6 +37,24 @@ class AtletasResultadosModel extends \app\common\model\TSLAppCommonBaseModel {
      */
     public function get_competencias_pruebas_id() {
         return $this->competencias_pruebas_id;
+    }
+
+    /**
+     * @return integer retorna el id de la posta en el  caso sea una prueba de este
+     *                 tipo de lo contrario sera null.
+     */
+    public function get_postas_id() {
+        return $this->postas_id;
+    }
+
+    /**
+     * Setea el id unico de de la posta en caso que esta prueba o resultado
+     * sea de una posta.
+     *
+     * @param integer $postas_id id de la posta , puede ser null si la prueba no es posta.
+     */
+    public function set_postas_id($postas_id) {
+        $this->postas_id = $postas_id;
     }
 
     public function &getPKAsArray() {

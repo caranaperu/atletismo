@@ -52,6 +52,7 @@ isc.RestDataSource.create({
         {name: "obs", title: 'Obs.', type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
             }},
+        {name: "postas_id"},
         // Solo para efectos de GUI no se grabaran
         {name: "serie", title: 'Serie'},
         {name: "atletas_nombre_completo", title: 'Atleta'},
@@ -64,7 +65,7 @@ isc.RestDataSource.create({
         {name: "atletas_sexo"},
         {name: "apppruebas_multiple", type: 'boolean', getFieldValue: function (r, v, f, fn) {
                 return mdl_atletaspruebas_resultados._getBooleanFieldValue(v);
-            }},
+            }}
     ],
     /**
      * Normalizador de valores para el viento ya que este puede ser null dependiendo de la prueba,
