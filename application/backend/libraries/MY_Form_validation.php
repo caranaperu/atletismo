@@ -48,14 +48,23 @@ class MY_Form_validation extends CI_Form_validation {
                 return true;
             }
         }
-        $t = strtotime($date);
-        if ($t == '0') {
-            return false;
-        }
+        // Cambio de metodo para verificar la fecha ya que en 32 bts strtotime
+        // no puede con fechas del siglo pasado.
+        $date = date_create($date);
 
-        $m = date('m', $t);
-        $d = date('d', $t);
-        $y = date('Y', $t);
+        $y = date_format($date, 'Y');
+        $m = date_format($date, 'm');
+        $d = date_format($date, 'd');
+
+        // TODO: Verificar en 64 bits aunque sea por curiosidad
+//        $t = strtotime($date);
+//        if ($t == '0') {
+//            return false;
+//        }
+
+//        $m = date('m', $t);
+//        $d = date('d', $t);
+//        $y = date('Y', $t);
         return checkdate($m, $d, $y);
     }
 
