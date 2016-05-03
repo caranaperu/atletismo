@@ -85,6 +85,7 @@
                         FROM tb_postas_detalle pd
                         INNER JOIN tb_postas po ON po.postas_id = pd.postas_id
                           INNER JOIN tb_competencias_pruebas cp ON cp.competencias_pruebas_id = po.competencias_pruebas_id
+                          INNER JOIN tb_atletas_resultados ar on ar.competencias_pruebas_id = cp.competencias_pruebas_id
                           INNER JOIN tb_pruebas pr ON pr.pruebas_codigo = cp.pruebas_codigo
                           INNER JOIN tb_app_pruebas_values pv ON pv.apppruebas_codigo = pr.pruebas_generica_codigo
                         WHERE pd.atletas_codigo = \'' . $atletas_codigo . '\'' .
