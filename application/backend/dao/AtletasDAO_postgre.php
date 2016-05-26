@@ -105,7 +105,9 @@
                     $where = $constraints->getFilterFieldsAsString();
 
                     if (strlen($where) > 0) {
-                        $sql .= ' and ' . $where;
+                        $sql .= ' and ' . $where . ' and a.atletas_protected=FALSE ';
+                    } else {
+                        $sql .= 'and a.atletas_protected=FALSE ';
                     }
 
 
@@ -113,16 +115,56 @@
             } else if ($subOperation == 'fetchForListByPrueba') {
                 // USamos un campo virtual que es atletas_agno el cual es computado , por ende se usa un select
                 /// extermo para que el where lo pueda usar.
-                $sql = 'SELECT DISTINCT a.atletas_codigo ,atletas_nombre_completo FROM tb_atletas a
-                INNER JOIN tb_atletas_resultados ar ON ar.atletas_codigo = a.atletas_codigo
-                INNER JOIN tb_competencias_pruebas cp ON cp.competencias_pruebas_id = ar.competencias_pruebas_id
-                INNER JOIN tb_pruebas pc ON pc.pruebas_codigo = cp.pruebas_codigo';
+                $sql = 'SELECT DISTINCT
+                          CASE WHEN ar.postas_id IS  NULL
+                            THEN  a.atletas_codigo
+                            ELSE pd.atletas_codigo
+                            END AS atletas_codigo,
+                          CASE WHEN ar.postas_id IS NOT  NULL
+                            THEN  (SELECT atletas_nombre_completo FROM tb_atletas WHERE atletas_codigo = pd.atletas_codigo)
+                          ELSE atletas_nombre_completo
+                          END AS atletas_nombre_completo
+                        FROM tb_atletas a
+                          INNER JOIN tb_atletas_resultados ar ON ar.atletas_codigo = a.atletas_codigo
+                          INNER JOIN tb_competencias_pruebas cp ON cp.competencias_pruebas_id = ar.competencias_pruebas_id
+                          INNER JOIN tb_pruebas pc ON pc.pruebas_codigo = cp.pruebas_codigo
+                          LEFT  JOIN tb_postas po ON po.competencias_pruebas_id = cp.competencias_pruebas_id AND po.postas_id = ar.postas_id
+                          LEFT JOIN  tb_postas_detalle pd ON pd.postas_id = ar.postas_id ';
             } else if ($subOperation == 'fetchForListByPruebaGenerica') {
-                $sql = 'SELECT DISTINCT a.atletas_codigo,atletas_nombre_completo FROM tb_atletas a
-                INNER JOIN tb_atletas_resultados ar ON ar.atletas_codigo = a.atletas_codigo
-                INNER JOIN tb_competencias_pruebas cp ON cp.competencias_pruebas_id = ar.competencias_pruebas_id
-                INNER JOIN tb_pruebas pc ON pc.pruebas_codigo = cp.pruebas_codigo
-                INNER JOIN tb_app_pruebas_values pv ON pv.apppruebas_codigo = pc.pruebas_generica_codigo';
+                $sql = 'SELECT DISTINCT
+                          -- IMPORTANTE , si es una posta dado que no existe un unico codigo de atleta
+                          -- lo simulamos con el concatenado ordenado de los codigos de los atletas de las postas.
+                          -- Si se desea ubicar a una posta DEBERA ENVIARSE el valor de atletas_resultados_id del resultado
+                          -- si no la respuesta sera incorrecta.
+                          (CASE WHEN ar.postas_id IS NOT NULL
+                            THEN
+                              (SELECT array_to_string(ARRAY(SELECT unnest(array_agg(atl.atletas_codigo))
+                                                            ORDER BY 1), \',\')
+                               FROM tb_postas_detalle pd
+                                 INNER JOIN tb_postas po ON po.postas_id = pd.postas_id
+                                 INNER JOIN tb_atletas atl ON atl.atletas_codigo = pd.atletas_codigo
+                               WHERE pd.postas_id = ar.postas_id
+                               GROUP BY pd.postas_id)
+                           ELSE
+                             a.atletas_codigo
+                           END) AS atletas_codigo,
+                          (CASE WHEN ar.postas_id IS NOT NULL
+                            THEN
+                              (SELECT array_to_string(ARRAY(SELECT unnest(array_agg(atl.atletas_ap_paterno))
+                                                            ORDER BY 1), \',\')
+                               FROM tb_postas_detalle pd
+                                 INNER JOIN tb_postas po ON po.postas_id = pd.postas_id
+                                 INNER JOIN tb_atletas atl ON atl.atletas_codigo = pd.atletas_codigo
+                               WHERE pd.postas_id = ar.postas_id
+                               GROUP BY pd.postas_id)
+                           ELSE
+                             atletas_nombre_completo
+                           END) AS atletas_nombre_completo
+                        FROM tb_atletas a
+                          INNER JOIN tb_atletas_resultados ar ON ar.atletas_codigo = a.atletas_codigo
+                          INNER JOIN tb_competencias_pruebas cp ON cp.competencias_pruebas_id = ar.competencias_pruebas_id
+                          INNER JOIN tb_pruebas pc ON pc.pruebas_codigo = cp.pruebas_codigo
+                          INNER JOIN tb_app_pruebas_values pv ON pv.apppruebas_codigo = pc.pruebas_generica_codigo';
             } else if ($subOperation == 'fetchForListForResultados') {
                 $sql = 'SELECT *  FROM (SELECT atletas_codigo ,atletas_nombre_completo,atletas_sexo,activo 
                         FROM  tb_atletas
@@ -176,7 +218,7 @@
 
             $sql = str_replace('like', 'ilike', $sql);
 
-            //      echo $sql;
+           // echo $sql;
 
             return $sql;
         }
@@ -229,6 +271,7 @@
                 '\'' . $record->getActivo() . '\'::BOOLEAN,' .
                 '\'' . $record->get_Usuario_mod() . '\'::CHARACTER VARYING,' .
                 $record->getVersionId() . '::INTEGER, 1::BIT) AS insupd) AS ans WHERE insupd IS NOT NULL;';
+            echo $sql;
 
             return $sql;
         }

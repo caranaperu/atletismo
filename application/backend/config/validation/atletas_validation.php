@@ -23,7 +23,7 @@ $config['v_atletas'] = array(
         array(
             'field' => 'atletas_ap_materno',
             'label' => 'lang:atletas_ap_materno',
-            'rules' => 'required|onlyValidText|xss_clean|max_length[60]'
+            'rules' => 'onlyValidText|xss_clean|max_length[60]'
         ),
         array(
             'field' => 'atletas_nombres',
@@ -43,7 +43,7 @@ $config['v_atletas'] = array(
         array(
             'field' => 'atletas_nro_documento',
             'label' => 'lang:atletas_nro_documento',
-            'rules' => 'required|integer|xss_clean|max_length[8]'
+            'rules' => 'integer|xss_clean|max_length[8]'
         ),
         array(
             'field' => 'atletas_nro_pasaporte',
@@ -137,7 +137,7 @@ $config['v_atletas'] = array(
         array(
             'field' => 'atletas_ap_materno',
             'label' => 'lang:atletas_ap_materno',
-            'rules' => 'required|onlyValidText|xss_clean|max_length[60]'
+            'rules' => 'onlyValidText|xss_clean|max_length[60]'
         ),
         array(
             'field' => 'atletas_nombres',
@@ -157,7 +157,7 @@ $config['v_atletas'] = array(
         array(
             'field' => 'atletas_nro_documento',
             'label' => 'lang:atletas_nro_documento',
-            'rules' => 'required|integer|xss_clean|max_length[8]'
+            'rules' => 'integer|xss_clean|max_length[8]'
         ),
         array(
             'field' => 'atletas_nro_pasaporte',

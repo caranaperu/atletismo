@@ -14,7 +14,8 @@ isc.WinRecordsForm.addProperties({
     ID: "winRecordsForm",
     title: "Mantenimiento de Records",
     autoSize: false,
-    width: '600', height: '230',
+    width: '600',
+    height: '230',
     createForm: function (formMode) {
         return isc.DynamicFormExt.create({
             ID: "formRecords",
@@ -22,14 +23,27 @@ isc.WinRecordsForm.addProperties({
             padding: 2,
             dataSource: mdl_records,
             formMode: this.formMode, // parametro de inicializacion
-            keyFields: ['records_id', 'records_tipo_codigo', 'apppruebas_codigo', 'atletas_codigo', 'atletas_resultados_id', 'categorias_codigo'],
+            keyFields: ['records_id',
+                        'records_tipo_codigo',
+                        'apppruebas_codigo',
+                        'atletas_codigo',
+                        'atletas_resultados_id',
+                        'categorias_codigo'],
             saveButton: this.getFormButton('save'),
             focusInEditFld: 'records_tipo_codigo',
             fields: [
-                {name: "records_tipo_codigo", editorType: "comboBoxExt", length: 50, width: "200",
-                    valueField: "records_tipo_codigo", displayField: "records_tipo_descripcion",
+                {
+                    name: "records_tipo_codigo",
+                    editorType: "comboBoxExt",
+                    length: 50,
+                    width: "200",
+                    valueField: "records_tipo_codigo",
+                    displayField: "records_tipo_descripcion",
                     pickListFields: [
-                        {name: "records_tipo_descripcion", width: '70%'},
+                        {
+                            name: "records_tipo_descripcion",
+                            width: '70%'
+                        },
                         {name: "records_tipo_abreviatura"}
                     ],
                     pickListWidth: 250,
@@ -41,8 +55,14 @@ isc.WinRecordsForm.addProperties({
                     textMatchStyle: 'substring',
                     sortField: "records_tipo_descripcion"
                 },
-                {name: "apppruebas_codigo", title: 'Prueba', editorType: "comboBoxExt", length: 50, width: "200",
-                    valueField: "apppruebas_codigo", displayField: "apppruebas_descripcion",
+                {
+                    name: "apppruebas_codigo",
+                    title: 'Prueba',
+                    editorType: "comboBoxExt",
+                    length: 50,
+                    width: "200",
+                    valueField: "apppruebas_codigo",
+                    displayField: "apppruebas_descripcion",
                     pickListFields: [
                         {name: "apppruebas_descripcion"}
                     ],
@@ -62,9 +82,24 @@ isc.WinRecordsForm.addProperties({
                         formRecords._setFieldStatus('categorias_codigo', true, true);
                     }
                 },
-                {name: "atletas_codigo", title: 'Atleta', editorType: "comboBoxExt", length: 50, width: "250", disabled: true,
-                    valueField: "atletas_codigo", displayField: "atletas_nombre_completo",
-                    pickListFields: [{name: "atletas_codigo", width: '20%'}, {name: "atletas_nombre_completo", width: '80%'}],
+                {
+                    name: "atletas_codigo",
+                    title: 'Atleta',
+                    editorType: "comboBoxExt",
+                    length: 50,
+                    width: "250",
+                    disabled: true,
+                    valueField: "atletas_codigo",
+                    displayField: "atletas_nombre_completo",
+                    pickListFields: [
+                        {
+                            name: "atletas_codigo",
+                            width: '20%'
+                        },
+                        {
+                            name: "atletas_nombre_completo",
+                            width: '80%'
+                        }],
                     pickListWidth: 260,
                     completeOnTab: true,
                     optionOperationId: 'fetchForListByPruebaGenerica',
@@ -72,6 +107,9 @@ isc.WinRecordsForm.addProperties({
                     autoFetchData: false,
                     textMatchStyle: 'substring',
                     sortField: "atletas_nombre_completo",
+                    // ESto para que no lea autmaticamente ya que al editar requerimos hacer el fetch directamente
+                    // ya que las pruebas dependen de la categoria y sexo.
+                    fetchMissingValues: false,
                     changed: function (form, item, value) {
                         // si el codigo del atleta es cambiado  la competencia y
                         // categorias elegidas deben ser apagadas.
@@ -101,35 +139,93 @@ isc.WinRecordsForm.addProperties({
                         // Si existe un filtro ya pre digitado lo pongo en la criteria , de lo contrario
                         // todos los posibles para la competencia indicada.
                         if (filter.atletas_nombre_completo) {
-                            filter = {_constructor: "AdvancedCriteria",
-                                operator: "and", criteria: [
-                                    {fieldName: "atletas_nombre_completo", operator: "iContains", value: filter.atletas_nombre_completo},
-                                    {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')}
-                                ]};
+                            filter = {
+                                _constructor: "AdvancedCriteria",
+                                operator: "and",
+                                criteria: [
+                                    {
+                                        fieldName: "atletas_nombre_completo",
+                                        operator: "iContains",
+                                        value: filter.atletas_nombre_completo
+                                    },
+                                    {
+                                        fieldName: "apppruebas_codigo",
+                                        operator: "equals",
+                                        value: formRecords.getValue('apppruebas_codigo')
+                                    }
+                                ]
+                            };
                         } else { // CASO NO EXISTE NADA DIGITADO.
                             // En modo edit buscamos en gorma exacta el codigo
                             if (formRecords.formMode == 'edit') {
-                                filter = {_constructor: "AdvancedCriteria",
-                                    operator: "and", criteria: [
-                                        {fieldName: "atletas_codigo", operator: "equals", value: value},
-                                        {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')}
-                                    ]};
+
+                                var curRecord = formRecords.getValues();
+
+                                // Si el record es de postas buscamos al atleta basado en el resultado ya que el codigo para las postas es unico
+                                // y se repite en todos los resultados.
+                                if (curRecord.postas_id) {
+                                    filter = {
+                                        _constructor: "AdvancedCriteria",
+                                        operator: "and",
+                                        criteria: [
+                                            {
+                                                fieldName: "atletas_resultados_id",
+                                                operator: "equals",
+                                                value: curRecord.atletas_resultados_id
+                                            }
+                                        ]
+                                    };
+                                } else {
+                                    filter = {
+                                        _constructor: "AdvancedCriteria",
+                                        operator: "and",
+                                        criteria: [
+                                            {
+                                                fieldName: "atletas_codigo",
+                                                operator: "equals",
+                                                value: formRecords.getValue('atletas_codigo')
+                                            },
+                                            {
+                                                fieldName: "apppruebas_codigo",
+                                                operator: "equals",
+                                                value: formRecords.getValue('apppruebas_codigo')
+                                            }
+                                        ]
+                                    };
+                                }
                             } else {
                                 // De lo contrario buscamos todas las posibles.
-                                filter = {_constructor: "AdvancedCriteria",
-                                    operator: "and", criteria: [
+                                filter = {
+                                    _constructor: "AdvancedCriteria",
+                                    operator: "and",
+                                    criteria: [
                                         //   {fieldName: "atletas_nombre_completo", operator: "iContains", value: filter.atletas_nombre_completo},
-                                        {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')}
-                                    ]};
+                                        {
+                                            fieldName: "apppruebas_codigo",
+                                            operator: "equals",
+                                            value: formRecords.getValue('apppruebas_codigo')
+                                        }
+                                    ]
+                                };
                             }
                         }
+                        console.log(filter);
                         return filter;
                     }
                 },
-                {name: "atletas_resultados_id", title: 'Competecia/Marca', editorType: "comboBoxExt", length: 50, width: "450", disabled: true,
-                    valueField: "atletas_resultados_id", displayField: "competencias_descripcion",
+                {
+                    name: "atletas_resultados_id",
+                    title: 'Competencia/Marca',
+                    editorType: "comboBoxExt",
+                    length: 50,
+                    width: "450",
+                    disabled: true,
+                    valueField: "atletas_resultados_id",
+                    displayField: "competencias_descripcion",
                     pickListFields: [
-                        {name: 'Resultado', formatCellValue: function (value, record, rownum, colnum) {
+                        {
+                            name: 'Resultado',
+                            formatCellValue: function (value, record, rownum, colnum) {
                                 if (record) {
                                     var fvalue = record.numb_resultado;
                                     if (record.ciudades_altura == true) {
@@ -141,17 +237,28 @@ isc.WinRecordsForm.addProperties({
                                     return '';
                                 }
 
-                            }, width: 100},
-                        {name: "competencias_pruebas_fecha", width: '60'},
-                        {name: "categorias_codigo", width: '70'},
-                        {name: 'Lugar', formatCellValue: function (value, record, rownum, colnum) {
+                            },
+                            width: 100
+                        },
+                        {
+                            name: "competencias_pruebas_fecha",
+                            width: '60'
+                        },
+                        {
+                            name: "categorias_codigo",
+                            width: '70'
+                        },
+                        {
+                            name: 'Lugar',
+                            formatCellValue: function (value, record, rownum, colnum) {
                                 if (record) {
                                     return record.competencias_descripcion + '/' + record.paises_descripcion + '/' + record.ciudades_descripcion;
                                 } else {
                                     return '';
                                 }
 
-                            }}
+                            }
+                        }
                     ],
                     pickListWidth: 500,
                     formatOnBlur: true,
@@ -162,7 +269,7 @@ isc.WinRecordsForm.addProperties({
                     formatValue: function (value, record, form, item) {
 
                         // closure para mejor lectura
-                        var _doFormat =  function (lugar,resultado,enAltura,viento,categoria) {
+                        var _doFormat = function (lugar, resultado, enAltura, viento, categoria) {
                             var fvalue = 'Marca: ' + resultado;
                             if (enAltura == true) {
                                 fvalue += '(A)'
@@ -178,13 +285,13 @@ isc.WinRecordsForm.addProperties({
                         // y alli estan todos los valores necesarios a pintar.
                         // Si es un modo add los valores los extraemos del registro leido por el combo.
                         if (formRecords.formMode == 'edit') {
-                            return _doFormat(record.lugar,record.atletas_resultados_resultado,record.ciudades_altura,record.competencias_pruebas_viento,record.categorias_codigo);
+                            return _doFormat(record.lugar, record.atletas_resultados_resultado, record.ciudades_altura, record.competencias_pruebas_viento, record.categorias_codigo);
                         } else {
                             // Si existe un registro ya seleccionado , partmos de alli
                             var recordFinal = item.getSelectedRecord();
                             if (recordFinal) {
                                 return _doFormat(recordFinal.competencias_descripcion + '/' + recordFinal.paises_descripcion + '/' + recordFinal.ciudades_descripcion,
-                                    recordFinal.numb_resultado,recordFinal.ciudades_altura,recordFinal.competencias_pruebas_viento,recordFinal.categorias_codigo);
+                                    recordFinal.numb_resultado, recordFinal.ciudades_altura, recordFinal.competencias_pruebas_viento, recordFinal.categorias_codigo);
                             } else {
                                 return value;
                             }
@@ -210,29 +317,63 @@ isc.WinRecordsForm.addProperties({
                         // Si existe un filtro ya pre digitado lo pongo en la criteria , de lo contrario
                         // todos los posibles para la competencia indicada.
                         if (filter.competencias_descripcion) {
-                            filter = {_constructor: "AdvancedCriteria",
-                                operator: "and", criteria: [
-                                    {fieldName: "competencias_descripcion", operator: "iContains", value: filter.competencias_descripcion},
-                                    {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')},
-                                    {fieldName: "atletas_codigo", operator: "equals", value: formRecords.getValue('atletas_codigo')}
-                                ]};
+                            filter = {
+                                _constructor: "AdvancedCriteria",
+                                operator: "and",
+                                criteria: [
+                                    {
+                                        fieldName: "competencias_descripcion",
+                                        operator: "iContains",
+                                        value: filter.competencias_descripcion
+                                    },
+                                    {
+                                        fieldName: "apppruebas_codigo",
+                                        operator: "equals",
+                                        value: formRecords.getValue('apppruebas_codigo')
+                                    },
+                                    {
+                                        fieldName: "atletas_codigo",
+                                        operator: "equals",
+                                        value: formRecords.getValue('atletas_codigo')
+                                    }
+                                ]
+                            };
                         } else { // CASO NO EXISTE NADA DIGITADO.
                             // En modo edit buscamos en gorma exacta el codigo
                             if (formRecords.formMode == 'edit') {
-                                filter = {_constructor: "AdvancedCriteria",
-                                    operator: "and", criteria: [
-                                        {fieldName: "atletas_resultados_id", operator: "equals", value: formRecords.getValue('atletas_resultados_id')}
-                                    ]};
+                                filter = {
+                                    _constructor: "AdvancedCriteria",
+                                    operator: "and",
+                                    criteria: [
+                                        {
+                                            fieldName: "atletas_resultados_id",
+                                            operator: "equals",
+                                            value: formRecords.getValue('atletas_resultados_id')
+                                        }
+                                    ]
+                                };
                             } else {
                                 // De lo contrario buscamos todas las posibles.
-                                filter = {_constructor: "AdvancedCriteria",
-                                    operator: "and", criteria: [
+                                filter = {
+                                    _constructor: "AdvancedCriteria",
+                                    operator: "and",
+                                    criteria: [
                                         //   {fieldName: "atletas_nombre_completo", operator: "iContains", value: filter.atletas_nombre_completo},
-                                        {fieldName: "apppruebas_codigo", operator: "equals", value: formRecords.getValue('apppruebas_codigo')},
-                                        {fieldName: "atletas_codigo", operator: "equals", value: formRecords.getValue('atletas_codigo')}
-                                    ]};
+                                        {
+                                            fieldName: "apppruebas_codigo",
+                                            operator: "equals",
+                                            value: formRecords.getValue('apppruebas_codigo')
+                                        },
+                                        {
+                                            fieldName: "atletas_codigo",
+                                            operator: "equals",
+                                            value: formRecords.getValue('atletas_codigo')
+                                        }
+                                    ]
+                                };
                             }
                         }
+                        console.log(filter);
                         return filter;
                     },
                     changed: function (form, item, value) {
@@ -248,14 +389,30 @@ isc.WinRecordsForm.addProperties({
                         }
                     }
                 },
-                {name: "categorias_codigo", editorType: "comboBoxExt", length: 50, width: "100",
-                    valueField: "categorias_codigo", displayField: "categorias_descripcion",
-                    pickListFields: [{name: "categorias_codigo", width: '20%'}, {name: "categorias_descripcion", width: '80%'}],
+                {
+                    name: "categorias_codigo",
+                    editorType: "comboBoxExt",
+                    length: 50,
+                    width: "100",
+                    valueField: "categorias_codigo",
+                    displayField: "categorias_descripcion",
+                    pickListFields: [
+                        {
+                            name: "categorias_codigo",
+                            width: '20%'
+                        },
+                        {
+                            name: "categorias_descripcion",
+                            width: '80%'
+                        }],
                     pickListWidth: 240,
                     optionDataSource: mdl_categorias,
                     autoFetchData: false
                 },
-                {name: "records_id", visible: false}
+                {
+                    name: "records_id",
+                    visible: false
+                }
             ],
             /**
              * Override para aprovecha que solo en modo add se blanqueen todas las variables de cache y el estado
@@ -274,6 +431,20 @@ isc.WinRecordsForm.addProperties({
             isPostOperationDataRefreshMainListRequired: function (operationType) {
                 return true;
             },
+            editSelectedData: function (component) {
+                var record = component.getSelectedRecord();
+                this.Super('editSelectedData', arguments);
+
+
+                // Aqui forzamos solo a leer un registro justo el que corresponde a la prueba
+                // de este registro.
+                // Para que esto funcione ok es necesario que el combo de pruebas indique
+                //      fetchMissingValues: false,
+                //      autoFetchData: false
+                // De tal manera que se anulen lecturas no deseadas.
+                winRecordsForm.fetchFieldRecord('atletas_codigo',
+                    {"atletas_codigo": record.atletas_codigo});
+            },
             /*******************************************************************
              *
              * FUNCIONES DE SOPORTE PARA LA FORMA
@@ -284,13 +455,12 @@ isc.WinRecordsForm.addProperties({
              * @param {boolean} disable true para desactivar , false para activar.
              * @param {boolean} clear true para limpiar campo, false no tocarlo.
              */
-            _setFieldStatus: function (fieldName, disable, clear)
-            {
-                formRecords.getItem(fieldName).setDisabled(disable);
-                formRecords.clearFieldErrors(fieldName, true);
+            _setFieldStatus: function (fieldName, disable, clear) {
                 if (clear) {
                     formRecords.getItem(fieldName).clearValue();
                 }
+                formRecords.getItem(fieldName).setDisabled(disable);
+                formRecords.clearFieldErrors(fieldName, true);
             }
             //  , cellBorder: 1
         });

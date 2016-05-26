@@ -814,7 +814,7 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                     }
                                     return filter;
                                 },
-                                changed: function (form,item, newValue) {
+                                changed: function (form, item, newValue) {
                                     var record = item.getSelectedRecord();
                                     if (record) {
                                         form.getItem('postas_atletas').setValue(record.postas_atletas);
@@ -826,7 +826,7 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                             {
                                 name: "postas_atletas",
                                 type: 'staticText',
-                                startRow : true,
+                                startRow: true,
                                 endRow: true
                             },
                             {
@@ -879,7 +879,13 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                             if (mode === 'edit') {
                                 //var record= this.getField('atletas_codigo').getSelectedRecord();
                                 g_atletas_resultados.getSelectedRecord().atletas_nombre_completo = this.getField('atletas_codigo').getDisplayValue();
-                                g_atletas_resultados.getSelectedRecord().postas_atletas = this.getField('postas_id').getSelectedRecord().postas_atletas;
+                                var postasRecord = this.getField('postas_id').getSelectedRecord();
+                                if (postasRecord) {
+                                    g_atletas_resultados.getSelectedRecord().postas_atletas = this.getField('postas_id').getSelectedRecord().postas_atletas;
+                                } else {
+                                    g_atletas_resultados.getSelectedRecord().postas_atletas = null;
+                                }
+
                             } else {
                                 if (!record.hasOwnProperty('atletas_nombre_completo')) {
                                     isc.addProperties(record, {'atletas_nombre_completo': this.getField('atletas_codigo').getDisplayValue()});
@@ -894,14 +900,14 @@ isc.WinCompetenciasResultadosMantForm.addProperties({
                                 }
                             }
                         },
-                        setEditMode: function(mode) {
-                          this.Super('setEditMode',arguments) ;
+                        setEditMode: function (mode) {
+                            this.Super('setEditMode', arguments);
                             if (mode === 'add') {
                                 var record = formCompetenciasPruebasResultadosMantForm.getItem('pruebas_codigo').getSelectedRecord();
                                 if (record.apppruebas_nro_atletas > 1) {
                                     this.setValue('atletas_codigo', (record.pruebas_sexo === 'F' ? 'POSTAF' : 'POSTAM'));
                                 } else {
-                                    this.setValue('atletas_codigo',undefined);
+                                    this.setValue('atletas_codigo', undefined);
                                 }
                             }
 

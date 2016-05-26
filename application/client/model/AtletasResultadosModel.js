@@ -79,7 +79,8 @@ isc.RestDataSource.create({
             title: 'Posta',
             type: 'integer',
             required: true,
-            foreignKey: "mdl_postas.postas_id"
+            foreignKey: "mdl_postas.postas_id",
+            nullReplacementValue: null
         },
         {
             name: "versionId",

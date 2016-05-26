@@ -107,19 +107,37 @@
             } else if ($subOperation == 'fetchForRecords') {
                 // Aqui solo se devolveran las pruebas genericas de uno o mas atletas , se espera como filto un atleta y
                 // una prueba para una seleccion afinada. Se retiran las pruebas con viento ilegal
-                $where = $constraints->getFilterFieldsAsString();
-                if (strlen($where) > 0) {
-                    $where = str_replace('"atletas_codigo"', 'eatl.atletas_codigo', $where);
-                    $where .= ' and ';
-                }
+                $atletas_codigo = $constraints->getFilterField('atletas_codigo');
+                $apppruebas_codigo = $constraints->getFilterField('apppruebas_codigo');
 
-                $sql = 'SELECT * FROM (SELECT
+                $constraints->removeFilterField('atletas_codigo');
+                $constraints->removeFilterField('apppruebas_codigo');
+
+                $sql = 'SELECT *
+                    FROM (SELECT
                     atletas_resultados_id,
+                    (CASE WHEN eatl.postas_id IS NOT NULL
+                      THEN
+                        (SELECT array_to_string(ARRAY(SELECT unnest(array_agg(atl.atletas_codigo))
+                                                      ORDER BY 1), \',\')
+                         FROM tb_postas_detalle pd
+                           INNER JOIN tb_postas po ON po.postas_id = pd.postas_id
+                           INNER JOIN tb_atletas atl ON atl.atletas_codigo = pd.atletas_codigo
+                         WHERE pd.postas_id = eatl.postas_id
+                         GROUP BY pd.postas_id)
+                     ELSE
+                       atl.atletas_codigo
+                     END)                        AS atletas_codigo,
+                    apppruebas_codigo,
                     (CASE WHEN
-                            coalesce((CASE WHEN apppruebas_viento_individual = TRUE THEN eatl.atletas_resultados_viento ELSE competencias_pruebas_viento END),0.00) > apppruebas_viento_limite_normal
-                          THEN  -10000.00
-                          ELSE coalesce((CASE WHEN apppruebas_viento_individual = TRUE THEN eatl.atletas_resultados_viento ELSE competencias_pruebas_viento END),0.00)
-                     END) AS competencias_pruebas_viento,
+                      coalesce((CASE WHEN apppruebas_viento_individual = TRUE
+                        THEN eatl.atletas_resultados_viento
+                                ELSE competencias_pruebas_viento END), 0.00) > apppruebas_viento_limite_normal
+                      THEN -10000.00
+                     ELSE coalesce((CASE WHEN apppruebas_viento_individual = TRUE
+                       THEN eatl.atletas_resultados_viento
+                                    ELSE competencias_pruebas_viento END), 0.00)
+                     END)                        AS competencias_pruebas_viento,
                     co.categorias_codigo,
                     co.competencias_descripcion,
                     ciudades_descripcion,
@@ -137,13 +155,13 @@
                     INNER JOIN tb_paises pa ON pa.paises_codigo = ciu.paises_codigo
                     INNER JOIN tb_pruebas_clasificacion cl ON cl.pruebas_clasificacion_codigo = pv.pruebas_clasificacion_codigo
                     INNER JOIN tb_unidad_medida um ON um.unidad_medida_codigo = cl.unidad_medida_codigo
-                    where' . $where . ' competencias_pruebas_anemometro = TRUE AND
+                    where apppruebas_codigo=\''.$apppruebas_codigo . '\' and competencias_pruebas_anemometro = TRUE AND
                             competencias_pruebas_material_reglamentario = TRUE AND
                            -- competencias_pruebas_manual = false and
                             atletas_resultados_resultado != \'0\' AND atletas_resultados_resultado IS NOT NULL AND atletas_resultados_resultado <> \'\'
                     ) res
-                    WHERE res.competencias_pruebas_viento != -10000.00
-                    ORDER BY competencias_pruebas_fecha';
+                    WHERE res.competencias_pruebas_viento != -10000.00  AND atletas_codigo = \''.$atletas_codigo. '\' '.
+                    'ORDER BY competencias_pruebas_fecha';
 
             } else {
                 if ($subOperation == 'fetchJoined') {
@@ -152,6 +170,7 @@
                           atletas_resultados_id,
                           cp.pruebas_codigo,
                           eatl.atletas_codigo,
+                          -- Esto para resolver los casos de postas
                           (CASE WHEN eatl.postas_id IS NOT NULL
                             THEN
                               (SELECT max(postas_descripcion) || \' - \' || array_to_string(ARRAY(SELECT unnest(array_agg(atl.atletas_ap_paterno))
