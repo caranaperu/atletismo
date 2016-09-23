@@ -1,22 +1,46 @@
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Deployment (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_DataBinding){isc.module_DataBinding=1;isc._moduleStart=isc._DataBinding_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'DataBinding load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
+if (window.isc && isc.version != "v10.1p_2016-08-12/LGPL Deployment") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-08-12/LGPL Deployment'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -4408,20 +4432,29 @@ isc.defineClass("DataSource");
 // &lt;/DataSource&gt;
 // </pre>
 // <p>
-// Note that all whitespace is significant.  A declaration like this one:
+// Note that any amount of whitespace around &lt;fmt&gt; tag is ignored, unless there is also
+// some text, then whitespace becomes significant as well. A declaration like this one:
 // <pre>
 //   &lt;DataSource  xmlns:fmt="WEB-INF/" ID="i18nTest"&gt;
 //     &lt;title&gt;
-//         &lt;fmt:message key="dsTitle" /&gt;
+//         <b>Some text</b> &lt;fmt:message key="dsTitle" /&gt;
 //     &lt;/title&gt;
 //      ...
 // &lt;/DataSource&gt;
 // </pre>
-// .. will cause linefeed / carriage return characters to be embedded in your title.  This can
-// be useful in situations where you want to embed small amounts of HTML in a localized
-// attribute, but most of the time, you will want the &lt;fmt&gt; tag on one line with the
+// .. will cause linefeed / carriage return characters to be embedded in your title as well as the
+// text. This can be useful in situations where you want to embed small amounts of static text in
+// a localized attribute, but most of the time, you will want the &lt;fmt&gt; tag on one line with the
 // surrounding tag (eg "title").
 // <p>
+// If any HTML tags are needed around a &lt;fmt&gt; value, you can place them into the resource bundle
+// or use the <i>CDATA section</i> to escape them in the XML file:
+// <pre>
+//  &lt;DataSource  xmlns:fmt="WEB-INF/" ID="i18nTest"&gt;
+//     &lt;title&gt;<b>&lt;![CDATA[&lt;b&gt;]]&gt;</b>&lt;fmt:message key="dsTitle" /&gt;<b>&lt;![CDATA[&lt;/b&gt;]]&gt;</b>&lt;/title&gt;
+//      ...
+// &lt;/DataSource&gt;
+// </pre>
 // <h4>Unicode support</h4>
 // The Java language insists that <code>.properties</code> files be encoded with ISO-8859-1 -
 // in other words, that they be plain ASCII files.  This means that any non-ASCII characters
@@ -5108,11 +5141,12 @@ isc.defineClass("DataSource");
 // &nbsp;&nbsp;&nbsp;&nbsp;poi - if you plan to export datasets in Microsoft Excel 97 (xls)
 // or 2007 (xlsx) formats.  Additionally, if you plan to export data in Excel 2007 (xlsx)
 // format, you will need the following libraries:<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;poi-ooxml, poi-ooxml-schemas, dom4j, xmlbeans<br><br>
+// &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;poi-ooxml, poi-ooxml-schemas, dom4j, xbean<br><br>
 // &nbsp;&nbsp;&nbsp;&nbsp;PDF Export - Additional .jars are required if PDF Export is to be used. These .jars are:<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core-renderer, iText-2.0.8, jtidy-r938<br>
-// &nbsp;&nbsp;&nbsp;&nbsp;Image Export, IE6-8 DrawPane PDF Export - These libraries are required to use
-// +link{RPCManager.exportImage()} or if DrawPanes or FacetCharts are to be exported in IE6-8:<br>
+// &nbsp;&nbsp;&nbsp;&nbsp;Image Export and IE6-8 DrawPane PDF Export - These libraries are required to use
+// +link{RPCManager.exportImage()}, or when using +link{RPCManager.exportContent()} to export a DrawPane or FacetChart
+// only in IE8 or earlier:<br>
 // &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;batik-anim, batik-awt-util, batik-bridge, batik-css,
 // batik-dom, batik-ext, batik-gvt, batik-parser, batik-script, batik-svg-dom, batik-util, batik-xml,
 // xml-apis-ext<br>
@@ -5676,7 +5710,7 @@ isc.defineClass("DataSource");
 // You can create a Controller that invokes standard SmartClient server request processing,
 // including DMI, like so:
 // <pre>
-// public class SmartClientRPCController extends AbstractController
+// public class <smartclient>SmartClientRPCController</smartclient><smartgwt>SmartGWTRPCController</smartgwt> extends AbstractController
 // {
 //     public ModelAndView handleRequest(HttpServletRequest request,
 //                                       HttpServletResponse response)
@@ -6386,6 +6420,10 @@ isc.defineClass("DataSource");
 // you have experience with DBCP and are troubleshooting a specific pool-related performance
 // problem: testOnBorrow, testOnReturn, testWhileIdle, timeBetweenEvictionRunsMillis,
 // minEvictableIdleTimeMillis, numTestsPerEvictionRun.
+// <p>
+// When the pool is configured for connection validation, as it is by default, a SQL statement
+// is run to verify the condition of its connection.  To control the timeout value on this statement,
+// set the sql.validationQueryTimeout / sql.dbName.validationQueryTimeout property (in seconds, default value is 10).
 // <p>
 // If you are trying to diagnose an issue related to SQL connection pooling, you can enable
 // DEBUG logging for the following classes in <code>log4j.isc.config.xml</code> (see
@@ -7683,6 +7721,16 @@ isc.DataSource.addClassMethods({
         return isc.Canvas._saveFieldValue(dataPath, field, value, values, null, true, reason);
     },
 
+    // helper method that returns a shallow copy of requestProperties
+    // we want to avoid side-effecting the requestProperties that application developers
+    // pass into our APIs, since otherwise re-used requestProperties objects might carry over
+    // settings like requestProperties.prompt or requestProperties.operationId between different
+    // types of operations.
+    dupRequest : function (requestProperties) {
+        if (!requestProperties || requestProperties._alreadyDuped) return requestProperties;
+
+        return isc.addProperties({_alreadyDuped:true}, requestProperties);
+    },
 
     // helper method for getObjectField; returns inheritance distance or -1 on error
     getInheritanceDistance : function (superclass, subclass) {
@@ -11403,6 +11451,7 @@ firstGeneratedSequenceValue: 0,
     // @serverDS allowed
     // @visibility external
     //<
+
     autoConvertRelativeDates: true,
 
     //> @attr dataSource.showFieldsAsTree (boolean : false : IR)
@@ -13985,6 +14034,9 @@ firstGeneratedSequenceValue: 0,
 // You may also wish to use this property to map legacy column names to more meaningful field
 // names in the DataSource.  For example:<br>
 // <pre>    &lt;field name="productName" type="text" nativeName="PRDNM" /></pre>
+// <p>
+// Note that it is not allowed to have multiple fields with the same <code>nativeName</code>
+// bound to the same database table.
 //
 // @see tableName
 // @serverDS only
@@ -14291,7 +14343,7 @@ firstGeneratedSequenceValue: 0,
 // this will lead  to a loss of precision</i>.  If the flag is true (which is the the default),
 // the behavior is to prevent range overflow for numeric values:
 // <ul>
-// <li> Java values of type Long, BigInteger, Float, Double and BigDecimal will be delivered as
+// <li> Java values of type Long, BigInteger and BigDecimal will be delivered as
 //      String <i>only if</i> they exceed JavaScript's number range.
 // <li> Client-side validation will allow inputs that are outside of JavaScript's normal
 //      integer range, and such numbers will remain as Strings after validation, instead of being
@@ -14850,7 +14902,7 @@ firstGeneratedSequenceValue: 0,
 // <tr><td>"MMMM yyyy"</td><td>August 2006</td></tr>
 // <tr><td>"HH:mm"</td><td>11:26</td></tr>
 // <tr><td>"d MMM yyyy, H:ma"</td><td>3 Aug 2006, 11:26 am</td></tr>
-// <tr><td>"dd/mm/yyyy"</td><td>03/08/2006</td></tr>
+// <tr><td>"dd/MM/yyyy"</td><td>03/08/2006</td></tr>
 // <tr><td>"CC/LLLL"</td><td>53/2006 (assuming the fiscal year ends in the first week of August)</td></tr>
 // </table>
 // <p>
@@ -16023,7 +16075,8 @@ isc.DataSource.addMethods({
     // @return data (DataSourceRecord | Array of DataSourceRecords) Updated data.
     // @visibility external
     //<
-    getUpdatedData : function (dsRequest, dsResponse, useDataFromRequest) {
+
+    getUpdatedData : function (dsRequest, dsResponse, useDataFromRequest, copyData) {
         var updateData = dsResponse.data;
         // If the server failed to return the updated records, and updateCacheFromRequest is true,
         // integrate the submitted values into the cache if the operation was succesful.
@@ -16061,6 +16114,9 @@ isc.DataSource.addMethods({
                         updateData[i] = isc.addProperties({}, requestData[i]);
                     }
                 }
+                // updateData set to a new object, so we can skip it below
+                copyData = false;
+
                 //>DEBUG
                 if (this.logIsDebugEnabled("ResultSet")) {
                     this.logDebug("Submitted data to be integrated into the cache:"
@@ -16069,7 +16125,8 @@ isc.DataSource.addMethods({
                 //<DEBUG
             }
         }
-        return updateData;
+        // if copy requested and updateData isn't already a new object, copy it now
+        return copyData ? isc.shallowClone(updateData) : updateData;
     },
 
 
@@ -16177,8 +16234,13 @@ isc.DataSource.addMethods({
         // WSDL-described web services use SOAP unless a dataProtocol has been explicitly set
         // for the operationBinding.
         // NOTE: protocol per operationBinding allows eg GET fetch, POST update
+        // To avoid serializing the records when the request is clientOnly, we make this
+        // method to return “clientOnly” when the dsRequest is clientOnly.
+        // As this is not a valid value for DSProtocol, just an internal type, we do not
+        // document "clientOnly" as a valid value for DSProtocol.
         return (operationBinding.dataProtocol != null ? operationBinding.dataProtocol :
-                isc.isA.WebService(service) ? "soap" : this.dataProtocol || "getParams");
+                 isc.isA.WebService(service) ? "soap" : this.clientOnly ? "clientOnly" :
+                 this.dataProtocol || "getParams");
     },
 
     _storeCustomRequest : function (dsRequest) {
@@ -16840,7 +16902,16 @@ rawData=rpcResponse.results;
 
                 //this.logWarn("validating value: " + fieldValue +
                 //             " of field: " + this.echo(field));
-                result[fieldName] = this.validateFieldValue(field, fieldValue);
+                // field is multiple:true
+                if (isc.isAn.Array(fieldValue)) {
+                    var childValue = [];
+                    for (var j = 0; j < fieldValue.length; j++) {
+                        childValue.push(this.validateFieldValue(field, fieldValue[j]));
+                    }
+                    result[fieldName] = childValue;
+                } else {
+                    result[fieldName] = this.validateFieldValue(field, fieldValue);
+                }
             }
         }
 
@@ -18743,28 +18814,22 @@ rawData=rpcResponse.results;
             isc.DataSource.handleUpdate(dsResponse, dsRequest);
         } else if (!dsRequest.willHandleError) {
             isc.RPCManager._handleError(dsResponse, dsRequest);
+            return; // don't fire any callbacks if willHandleError: false
         }
 
         // fire callbacks:
                         // passed directly to a DataSource method, eg ds.fetchData()
         var callbacks = [dsRequest._dsCallback,
                         // secondary convenience callback, see ActionMethods::buildRequest()
-                         dsRequest.afterFlowCallback],
-            firedCallbacks = [];
+                         dsRequest.afterFlowCallback]
+        ;
 
         for (var i = 0; i < callbacks.length; i++) {
 
-            var callback = callbacks[i];
-
-            // paranoid duplicate callback check
-            if (firedCallbacks.contains(callback)) {
-                this.logWarn("Suppressed duplicate callback: " + callback);
-                continue;
-            }
-
-            var callbackResult = this.fireCallback(callback, "dsResponse,data,dsRequest",
-                                                    [dsResponse,dsResponse.data,dsRequest]);
-
+            var callback = callbacks[i],
+                callbackResult = this.fireCallback(callback, "dsResponse,data,dsRequest",
+                                                    [dsResponse,dsResponse.data,dsRequest])
+            ;
 
             // the primary callback, which completes the basic dataSource flow, can stop
             // further processing by returning false.  This is intended to allow flow code to
@@ -19252,6 +19317,9 @@ rawData=rpcResponse.results;
     //<
     filterData : function (criteria, callback, requestProperties) {
         if (!requestProperties) requestProperties = {};
+
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
+
         if (requestProperties.textMatchStyle == null) requestProperties.textMatchStyle = "substring";
         this.performDSOperation("fetch", criteria, callback, requestProperties);
     },
@@ -19350,6 +19418,8 @@ rawData=rpcResponse.results;
         var operationType = "fetch";
 
         if (!requestProperties) requestProperties = {};
+
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
 
         if (this.canExport == false) {
             // exporting is disabled at the DS level - warn and return
@@ -19666,11 +19736,14 @@ rawData=rpcResponse.results;
     //<
     validateData : function (values, callback, requestProperties) {
         if (!requestProperties) requestProperties = {};
+
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
+
         // Force willHandleError: true on request and default value for validationMode
         requestProperties = isc.addProperties(requestProperties, {willHandleError: true});
         if (requestProperties.validationMode == null) requestProperties.validationMode = "full";
 
-        return this.performDSOperation("validate", values, callback, requestProperties);
+        return !!this.performDSOperation("validate", values, callback, requestProperties);
     },
 
     //> @method dataSource.performCustomOperation()
@@ -19726,12 +19799,18 @@ rawData=rpcResponse.results;
     //<
     performCustomOperation : function (operationId, data, callback, requestProperties) {
         if (!requestProperties) requestProperties = {};
+
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
+
         isc.addProperties(requestProperties, {operationId: operationId});
         this.performDSOperation("custom", data, callback, requestProperties);
     },
 
     performClientExportOperation : function (operationId, data, callback, requestProperties) {
         if (!requestProperties) requestProperties = {};
+
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
+
         isc.addProperties(requestProperties, {operationId: operationId});
         this.performDSOperation("clientExport", data, callback, requestProperties);
     },
@@ -20602,6 +20681,8 @@ rawData=rpcResponse.results;
         }
         //<DEBUG
 
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
+
         // form a dsRequest
         var dsRequest = isc.addProperties({
             operationType : operationType,
@@ -20920,11 +21001,28 @@ rawData=rpcResponse.results;
             // This implies the transformRequest implementation will have
             // kicked off a request and we'll be notified via an explicit call to
             // processResponse() when new data is available.
-            if (updatedProtocol == "clientCustom") return;
 
-            // We now know this is not a client-custom operation - clear out the
-            // request from the client-custom store so we don't leak requests.
-            delete this._clientCustomRequests[dsRequest.requestId];
+            if (updatedProtocol == "clientCustom") {
+                // _isServerRequest is installed when cacheAllData is active
+                if (!this._isServerRequest) return;
+                // only bail here for server requests - otherwise, use the cache as usual
+                if (this._isServerRequest(dsRequest)) {
+                    this.logInfo("sendDSRequest: clientCustom server request - returning",
+                        "cacheAllData"
+                    );
+                    return;
+                } else {
+                    this.logInfo("sendDSRequest: clientCustom request using client cache",
+                        "cacheAllData"
+                    );
+
+                    //delete this._clientCustomRequests[dsRequest.requestId];
+                }
+            } else {
+                // We now know this is not a client-custom operation - clear out the
+                // request from the client-custom store so we don't leak requests.
+                delete this._clientCustomRequests[dsRequest.requestId];
+            }
 
             // detect whether this is a clientOnly request
             if ( dsRequest.shouldUseCache === false ||
@@ -21368,9 +21466,10 @@ rawData=rpcResponse.results;
     //> @method dataSource.handleError() (A)
     // If you define this method on a DataSource, it will be called whenever the server returns
     // a DSResponse with a status other than +link{RPCResponse.STATUS_SUCCESS}.  You can use
-    // this hook to do DataSource-specific error handling.  Unless you return
-    // <code>false</code> from this method, +link{RPCManager.handleError()} will be called by
-    // SmartClient right after this method completes.
+    // this hook to do DataSource-specific error handling.
+    // <smartclient> Unless you return <code>false</code> from this method, </smartclient>
+    // <smartgwt>Unless you call {@link com.smartgwt.client.data.events.ErrorEvent#cancel()}, </smartgwt>
+    // +link{RPCManager.handleError()} will be called by SmartClient right after this method completes.
     //
     // @param response (DSResponse) the DSResponse or DSResponse object returned from the server
     // @param request (DSRequest) the DSRequest or DSRequest that was sent to the server
@@ -21447,6 +21546,13 @@ rawData=rpcResponse.results;
 
 //> @attr dsResponse.operationType (DSOperationType : null : IR)
 // The operation type of the request corresponding to this DSResponse.
+//
+// @group dsResponse
+// @visibility external
+//<
+
+//> @attr dsResponse.operationId (String : null : IR)
+// The operation ID of the request corresponding to this DSResponse.
 //
 // @group dsResponse
 // @visibility external
@@ -25407,6 +25513,29 @@ rawData=rpcResponse.results;
 // (applicable to advanced criteria only).  The value, start and end settings can be static, or -
 // with Power or better licenses - they can be expressions in the Velocity template language,
 // which will be resolved at runtime, immediately before the DSRequest is executed.
+// <p>
+// See below some examples of +link{operationBinding.criteria} declarations:
+// <pre>
+//  &lt;operationBindings&gt;
+//      &lt;operationBinding operationType="fetch" operationId="..."&gt;
+//          &lt;criteria fieldName="lifeSpan" value="10"/&gt;
+//          &lt;criteria fieldName="scientificName" value="Gazella thomsoni"/&gt;
+//      &lt;/operationBinding&gt;
+//
+//      &lt;operationBinding operationType="fetch" operationId="..."&gt;
+//          &lt;criteria fieldName="lifeSpan" operator="greaterThan" value="10" /&gt;
+//      &lt;/operationBinding&gt;
+//
+//      &lt;operationBinding operationType="fetch" operationId="..."&gt;
+//          &lt;criteria _constructor="AdvancedCriteria" operator="or"&gt;
+//              &lt;criteria&gt;
+//                  &lt;Criterion fieldName="lifeSpan" operator="greaterThan" value="10" /&gt;
+//                  &lt;Criterion fieldName="scientificName" operator="contains" value="Octopus" /&gt;
+//              &lt;/criteria&gt;
+//          &lt;/criteria&gt;
+//      &lt;/operationBinding&gt;
+//  &lt;/operationBindings&gt;
+// </pre>
 //
 // @treeLocation Client Reference/Data Binding/DataSource
 // @group transactionChaining
@@ -25623,11 +25752,16 @@ rawData=rpcResponse.results;
 // operations and DataSource fields, as well as create a mix of authenticated and non authenticated
 // operations for applications that support limited publicly accessible functionality.
 // <p>
-// See the +externalLink{/docs/SmartClient_Quick_Start_Guide.pdf,QuickStart Guide} for more in
-// depth documentation on how declarative security works and how to use it in your application.
+// See the <smartclient>+externalLink{/docs/SmartClient_Quick_Start_Guide.pdf,QuickStart Guide}
+// </smartclient><smartgwt>+externalLink{/docs/SmartGWT_Quick_Start_Guide.pdf,QuickStart Guide}
+// </smartgwt>for more in depth documentation on how declarative security works and how to use
+// it in your application.
 // <p>
 // See +link{standaloneDataSourceUsage,Standalone DataSource Usage} for information on how to use
 // declarative security in a standalone application.
+// <p>
+// Requests that fail to pass Declarative Security checks will return response with
+// +link{rpcResponse.STATUS_AUTHORIZATION_FAILURE,special status set}.
 //
 // @title Declarative Security
 // @treeLocation Concepts/Persistence Technologies
@@ -27197,11 +27331,11 @@ rawData=rpcResponse.results;
     // isDataSource attribute is used to distinguish between combining attributes for a
     // dataBoundComponent field definition vs dataSource inheritance. Some properties
     // are treated differently, such as "hidden"
-    combineFieldData : function (localField, targetFieldName, isDataSource) {
+    combineFieldData : function (localField, targetFieldName, isDataSource, propertiesAttr) {
         var parentField;
         if (isc.isAn.Object(targetFieldName)) parentField = targetFieldName;
         else parentField = this.getField(targetFieldName || localField.name);
-        return isc.DataSource.combineFieldData(localField, parentField, isDataSource);
+        return isc.DataSource.combineFieldData(localField, parentField, isDataSource, propertiesAttr);
     },
 
     // SimpleType handling: local types and type defaults
@@ -27365,8 +27499,7 @@ rawData=rpcResponse.results;
             this.addMethods({
                 _isServerRequest : function (dsRequest) {
 
-                    return this.dataProtocol == "clientCustom" ||
-                        dsRequest.cachingAllData ||
+                    return dsRequest.cachingAllData ||
                         (this.cacheAcrossOperationIds &&
                             (dsRequest.operationType && dsRequest.operationType != "fetch"))
                         ||
@@ -28187,6 +28320,23 @@ rawData=rpcResponse.results;
         var output = [];
         if (!data || data.length == 0) return output;
 
+        // canonicalize certain relative-date-based criteria
+
+        if (this.autoConvertRelativeDates     == true &&
+            this.autoConvertRelativeDatesMode != "server")
+        {
+            if (this.logIsInfoEnabled("relativeDates")) {
+                this.logInfo("Calling convertRelativeDates from applyFilter - data is\n\n" +
+                             isc.echoFull(criteria));
+            }
+            criteria = this.convertRelativeDates(criteria);
+
+            if (this.logIsInfoEnabled("relativeDates")) {
+                this.logInfo("Called convertRelativeDates from applyFilter - data is\n\n" +
+                             isc.echoFull(criteria));
+            }
+        }
+
         // If our criteria object is of type AdvancedCriteria, go down the new
         // AdvancedFilter codepath
         if (this.isAdvancedCriteria(criteria)) {
@@ -28318,6 +28468,8 @@ rawData=rpcResponse.results;
     //      is contained in the filterValue Array.  If textMatchStyle if substring, it matches
     //      if any of the entries in filterValue appear as a case-insensitive substring of any
     //      of the entries in fieldValue.
+    // <li>Dates are compared as logical dates if either the field value or the filter value is a logical date.
+    //     Only if none of them is a logical date they will be compared as standard Dates
     // </ul>
     // @param   fieldValue  (any)    field value to be compared
     // @param   filterValue (any)    filter value to be compared
@@ -28375,7 +28527,7 @@ rawData=rpcResponse.results;
 
 
         if (isc.isA.Date(fieldValue) && isc.isA.Date(filterValue)) {
-            if (filterValue.logicalDate)
+            if (filterValue.logicalDate || fieldValue.logicalDate)
                 return (Date.compareLogicalDates(fieldValue, filterValue) == 0);
             return (Date.compareDates(fieldValue, filterValue) == 0);
         }
@@ -28858,7 +29010,7 @@ rawData=rpcResponse.results;
         }
     },
 
-    //> @method dataSource.recordsAreEqual
+    //> @method dataSource.recordsAreEqual()
     // Convenience method to test if two records are equal. Testing is done only for the
     // fields defined in the DataSource, anything else is ignored.
     //
@@ -28868,7 +29020,7 @@ rawData=rpcResponse.results;
     // @return (boolean) true if the records are equal, false otherwise.
     // @visibility external
     //<
-    recordsAreEqual: function(record1, record2) {
+    recordsAreEqual : function (record1, record2) {
         var fieldNames = this.getFieldNames();
         for (var i = 0; i <  fieldNames.length; i++) {
             if (this.compareValues(record1[ fieldNames[i] ], record2[ fieldNames[i] ], fieldNames[i]) != 0) {
@@ -29027,6 +29179,12 @@ rawData=rpcResponse.results;
 // </smartgwt>
 // See +link{group:criteriaEditing,Criteria Editing} for information about
 // editing AdvancedCriteria in a DynamicForm.
+// <P>
+// When using the SmartClient Server, AdvancedCriteria created on the client and stored
+// as JSON can be used directly by server code (without involvement of the browser and client-side system).
+// Use the server-side API AdvancedCriteria.decodeClientCriteria() to obtain an AdvancedCriteria that can
+// then be used with a server-created DSRequest object.  Note that the client must be serialized by the
+// +link{JSONEncoder} class, using +link{jsonEncoder.dateFormat} "logicalDateConstructor".
 //
 // @inheritsFrom Criterion
 // @group advancedFilter
@@ -29648,7 +29806,7 @@ isc.DataSource.addClassMethods({
     // @visibility external
     //<
     _typeMap: {exact:"equals",exactCase:"iEquals",substring:"iContains",startsWith:"iStartsWith"},
-    convertCriteria : function(criteria, textMatchStyle, ds) {
+    convertCriteria : function (criteria, textMatchStyle, ds) {
         var aCriteria = {
             _constructor: "AdvancedCriteria",
             operator: "and"
@@ -29659,11 +29817,11 @@ isc.DataSource.addClassMethods({
         var subCriteria = [];
         for (var fieldName in criteria) {
             var field = ds == null ? null : ds.getField(fieldName),
-                defaultType = ds == null ? null : this._typeMap[ds.defaultTextMatchStyle],
-                type = null;
+                defaultOperator = ds == null ? null : this._typeMap[ds.defaultTextMatchStyle],
+                operator = null;
             if (field != null) {
                 if (field.ignoreTextMatchStyle) {
-                    type = ds.ignoreTextMatchStyleCaseSensitive ? "equals" : "iEquals"
+                    operator = ds.ignoreTextMatchStyleCaseSensitive ? "equals" : "iEquals"
                 }
             }
             if (isc.isAn.Array(criteria[fieldName])) {
@@ -29675,8 +29833,8 @@ isc.DataSource.addClassMethods({
                 }
                 for (var i = 0; i < criteria[fieldName].length; i++) {
                     var value = criteria[fieldName][i];
-                    var operator = type ? type : this.getCriteriaOperator(value,
-                                                        textMatchStyle, defaultType);
+                    if (!operator) operator = this.getCriteriaOperator(value,
+                                                textMatchStyle, defaultOperator);
                     if (value == null &&
                         !this.criteriaConversion_OperatorKeepNullValue[operator]) {
                             continue;
@@ -29688,12 +29846,12 @@ isc.DataSource.addClassMethods({
                     });
                 }
                 if (disjunct.criteria.length > 0) {
-                subCriteria.add(disjunct);
+                    subCriteria.add(disjunct);
                 }
             } else {
-                var value = criteria[fieldName],
-                    operator = type ? type : this.getCriteriaOperator(value,
-                                                        textMatchStyle, defaultType);
+                var value = criteria[fieldName];
+                if (!operator) operator = this.getCriteriaOperator(value,
+                                                                   textMatchStyle, defaultOperator);
                 if (value == null &&
                     !this.criteriaConversion_OperatorKeepNullValue[operator]) {
                         continue;
@@ -30057,8 +30215,16 @@ isc.DataSource.addClassMethods({
     // isDataSource parameter indicates we're subclassing a dataSource - there are some
     // differences between this and standard DBC attribute inheritance - for example
     // the handling of field.hidden
-    combineFieldData : function (localField, dsField, isDataSource) {
+    combineFieldData : function (localField, dsField, isDataSource, propertiesAttr) {
         if (dsField == null) return localField;
+
+        // If passed a "propertiesAttr", pick up any properties specified under that
+        // attribute flag and apply them, while still allowing them to be overridden
+        // by properties applied directly to the local component field.
+
+       if (propertiesAttr != null && dsField && dsField[propertiesAttr] != null) {
+            dsField = isc.addProperties({}, dsField, dsField[propertiesAttr]);
+        }
 
         for (var propertyName in dsField) {
             // validators should be combined, not overridden
@@ -30118,8 +30284,9 @@ isc.DataSource.addClassMethods({
                 }
             }
 
-            // datasource properties act as defaults - they don't override
-            if (localField[propertyName] != null) continue;
+            // datasource properties act as defaults - they don't override - use propertyDefined
+            // to ensure that we respect explicit nulls in filterEditorProperties
+            if (isc.propertyDefined(localField, propertyName)) continue;
 
             // ignore 'name' field - the component-field may have retrieved this ds field via
             // dataPath but we don't want to write our name onto the component-level field
@@ -30388,6 +30555,9 @@ isc.DataSource.addClassMethods({
     //<
 
     exportClientData : function (data, requestProperties, callback, ds) {
+
+        requestProperties = isc.DataSource.dupRequest(requestProperties);
+
         var props = requestProperties.exportContext || requestProperties || {},
             format = props && props.exportAs ? props.exportAs : "csv",
             exportDisplay = props && props.exportDisplay ? props.exportDisplay : "download",
@@ -34964,6 +35134,7 @@ isc.defineClass("XJSONDataSource", "DataSource").addMethods({
 // @visibility external
 //<
 
+
 //> @class WebService
 // Class representing a WebService definition derived from a WSDL file.
 // <P>
@@ -37825,6 +37996,18 @@ errorCodes : {
     //<
     STATUS_FAILURE: -1,
 
+    //> @classAttr rpcResponse.STATUS_AUTHORIZATION_FAILURE (int : -3 : R)
+    //
+    // Indicates a +link{group:declarativeSecurity,Declarative Security} failure on the server.
+    // See the error handling section in +link{class:RPCManager, RPCManager documentation}
+    // for more information.
+    //
+    // @see class:RPCRequest
+    // @group statusCodes, constant
+    // @visibility external
+    //<
+    STATUS_AUTHORIZATION_FAILURE: -3,
+
     //> @classAttr rpcResponse.STATUS_VALIDATION_ERROR (int : -4 : R)
     //
     // Indicates a validation failure on the server.
@@ -38432,10 +38615,6 @@ isc.RPCManager.addClassMethods({
         return true;
     },
 
-    // return the action URL, dereferencing any special local directories.
-    // used internally by the RPCManager for url interpolation
-    getActionURL : function () { return isc.Page.getURL(this.actionURL); },
-
     //> @classMethod RPCManager.send()
     //
     // This method is a convenience wrapper on <code>RPCManager.sendRequest()</code> - it calls
@@ -38712,9 +38891,8 @@ isLocalURL : function (url) {
 
         // actionURL can also be specified as URL or url
         request.actionURL =
-                // NOTE use Page.getURL() to support special directories such as "[APPFILES]"
-                isc.Page.getURL(request.actionURL || request.url ||
-                                request.URL || this.getActionURL());
+            // NOTE use Page.getURL() to support special directories such as "[APPFILES]"
+            isc.Page.getURL(request.actionURL || request.url || request.URL || this.actionURL);
 
 
         // check if requested transport is available and fall back if necessary
@@ -39796,8 +39974,10 @@ isLocalURL : function (url) {
     },
 
     transactionAsGetRequest : function (transaction, baseURL, params) {
-        if (!transaction.cleared) transaction = this.getTransaction(transaction) || this.getCurrentTransaction();
-        baseURL = (baseURL || transaction.URL || this.getActionURL());
+        if (!transaction.cleared) {
+            transaction = this.getTransaction(transaction) || this.getCurrentTransaction();
+        }
+        baseURL = isc.Page.getURL(baseURL || transaction.URL || this.actionURL);
         if(!params) params = {};
         params._transaction = this.serializeTransaction(transaction);
 
@@ -39946,14 +40126,16 @@ isLocalURL : function (url) {
     //
     // Send all currently queued requests to the server.  You need only call this method if you are
     // using queuing otherwise your requests are synchronously submitted to the server.
-    // <br><br>
+    // <P>
     // This method will do nothing and the callback will not be called if no requests have actually
     // been queued. You can detect whether the queue is empty by calling
     // +link{RPCManager.getQueueTransactionId(), getQueueTransactionId()}.
-    // <br><br>
+    // <P>
     // NOTE: if you aren't the caller who first enables queuing (startQueue() returns
     // true), you should in general avoid calling sendQueue(), because whoever was
     // first to enable queuing may have more requests to add to the same queue.
+    // <P>
+    // See +link{startQueue()} for more information about queuing.
     //
     // @param [callback] (RPCQueueCallback) Callback to fire when the queued operations complete. Callback
     // will be fired with 1 parameter: <code>responses</code> an array of +link{DSResponse} or
@@ -40054,7 +40236,7 @@ isLocalURL : function (url) {
         // figure out the prompt and URL, saving them on the transaction object in case we need to
         // delay
         // NOTE use Page.getURL() to support special directories such as "[APPFILES]"
-        URL = transaction.URL = isc.Page.getURL(URL || transaction.URL || this.getActionURL());
+        URL = transaction.URL = isc.Page.getURL(URL || transaction.URL || this.actionURL);
 
         // do not log non-trackable RPCs - these are used form DevConsole comm and create a lot
         // of noise in the logs
@@ -40442,9 +40624,12 @@ isLocalURL : function (url) {
                 // _handlingResponse flag allows us to catch the case where we suspend and
                 // immediately resubmit the transaction
                 transaction._handlingResponse = true;
-                this.handleTransportError(transactionNum, transaction.status,
-                                         transaction.httpResponseCode,
-                                         transaction.httpResponseText);
+                if (false == this.handleTransportError(transactionNum, transaction.status,
+                                                       transaction.httpResponseCode,
+                                                       transaction.httpResponseText))
+                {
+                    this.cancelDefaultErrorHandling(transaction);
+                }
                 if (transaction.suspended || transaction.abortCallbacks) {
                     delete transaction.abortCallbacks;
                     delete transaction._handlingResponse
@@ -41076,6 +41261,9 @@ isLocalURL : function (url) {
                 j++;
             }
 
+            // apply transaction preference to skip the standard error handling
+            if (transaction._skipHandleError) response._skipHandleError = true;
+
             // if no status has been set on the response, set to SUCCESS.  This can happen with
             // unstructured responses that simply load a file.
             if (response.status == null) response.status = 0;
@@ -41363,7 +41551,7 @@ isLocalURL : function (url) {
                 if (val == false) return;
             }
         }
-        return this.handleError(response, request);
+        return response._skipHandleError ? false : this.handleError(response, request);
     },
     handleError : function (response, request) {
         var context = (response.context ? response.context : {}),
@@ -41461,7 +41649,10 @@ isLocalURL : function (url) {
     //         }
     //     })
     // </pre>
-    // <P>
+    // <P><smartclient>
+    // Return an explicit <code>false</code> from this method to cancel default error handling,
+    // so that +link{handleError()} is not called for any +link{DSResponse} in this transaction.
+    // <P></smartclient>
     // Note: This method only applies to operations submitted via
     // +link{RPCTransport,XMLHttpRequest} - it is not possible to provide similar error handling
     // for other transports.
@@ -41470,6 +41661,7 @@ isLocalURL : function (url) {
     // @param status (integer) The RPCResponse status code
     // @param httpResponseCode (integer) The HTTP Response code reported by the server
     // @param httpResponseText (text) The raw HTTP Response text
+    // @return (Boolean) false to cancel default error handling
     //
     // @group errorHandling
     // @visibility external
@@ -41490,6 +41682,12 @@ isLocalURL : function (url) {
     handleTransportError : function (transactionNum, status, httpResponseCode, httpResponseText) {
     },
 
+
+    cancelDefaultErrorHandling : function (transaction) {
+        if (!transaction) return;
+        transaction._skipHandleError = true;
+        this.logInfo("Canceled error handling for transaction #" + transaction.transactionNum);
+    },
 
 //> @groupDef relogin
 //
@@ -43717,7 +43915,7 @@ transactionsChanged : function () {
 // </smartgwt>
 // <b>Error Status Codes</b><br>
 // The error status codes used by the framework are documented as class variables of the
-// +link{class:RPCRequest,RPCRequest class}.  Status codes in the range -1 to -100 are
+// +link{class:RPCResponse,RPCResponse class}.  Status codes in the range -1 to -100 are
 // reserved for use by the framework; if you wish to introduce new custom error statuses for
 // your own use, avoid this range.
 // <p>
@@ -44066,7 +44264,6 @@ transactionsChanged : function () {
 // @treeLocation Concepts
 // @visibility external
 //<
-
 
 
 
@@ -47544,7 +47741,7 @@ dataSourceDataChanged : function (dsRequest, dsResponse) {
     // If the server failed to return the updated records, and updateCacheFromRequest is true,
     // integrate the submitted values into the cache if the operation was succesful.
     var updateData = this.getDataSource().getUpdatedData(dsRequest, dsResponse,
-                                                   this.updateCacheFromRequest);
+                                                   this.updateCacheFromRequest, true);
 
     // Give transformData an opportunity
     if (this.transformData && this.transformUpdateResponses !== false) {
@@ -47949,8 +48146,8 @@ updateCacheData : function (updateData, dsRequest) {
 
                     var ds = this.getDataSource();
                     var fieldNames = ds.getFieldNames();
-                    for (var i = 0; i < fieldNames.length; i++) {
-                        var name = fieldNames[i];
+                    for (var j = 0; j < fieldNames.length; j++) {
+                        var name = fieldNames[j];
                         if (!updateRow.hasOwnProperty(name)) delete oldRow[name];
                     }
                 } else {
@@ -51245,7 +51442,7 @@ dataSourceDataChanged : function (dsRequest, dsResponse) {
     if (this.disableCacheSync) return;
 
     var updateData = isc.DataSource.getUpdatedData(dsRequest, dsResponse,
-                                                   this.updateCacheFromRequest);
+                                                   this.updateCacheFromRequest, true);
 
     this.handleUpdate(dsRequest.operationType, updateData, dsResponse.invalidateCache);
 },
@@ -53604,6 +53801,7 @@ isc.EditorActionMethods.addInterfaceMethods({
         delete this._editRecordNum;
         delete this._editList;
         var record = isc.addProperties({}, record);
+        this.__editingNewRecord = true;
         this.setData(record);
 
 
@@ -53614,6 +53812,7 @@ isc.EditorActionMethods.addInterfaceMethods({
                 fileItemForm.clearErrors(true);
             }
         }
+        delete this.__editingNewRecord;
     },
 
     //>    @method dynamicForm.editSelectedData()
@@ -53726,11 +53925,22 @@ isc.EditorActionMethods.addInterfaceMethods({
 
     //> @method dynamicForm.validateData()
     //
-    // Perform validation on the client and the server.
+    // <code>validateData()</code> can be used to check for errors in server-side validators
+    // without showing such errors to the user.  Errors, if any, can be discovered by looking at
+    // the <code>DSResponse</code> object returned in the callback.
+    // <p>
+    // <code>validateData()</code> will first call +link{validate()} to check for client-side
+    // errors, and will return <code>false</code> without contacting the server if errors are
+    // present.  In this case, any errors detected client-side will be displayed; to avoid this
+    // and purely perform silent, server-side validation, you can use
+    // +link{dataSource.validateData()} with the form's +link{getValues(),current values}.
+    // +link{valuesAreValid()} can be used in lieu of a call to +link{validate()} if silent
+    // checking of client-side errors is also desired.
     //
     // @param [callback] (DSCallback) callback to invoke on completion
     // @param [requestProperties] (DSRequest Properties) additional properties to set on
     //                                                   the DSRequest that will be issued
+    // @return (boolean) true if the server will be contacted, false otherwise
     //
     // @group validation
     // @visibility external
@@ -79081,6 +79291,30 @@ isc.DataSource.create({
             name:"stringInBrowser",
             validators:[
             ]
+        },
+        {
+            type:"boolean",
+            name:"nillable",
+            validators:[
+            ]
+        },
+        {
+            type:"string",
+            name:"validOperators",
+            validators:[
+            ]
+        },
+        {
+            type:"string",
+            name:"fieldTypeProperty",
+            validators:[
+            ]
+        },
+        {
+            type:"string",
+            name:"moveTo",
+            validators:[
+            ]
         }
     ]
 })
@@ -80441,6 +80675,13 @@ setupClause : function () {
             selectedFieldName = specificFieldName;
         } else {
             if (this.fieldDataSource) {
+                var plFields;
+                if (this.fieldPickerProperties) {
+                    // if fieldPickerProperties.pickListFields is set, use it
+                    plFields = this.fieldPickerProperties.pickListFields;
+                }
+                // if plFields is still unset, use this.pickListFields
+                if (!plFields) plFields = this.pickListFields;
                 // change the fieldPicker to be a ComboBoxItem, setup the fieldDataSource as
                 // it's optionDataSource and provide type-ahead auto-completion
                 isc.addProperties(items[0], {
@@ -80451,8 +80692,8 @@ setupClause : function () {
                     valueField: "name",
                     displayField: this.showFieldTitles ? "title" : "name",
 
-                    pickListFields: this.pickListFields,
-                    pickListProperties: { reusePickList : function () { return false;} }
+                    pickListFields: plFields,
+                    pickListProperties: { reusePickList : function () { return false; } }
                 });
                 if (this.field) {
                     items[0].defaultValue = items[0].defaultValue || this.field.name;
@@ -80606,7 +80847,7 @@ setupClause : function () {
             height: 10,
             width: "100%",
             numCols: 5,
-            colWidths: [100, this.operatorPickerWidth, "*", 10, "*"]
+            colWidths: [100, this.operatorPickerWidth, "*", 25, "*"]
         });
 
         this.addMember(this.clause);
@@ -80694,6 +80935,9 @@ buildValueItemList : function (field, operator, fieldName) {
     // We're not interested in the type object, just the name of the type
     baseFieldType = baseFieldType.name;
 
+    // store this in case field.editorProperties overrides it
+    var valueItemWidth = this.valueItemWidth;
+
 
 
     if (field) {
@@ -80704,6 +80948,9 @@ buildValueItemList : function (field, operator, fieldName) {
         if (field.userFormula || field.userSummary) {
             field.canFilter = true;
             field.canEdit = true;
+        }
+        if (field.editorProperties && field.editorProperties.width != null) {
+            valueItemWidth = field.editorProperties.width;
         }
     }
 
@@ -80734,7 +80981,7 @@ buildValueItemList : function (field, operator, fieldName) {
                 name: field ? field.name : null,
                 showTitle: false,
                 title : this.valueItemTitle,
-                width: this.valueItemWidth,
+                width: valueItemWidth,
                 changed : function () {
                     this.form.creator.valueChanged(this, this.form);
                 }
@@ -80794,6 +81041,8 @@ buildValueItemList : function (field, operator, fieldName) {
                 if (props.optionDataSource != null) fieldDef.optionDataSource = props.optionDataSource;
                 if (props.valueField != null) fieldDef.valueField = props.valueField;
                 if (props.displayField != null) fieldDef.displayField = props.displayField;
+                // if there are pickListFields, shallow copy them to avoid downstream updates
+                if (props.pickListFields) fieldDef.pickListFields = isc.shallowClone(props.pickListFields);
             } else {
                 fieldDef = isc.addProperties({}, fieldDef, field.editorProperties);
             }
@@ -80843,7 +81092,7 @@ buildValueItemList : function (field, operator, fieldName) {
             addUnknownValues: false,
             editorType: this.fieldDataSource ? "ComboBoxItem" : "SelectItem",
             valueType:valueType,
-            width: this.valueItemWidth,
+            width: valueItemWidth,
             textMatchStyle: this.fieldPicker.textMatchStyle,
             changed : function () {
                 this.form.creator.valueChanged(this, this.form);
@@ -80889,7 +81138,7 @@ buildValueItemList : function (field, operator, fieldName) {
 
         props = this.combineFieldData(
             isc.addProperties({
-                type: baseFieldType, editorType:editorType, showTitle: false, width: "100%",
+                type: baseFieldType, editorType:editorType, showTitle: false, width: valueItemWidth,
                 changed : function () {
                     this.form.creator.valueChanged(this, this.form);
                 }
@@ -81131,7 +81380,8 @@ getClauseValues : function (fieldName, operator, includeEmptyValues) {
             if (valueField) {
                 // normal operator with a value
                 values = operator[this.customGetValuesFunction](fieldName, valueField, includeEmptyValues);
-                if (values && operator) {
+
+                if (values && operator && operator.condition) {
                     if (operator.ID && operator.ID != values[this.operatorAttribute]) {
 
                         values[this.operatorAttribute] = operator.ID;
@@ -82859,6 +83109,12 @@ getChildFilters : function () {
 },
 
 
+// override setFocus() to set the default focus (fieldName picker) on the first clause
+setFocus : function (focus) {
+    if (focus && this.clauses && this.clauses[0]) this.clauses[0].setDefaultFocus();
+    else this.Super("setFocus", arguments);
+},
+
 //> @method filterBuilder.getFilterDescription()
 // Returns a human-readable string describing the clauses in this filterBuilder.
 //
@@ -83587,7 +83843,7 @@ itemChanged : function () {
     if (this.creator && isc.isA.Function(this.creator.itemChanged)) {
         this.creator.itemChanged();
     } else {
-        if (!this.creator && isc.isA.Function(this.filterChanged)) {
+        if (isc.isA.Function(this.filterChanged)) {
             this.filterChanged();
         }
     }
@@ -85977,7 +86233,7 @@ isc.defineClass("FilePickerForm", "VLayout").addProperties({
 // terms of its ARIA support.
 // <P>
 // By default, SmartClient components will write out limited ARIA markup sufficient to navigate basic
-// menus and buttons.  Full screen reader mode is not enabled by defaut because it has a small
+// menus and buttons.  Full screen reader mode is not enabled by default because it has a small
 // performance impact and subtly changes the management of keyboard focus in a way that is slightly worse
 // for unimpaired users.
 // <P>
@@ -86639,6 +86895,21 @@ isc.ListGrid.addMethods({
             if (state == null) state = {}
             state.selected = true;
         }
+
+        // If the row is 'expandable' due to expansion components, or due to
+        // it being a group header node, write out the aria-expanded state
+        if (record != null) {
+            if (this.canExpandRecords && this.canExpandRecord(record, rowNum)) {
+                if (state == null) state = {}
+                state.expanded = this.isExpanded(record);
+            } else if (this.isGrouped && this.isGroupNode(record)) {
+                if (state == null) state = {}
+                // group header node is a folder, data is (should be) a tree
+                var groupTree = isc.isA.Tree(this.data) ? this.data : null;
+                if (groupTree) state.expanded = groupTree.isOpen(record);
+            }
+        }
+
         return state;
     }
 });
@@ -88228,14 +88499,38 @@ deriveFields : function (ds) {
 
 }
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('DataBinding');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._DataBinding_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('DataBinding module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'DataBinding', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'DataBinding'.");}
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Deployment (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 

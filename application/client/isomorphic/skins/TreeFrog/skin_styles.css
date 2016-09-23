@@ -538,6 +538,9 @@ ul {
 .headerItem,
 .headerItemDisabled,
 .headerItemError,
+.nativeSelectItem,
+.nativeSelectItemDisabled,
+.nativeSelectItemError,
 .staticTextItem,
 .staticTextItemDisabled,
 .staticTextItemError,
@@ -629,6 +632,7 @@ ul {
 }
 .uploadItemDisabled,
 .uploadItemDisabledHint,
+.nativeSelectItemDisabled,
 .staticTextItemDisabled {
     color:#ACA899;
 }

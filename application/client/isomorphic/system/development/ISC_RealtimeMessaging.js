@@ -1,18 +1,42 @@
-/*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
 
-if(window.isc&&window.isc.module_Core&&!window.isc.module_RealtimeMessaging){isc.module_RealtimeMessaging=1;isc._moduleStart=isc._RealtimeMessaging_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log&&isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={message:'RealtimeMessaging load/parse time: '+(isc._moduleStart-isc._moduleEnd)+'ms',category:'loadTime'};if(isc.Log&&isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;else isc._preLog=[isc._pTM]}isc.definingFramework=true;if(window.isc&&isc.version!="v10.1p_2016-03-10/LGPL Development Only"){isc.$113h=function(){var _1=false;if(isc.version.toLowerCase().contains("pro")||isc.version.toLowerCase().contains("lgpl")){_1=true}else{var _2=isc.version;if(_2.indexOf("/")!=-1){_2=_2.substring(0,_2.indexOf("/"))}
-var _3="v10.1p_2016-03-10/LGPL Development Only";if(_3.indexOf("/")!=-1){_3=_3.substring(0,_3.indexOf("/"))}
+/*
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Development Only (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
+
+if(window.isc&&window.isc.module_Core&&!window.isc.module_RealtimeMessaging){isc.module_RealtimeMessaging=1;isc._moduleStart=isc._RealtimeMessaging_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log&&isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={message:'RealtimeMessaging load/parse time: '+(isc._moduleStart-isc._moduleEnd)+'ms',category:'loadTime'};if(isc.Log&&isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;else isc._preLog=[isc._pTM]}isc.definingFramework=true;if(window.isc&&isc.version!="v10.1p_2016-08-12/LGPL Development Only"){isc.$113h=function(){var _1=false;if(isc.version.toLowerCase().contains("pro")||isc.version.toLowerCase().contains("lgpl")){_1=true}else{var _2=isc.version;if(_2.indexOf("/")!=-1){_2=_2.substring(0,_2.indexOf("/"))}
+var _3="v10.1p_2016-08-12/LGPL Development Only";if(_3.indexOf("/")!=-1){_3=_3.substring(0,_3.indexOf("/"))}
 if(_2!=_3){_1=true}}
-if(_1){isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from SmartClient version '"+isc.version+"' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources from a single package you may need to clear your browser cache, or restart your browser."+(isc.Browser.isSGWT?" SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile.":""))}}
+if(_1){isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from SmartClient version '"+isc.version+"' and additional modules from 'v10.1p_2016-08-12/LGPL Development Only'. Mixing resources from different SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources from a single package you may need to clear your browser cache, or restart your browser."+(isc.Browser.isSGWT?" SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile.":""))}}
 isc.$113h()}
 isc.ClassFactory.defineClass("Messaging");isc.A=isc.Messaging;isc.A.messagingURL="[ISOMORPHIC]/messaging";isc.A.useEventSource=(!isc.Browser.isSafari||parseFloat(isc.Browser.rawSafariVersion)>=534.29)&&!!window.EventSource;isc.A.$zq=1;isc.A._channels={};isc.A.$zt=[];isc.A.$zu=20;isc.A.connectTimeout=4000;isc.A.legacyCommHTTPMethod="GET";isc.A=isc.Messaging;isc.A.useAJAX=!isc.Messaging.useEventSource&&((isc.Browser.isFirefox&&isc.Browser.minorVersion<4)||isc.Browser.isSafari);isc.A.$1129=!isc.Messaging.useEventSource&&isc.Browser.isSafari;isc.A=isc.Messaging;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.$171c=[];isc.B.push(isc.A.$1123=function isc_c_Messaging__handleEventSourceError(_1){},isc.A.send=function isc_c_Messaging_send(_1,_2,_3,_4){if(!isc.hasOptionalModules("RealtimeMessaging")&&!this.isRemoteDebug){this.logWarn("RealtimeMessaging not licensed - refusing to send()");return}
 if(!isc.isAn.Array(_1))_1=[_1];if(_4&&_4.sequenced){this.$171c.add({channels:_1,data:_2,callback:_3,requestProperties:_4});if(this.$171c.length>1)return}

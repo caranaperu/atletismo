@@ -533,6 +533,9 @@ Button (also used as MenuButton base style)
 .headerItem,
 .headerItemDisabled,
 .headerItemError,
+.nativeSelectItem,
+.nativeSelectItemDisabled,
+.nativeSelectItemError,
 .staticTextItem,
 .staticTextItemDisabled,
 .staticTextItemError,
@@ -681,6 +684,7 @@ Button (also used as MenuButton base style)
     padding:0px;
 }
 
+.nativeSelectItemDisabled,
 .staticTextItemDisabled {
     color:#ACA899;
 }

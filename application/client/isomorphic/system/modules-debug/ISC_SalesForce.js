@@ -1,13 +1,37 @@
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Deployment (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_SalesForce){isc.module_SalesForce=1;isc._moduleStart=isc._SalesForce_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'SalesForce load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
@@ -35,13 +59,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"fieldsToNull",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:false
                 },
                 {
                     name:"Id",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 }
@@ -107,7 +131,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"result",
-                    nillable:"true",
+                    nillable:true,
                     type:"DescribeSObjectResult",
                     xmlRequired:true
                 }
@@ -132,7 +156,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"result",
-                    nillable:"true",
+                    nillable:true,
                     type:"DescribeSObjectResult",
                     xmlRequired:false
                 }
@@ -181,7 +205,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"result",
-                    nillable:"true",
+                    nillable:true,
                     type:"DescribeLayoutResult",
                     xmlRequired:true
                 }
@@ -201,7 +225,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"result",
-                    nillable:"true",
+                    nillable:true,
                     type:"DescribeSoftphoneLayoutResult",
                     xmlRequired:true
                 }
@@ -221,7 +245,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"result",
-                    nillable:"true",
+                    nillable:true,
                     type:"DescribeTabSetResult",
                     xmlRequired:false
                 }
@@ -429,7 +453,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"result",
-                    nillable:"true",
+                    nillable:true,
                     type:"sObject",
                     xmlRequired:false
                 }
@@ -803,13 +827,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"assignmentRuleId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
                 {
                     name:"useDefaultRule",
-                    nillable:"true",
+                    nillable:true,
                     type:"boolean",
                     xmlRequired:true
                 }
@@ -822,7 +846,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"transferToUserId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 }
@@ -864,13 +888,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"queryLocator",
-                    nillable:"true",
+                    nillable:true,
                     type:"QueryLocator",
                     xmlRequired:true
                 },
                 {
                     name:"records",
-                    nillable:"true",
+                    nillable:true,
                     type:"sObject",
                     xmlRequired:false
                 },
@@ -1019,7 +1043,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"currencySymbol",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -1050,13 +1074,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"roleId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
                 {
                     name:"userDefaultCurrencyIsoCode",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -1114,19 +1138,19 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"serverUrl",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"sessionId",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"userId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1263,7 +1287,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"fields",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:false
                 },
@@ -1291,7 +1315,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"id",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1319,7 +1343,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"id",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1359,7 +1383,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"id",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1387,13 +1411,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"comments",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"nextApproverIds",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:false
                 }
@@ -1439,7 +1463,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"entityId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1450,19 +1474,19 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"instanceId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
                 {
                     name:"instanceStatus",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"newWorkitemIds",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:false
                 },
@@ -1480,13 +1504,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"errors",
-                    nillable:"true",
+                    nillable:true,
                     type:"Error",
                     xmlRequired:false
                 },
                 {
                     name:"id",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1509,7 +1533,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"id",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1527,13 +1551,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"accountId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
                 {
                     name:"contactId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1554,7 +1578,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"opportunityName",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -1565,7 +1589,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"ownerId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1583,13 +1607,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"accountId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
                 {
                     name:"contactId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1600,13 +1624,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"leadId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
                 {
                     name:"opportunityId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 },
@@ -1649,13 +1673,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"fields",
-                    nillable:"true",
+                    nillable:true,
                     type:"Field",
                     xmlRequired:false
                 },
                 {
                     name:"keyPrefix",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -1721,19 +1745,19 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"urlDetail",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"urlEdit",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"urlNew",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 }
@@ -1773,7 +1797,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"encoding",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -1784,7 +1808,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"types",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:false
                 }
@@ -1946,7 +1970,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"picklistValues",
-                    nillable:"true",
+                    nillable:true,
                     type:"PicklistEntry",
                     xmlRequired:false
                 },
@@ -1957,7 +1981,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"referenceTo",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:false
                 },
@@ -2020,7 +2044,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"label",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -2236,7 +2260,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"label",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -2316,7 +2340,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"recordTypeId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 }
@@ -2349,13 +2373,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"picklistsForRecordType",
-                    nillable:"true",
+                    nillable:true,
                     type:"PicklistForRecordType",
                     xmlRequired:false
                 },
                 {
                     name:"recordTypeId",
-                    nillable:"true",
+                    nillable:true,
                     type:"ID",
                     xmlRequired:true
                 }
@@ -2373,7 +2397,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"picklistValues",
-                    nillable:"true",
+                    nillable:true,
                     type:"PicklistEntry",
                     xmlRequired:false
                 }
@@ -2396,7 +2420,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"field",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -2417,7 +2441,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"sobject",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -2435,13 +2459,13 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
             fields:[
                 {
                     name:"field",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
                 {
                     name:"format",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -2523,7 +2547,7 @@ else isc._preLog=[isc._pTM]}isc.definingFramework=true;  isc.SchemaSet.create({
                 },
                 {
                     name:"sobjectName",
-                    nillable:"true",
+                    nillable:true,
                     type:"string",
                     xmlRequired:true
                 },
@@ -4832,14 +4856,38 @@ isc.B._maxIndex=isc.C+4;
 
 }
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('SalesForce');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._SalesForce_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('SalesForce module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'SalesForce', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'SalesForce'.");}
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Deployment (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 

@@ -501,6 +501,9 @@ ul {
 .headerItem,
 .headerItemDisabled,
 .headerItemError,
+.nativeSelectItem,
+.nativeSelectItemDisabled,
+.nativeSelectItemError,
 .staticTextItem,
 .staticTextItemDisabled,
 .staticTextItemError,
@@ -625,6 +628,7 @@ ul {
     padding:0px;
 }
 
+.nativeSelectItemDisabled,
 .staticTextItemDisabled {
     color:#ACA899;
 }

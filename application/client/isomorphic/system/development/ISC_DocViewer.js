@@ -1,13 +1,37 @@
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Development Only (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_DocViewer){isc.module_DocViewer=1;isc._moduleStart=isc._DocViewer_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log&&isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={message:'DocViewer load/parse time: '+(isc._moduleStart-isc._moduleEnd)+'ms',category:'loadTime'};if(isc.Log&&isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;else isc._preLog=[isc._pTM]}isc.definingFramework=true;isc.defineClass("DocCookieState").addProperties({init:function(){isc.ClassFactory.addGlobalID(this);if(!this.cookieName){this.logError("You must set the 'cookieName' property");return}
 if(!isc.Page.isLoaded()){isc.Page.setEvent("load",this.getID()+".pageLoaded()")}else{this.load();this.delayCall("processCallback")}},pageLoaded:function(){this.load();this.processCallback()},processCallback:function(){if(this.onload){this.fireCallback(this.onload,["state","data"],[this,this.data])}},load:function(){var _1=isc.Cookie.get(this.cookieName);this.logDebug("loaded: "+_1)
@@ -27,7 +51,7 @@ if(!_7){for(var i=0;i<_3-1;i++){var _9=_5.get(i);var _10=_9[this.shortcutField];
 {_7=_9;break}}}
 if(_7){if(_4)this.deselectRecord(_4);this.selectRecord(_7);this.scrollRecordIntoView(_5.indexOf(_7),"center");this.previewRecord(_7)}});isc.B._maxIndex=isc.C+5;isc.defineClass("DocTabSet","TabSet");isc.A=isc.DocTabSet.getPrototype();isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.A.paneMargin=0;isc.A.tabBarControls=["tabScroller","tabPicker","versionString"];isc.B.push(isc.A.getControl=function isc_DocTabSet_getControl(_1){if(_1=="helpLauncher"){if(!this.helpLauncher){this.helpLauncher=isc.ImgButton.create({width:16,height:16,autoDraw:false,canHover:true,prompt:"<nobr>Show help</nobr>",hoverHeight:20,src:"[ISO_DOCS_SKIN]/images/DocTabSet/help.png",layoutAlign:"center",click:"isc.DocViewer.instance.showHelpDialog()"})}
 return this.helpLauncher}
-if(!isc.Browser.isHandset&&_1=="versionString"){if(!this.versionString){this.versionString=isc.Label.create({width:1,height:20,overflow:"visible",autoDraw:false,wrap:false,contents:"SmartClient LGPL API "+isc.scVersion+" (2016-03-10)"})}
+if(!isc.Browser.isHandset&&_1=="versionString"){if(!this.versionString){this.versionString=isc.Label.create({width:1,height:20,overflow:"visible",autoDraw:false,wrap:false,contents:"SmartClient LGPL API "+isc.scVersion+" (2016-08-12)"})}
 return this.versionString}
 return this.Super("getControl",arguments)});isc.B._maxIndex=isc.C+1;isc.ClassFactory.defineClass("DocUtils");isc.addGlobal("doc",isc.DocUtils);isc.A=isc.DocUtils;isc.A.nativeClasses=["Object","Boolean","RegEx"];isc.A.offsetMap={};isc.A.extraOffsetMap={};isc.A=isc.DocUtils;isc.B=isc._allFuncs;isc.C=isc.B._maxIndex;isc.D=isc._funcClasses;isc.D[isc.C]=isc.A.Class;isc.B.push(isc.A.externalLink=function isc_c_DocUtils_externalLink(_1,_2){if(!_2)_2=_1;return"<a href='"+_1+"' onclick=\"window.open('"+_1+"');return false;\">"+_2+"</a>"},isc.A.linkForStandaloneExample=function isc_c_DocUtils_linkForStandaloneExample(_1,_2){if(!_2)_2=_1;var _3="<a href='"+_1+"' onclick=\"window.open('"+_1+"');return false;\">"+_2+"</a>";if(!_1.startsWith("http")){_3+="&nbsp;"+isc.Canvas.imgHTML("[ISO_DOCS_SKIN]/images/text_code.gif",16,16,null,"onclick='isc.DocUtils.showExampleSource(\""+_1+"\")' onmouseover='isc.Hover.setAction(isc.DocUtils, isc.DocUtils.doSourceHover,null,300)' onmouseout='isc.Hover.clear()' style='cursor:"+isc.Canvas.HAND+"'")}
 return _3},isc.A.doSourceHover=function isc_c_DocUtils_doSourceHover(){isc.Hover.show("<nobr>View example source</nobr>")},isc.A.showExampleSource=function isc_c_DocUtils_showExampleSource(_1){window.open("/isomorphic/Source.Viewer?file="+_1)},isc.A.buildTableHeader=function isc_c_DocUtils_buildTableHeader(_1,_2,_3){if(!this.$46r){this.$46r=["<table id='",null,"' BORDER='1' CELLPADDING='0' CELLSPACING='0' WIDTH='100%'>"]}

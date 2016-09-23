@@ -50,21 +50,12 @@ isc.SystemTreeMenu.addProperties({
             }
 
         }
-        // else if (leaf.menu_codigo === 'smn_entidad') {
-        //     if (this.atletasResultadosReport == null) {
-        //         this.atletasResultadosReport = WinPostasForm.create();
-        //         this.atletasResultadosReport.show();
-        //     } else {
-        //         this.atletasResultadosReport.show();
-        //     }
-        //}
         else {
             if (!this._controllersList[leaf.menu_codigo]) {
                 this._controllersList[leaf.menu_codigo] = this._getController(leaf.menu_codigo);
             }
             if (leaf.menu_codigo === 'smn_entidad') {
-//                this._controllersList[leaf.menu_codigo].doSetup(true,null);
-                this._controllersList[leaf.menu_codigo].doSetup(true, {competencias_pruebas_id: '926'});
+                this._controllersList[leaf.menu_codigo].doSetup(true,null);
             } else {
                 this._controllersList[leaf.menu_codigo].doSetup(false, null);
             }
@@ -74,11 +65,7 @@ isc.SystemTreeMenu.addProperties({
         var controller;
 
         if (menuId === 'smn_entidad') {
-//            controller = isc.DefaultController.create({mainWindowClass: undefined, formWindowClass: 'WinEntidadForm'});
-            controller = isc.DefaultController.create({
-                mainWindowClass: undefined,
-                formWindowClass: 'WinPostasForm'
-            });
+            controller = isc.DefaultController.create({mainWindowClass: undefined, formWindowClass: 'WinEntidadForm'});
         } else if (menuId === 'smn_paises') {
             controller = isc.DefaultController.create({
                 mainWindowClass: 'WinPaisesWindow',

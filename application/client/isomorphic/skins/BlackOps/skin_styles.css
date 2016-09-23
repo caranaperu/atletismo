@@ -587,6 +587,9 @@
 .headerItem,
 .headerItemDisabled,
 .headerItemError,
+.nativeSelectItem,
+.nativeSelectItemDisabled,
+.nativeSelectItemError,
 .staticTextItem,
 .staticTextItemDisabled,
 .staticTextItemError,
@@ -694,6 +697,8 @@
     color: #888888;
     background-color:#404040;
 }
+
+.nativeSelectItemDisabled,
 .staticTextItemDisabled {
     color: #888888;
 }

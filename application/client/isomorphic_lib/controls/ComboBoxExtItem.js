@@ -54,7 +54,7 @@ isc.defineClass("ComboBoxExtItem", isc.ComboBoxItem);
                 hspace: 1,
                 tabIndex: - 1,
                 inline: true,
-                inlineIconAlign: 'right',
+               // inlineIconAlign: 'right',
                 width: 12,
                 height: 12,
                 click: function (form, item) {

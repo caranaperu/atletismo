@@ -1,22 +1,46 @@
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Deployment (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 
 if(window.isc&&window.isc.module_Core&&!window.isc.module_Foundation){isc.module_Foundation=1;isc._moduleStart=isc._Foundation_start=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc._moduleEnd&&(!isc.Log||(isc.Log && isc.Log.logIsDebugEnabled('loadTime')))){isc._pTM={ message:'Foundation load/parse time: ' + (isc._moduleStart-isc._moduleEnd) + 'ms', category:'loadTime'};
 if(isc.Log && isc.Log.logDebug)isc.Log.logDebug(isc._pTM.message,'loadTime');
 else if(isc._preLog)isc._preLog[isc._preLog.length]=isc._pTM;
 else isc._preLog=[isc._pTM]}isc.definingFramework=true;
 
-if (window.isc && isc.version != "v10.1p_2016-03-10/LGPL Development Only") {
+if (window.isc && isc.version != "v10.1p_2016-08-12/LGPL Deployment") {
     isc.logWarn("SmartClient module version mismatch detected: This application is loading the core module from "
-        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-03-10/LGPL Development Only'. Mixing resources from different "
+        + "SmartClient version '" + isc.version + "' and additional modules from 'v10.1p_2016-08-12/LGPL Deployment'. Mixing resources from different "
         + "SmartClient packages is not supported and may lead to unpredictable behavior. If you are deploying resources "
         + "from a single package you may need to clear your browser cache, or restart your browser."
         + (isc.Browser.isSGWT ? " SmartGWT developers may also need to clear the gwt-unitCache and run a GWT Compile." : ""));
@@ -2958,15 +2982,13 @@ stateChanged : function () {
     if (this.logIsDebugEnabled(this._$visualState)) {
         this.logDebug("state changed to: " + this.getStateName(), "visualState");
     }
-
-    if (this.redrawOnStateChange) {
+    if (this._shouldRedrawOnStateChange()) {
         this.markForRedraw("state change");
     }
     // NOTE: a redraw doesn't update className
     if (!this.suppressClassName) {
         this.setClassName(this.getStateName());
     }
-
     // set our label to the same state (note it potentially has independent styling)
     var label = this.label;
     if (label != null) {
@@ -2974,6 +2996,11 @@ stateChanged : function () {
         label.setSelected(this.isSelected());
         label.setCustomState(this.getCustomState());
     }
+},
+
+// should we redraw on state change?
+_shouldRedrawOnStateChange : function () {
+    return this.redrawOnStateChange;
 },
 
 //>    @method statefulCanvas.setBaseStyle()
@@ -4629,9 +4656,70 @@ isc.Layout.addClassProperties({
     //  </ul>
     //
     // @visibility external
-    FILL:"fill"
+    FILL:"fill",
     //<
     //NONE:"none", // NOTE: constant declared by Canvas
+
+
+    reflowOnTEA : function (layout, reason) {
+
+        // remember in the current reflowCount so we don't do an extra reflow if reflowNow() is
+        // called before the timer fires (happens every time with TEAs, since
+        // EH._setThreadExitAction() sets up the TEA AND sets a timer in case
+        // the TEA fails to fire, and can happen if reflowNow() is called
+        // explicitly)
+        var layoutInfo = {
+                theLayout:layout,
+                reflowCount:layout._reflowCount,
+                reason:reason
+        };
+        if (this.reflowQueue == null) this.reflowQueue = [];
+        var reflowQueue = this.reflowQueue;
+        for (var i = 0; i < reflowQueue.length; i++) {
+            // If we already have an entry in the queue, clear it - the more recent
+            // reflow call takes precedence.
+
+            if (reflowQueue[i] != null && reflowQueue[i].theLayout == layout) {
+                reflowQueue[i] = null;
+            }
+        }
+        this.reflowQueue.add(layoutInfo);
+
+        if (!this.reflowTEASet) {
+            isc.EH._setThreadExitAction(function () {
+                isc.Layout.clearReflowQueue();
+            });
+            this.reflowTEASet = true;
+        }
+    },
+
+    clearReflowQueue : function () {
+        // Clear the flag before doing anything else. That way if below code actually
+        // causes a new reflow() call on another layout we'll correctly set up a new TEA for it.
+        this.reflowTEASet = false;
+
+        var queue = this.reflowQueue;
+        // Clear the reflowQueue attribute now (that way if code below trips a new reflow() call we
+        // won't modify the array we're currently working our way through!)
+        this.reflowQueue = null;
+
+        if (queue == null) return;
+
+        for (var i = 0; i < queue.length; i++) {
+            if (queue[i] == null) continue; // may have been cleared above
+            var theLayout = queue[i].theLayout,
+                reflowCount = queue[i].reflowCount,
+                reason = queue[i].reason;
+
+            //isc.logWarn("reflowing " + theLayout + " at end of thread");
+            if (!theLayout.destroyed) {
+                // reflowNow would no-op anyway in this condition,
+                // but let's avoid the unnecessary function call
+                if (reflowCount != null && reflowCount < theLayout._reflowCount) continue;
+                theLayout.reflowNow(reason, reflowCount);
+            }
+        }
+    }
 });
 
 isc.Layout.addProperties({
@@ -6075,8 +6163,9 @@ resizeMembers : function (sizes, layoutInfo, overflowersOnly) {
 
         // redraw the member if it changed size, so we can get the right size for stacking
         // purposes (or draw the member if it's never been drawn)
+
         if (member.isDrawn()) {
-            if (member.isDirty()) member.redraw("Layout getting new size");
+        if (member.isDirty()) member.redrawForNewSize("Layout getting new size");
         } else {
             // cause undrawn members to draw (drawOffscreen because we haven't positioned them
             // yet and don't want them to momentarily appear stacked on top of each other)
@@ -6859,16 +6948,7 @@ reflow : function (reason) {
             //isc.logWarn("reflowing NOW");
             this.layoutChildren(reason);
         } else {
-            // pass in the current reflowCount so we don't do an extra reflow if reflowNow() is
-            // called before the timer fires (happens every time with TEAs, since we currently
-            // set a timer as well as a TEA, and can happen if reflowNow() is called
-            // explicitly)
-            var theLayout = this,
-                reflowCount = this._reflowCount;
-            isc.EH._setThreadExitAction(function () {
-                //isc.logWarn("reflowing at end of thread");
-                if (!theLayout.destroyed) theLayout.reflowNow(reason, reflowCount);
-            });
+            isc.Layout.reflowOnTEA(this, reason);
         }
     }
 },
@@ -7587,8 +7667,11 @@ _completeRemoveMembers : function (members) {
 setMembers : function (members) {
     if (members == this.members || !isc.isAn.Array(members)) return;
     var removeMembers = [];
-    for (var i = 0; i < this.members.length; i++) {
-        if (!members.contains(this.members[i])) removeMembers.add(this.members[i]);
+
+    if (this.members != null) {
+        for (var i = 0; i < this.members.length; i++) {
+            if (!members.contains(this.members[i])) removeMembers.add(this.members[i]);
+        }
     }
     var instantRelayout = this.instantRelayout;
     this.instantRelayout = false;
@@ -10035,11 +10118,9 @@ fillInCell : function (template, slot, cellIsTitleClipper) {
         template[++slot] = styleName;
         template[++slot] = tableNoStyleDoubling;
         if (clipTitle) template[++slot] = this._$textOverflowEllipsis;
+        template[++slot] = "' align='";
+        template[++slot] = align;
 
-        if (iconAtEdge) {
-            template[++slot] = "' align='";
-            template[++slot] = align;
-        }
         if (clipTitle) {
             template[++slot] = isc.Button._id;
             template[++slot] = this._getTitleClipperID();
@@ -10053,11 +10134,9 @@ fillInCell : function (template, slot, cellIsTitleClipper) {
         template[++slot] = styleName;
         template[++slot] = tableNoStyleDoubling;
         if (clipTitle) template[++slot] = this._$textOverflowEllipsis;
+        template[++slot] = "' align='";
+        template[++slot] = align;
 
-        if (iconAtEdge) {
-            template[++slot] = "' align='";
-            template[++slot] = align;
-        }
         if (clipTitle) {
             template[++slot] = isc.Button._id;
             template[++slot] = this._getTitleClipperID();
@@ -10084,7 +10163,6 @@ fillInCell : function (template, slot, cellIsTitleClipper) {
 
     }
     template[++slot] = this._$innerTableEnd;
-
     this._endTemplate(template, slot+1)
 },
 
@@ -10129,9 +10207,15 @@ _generateIconImgHTML : function (imgParams) {
 
     return this.imgHTML(imgParams);
 },
+
 _getIconURL : function () {
     var icon = this.icon;
     if (isc.isAn.Object(icon)) icon = icon.src;
+
+    return this._getStatefulIconURL(icon);
+},
+
+_getStatefulIconURL : function (icon) {
 
     // Special exception: If the icon is isc.Canvas._blankImgURL, then simply return the _blankImgURL.
     if (icon === isc.Canvas._blankImgURL) return icon;
@@ -10289,7 +10373,7 @@ stateChanged : function () {
 
 
 
-    if (this.redrawOnStateChange || !this.isDrawn()) {
+    if (this._shouldRedrawOnStateChange() || !this.isDrawn()) {
         return this.Super("stateChanged");
     } else {
         var stateName = this.isPrinting ? this.getPrintStyleName() : this.getStateName();
@@ -10303,7 +10387,6 @@ stateChanged : function () {
 
         if (!this.suppressClassName) this.setClassName(stateName);
         else this.setTableClassName(stateName);
-
         if (this.icon) {
             // NOTE: the icon may or may not actually change to reflect states or selectedness,
             // but either state or selectedness or both may have just changed, and we may be
@@ -15485,6 +15568,10 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     // The number of rows of controls to display in each column.  Each control will take one
     // row in a +link{toolStripGroup.columnLayout, columnLayout} by default, but those that
     // support the feature may specify <code>rowSpan</code> to override that.
+    // <P>
+    // Note that settings like this, which affect the group's layout, are not applied directly
+    // if changed at runtime - a call to +link{toolStripGroup.reflowControls, reflowControls}
+    // will force the group to reflow.
     // @visibility external
     //<
     numRows: 1,
@@ -15706,6 +15793,19 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
         this.addControls(controls, store);
     },
 
+    //> @method toolStripGroup.reflowControls()
+    // Forces this group to reflow following changes to attributes that affect layout, like
+    // +link{toolStripGroup.numRows, numRows}.
+    //
+    // @visibility external
+    //<
+    reflowControls : function () {
+        if (this.controls) {
+            this.removeAllControls(false);
+        }
+        this.addControls(this.controls, false);
+    },
+
     //> @method toolStripGroup.addControls()
     // Adds an array of controls to this group, creating new
     // +link{toolStripGroup.columnLayout, columns} as necessary, according to each control's
@@ -15743,10 +15843,18 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
         var column = this.getAvailableColumn(true);
 
         if (!this.controls) this.controls = [];
-        if (store != false) this.controls.add(control);
-
+        if (store != false) {
+            if (!this.controls.contains(control)) this.controls.add(control);
+        }
         column.addMember(control, index);
         column.reflowNow();
+        if (!store && control._wasVisible && !control.isVisible()) {
+            // if !store, this is a call from reflowControls(), which hides all controls - so,
+            // the control needs to be shown now, but only if it was visible before the reflow
+            // started
+            delete control._wasVisible;
+            control.show();
+        }
     },
 
     //> @method toolStripGroup.removeControl()
@@ -15757,19 +15865,20 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
     // @visibility external
     //<
     autoHideOnLastRemove: false,
-    removeControl : function (control) {
+    removeControl : function (control, destroy) {
         control = isc.isAn.Object(control) ? control : this.getMember(control);
         if (!control) return null;
 
         var column = this.getControlColumn(control);
 
         if (column) {
-            column.removeMember(control);
-            this.controls.remove(control);
+            column.members.remove(control);
+            if (destroy) this.controls.remove(control);
+            else this.addChild(control);
             if (column.members.length == 0) {
                 // if the column is now empty, destroy it
                 column.hide();
-                this.body.removeMember(column);
+                this.body.members.remove(column);
                 column.markForDestroy();
                 column = null;
             }
@@ -15781,16 +15890,29 @@ isc.defineClass("ToolStripGroup", "VLayout").addProperties({
         }
     },
 
-    removeAllControls : function () {
+    removeAllControls : function (destroy) {
         if (!this.controls || this.controls.length == 0) return null;
 
         for (var i=this.controls.length-1; i>=0; i--) {
             var control = this.controls[i];
+            // !destroy means a call from reflowControls() - remember visibility so that
+            // addControl() can re-instate in later
+            if (!destroy) control._wasVisible = control.isVisible();
             control.hide();
-            this.removeControl(control);
-            control.markForDestroy();
-            control = null;
+            this.removeControl(control, destroy);
+            if (destroy) {
+                control.markForDestroy();
+                control = null;
+            }
         }
+
+        // clear out nulls - that is, any controls that got destroyed
+        this.controls.removeEmpty();
+
+        // shrink the group's body layout, so it can overflow properly when new controls arrive
+        this.body.height = 1;
+        this.height = 1;
+        this.redraw();
     },
 
     resized : function () {
@@ -16051,16 +16173,8 @@ getTitle : function () {
 
     if (icon == "") icon = null;
 
-    if (icon && this.showDisabledIcon && this.isDisabled()) {
-        var dotIndex = icon.lastIndexOf("."),
-            tempIcon = dotIndex > 0 ?
-                        icon.substring(0, dotIndex) + "_Disabled" + icon.substring(dotIndex) :
-                        icon + "_Disabled"
-        ;
-
-        icon = tempIcon;
-    }
-
+    // pick up disabled, over etc state if appropriate
+    icon = this._getStatefulIconURL(icon);
     var iconCSS = "vertical-align:middle;" + (isLarge ? "margin-bottom:5px;" : ""),
         menuIconCSS = this.menuIconStyleCSS + (isLarge ? "margin-top:4px;" : ""),
         img = icon ? this.imgHTML({
@@ -16240,8 +16354,24 @@ menuIconMouseOut : function () {
         this.setTitle(this._originalTitle);
         //element.style.border = "1px solid transparent";
     }
-}
+},
 
+_shouldRedrawOnStateChange : function () {
+    if (this.Super("_shouldRedrawOnStateChange", arguments)) return true;
+    var icon = this.showIcon ?
+                (this.orientation == "vertical" ?  this.largeIcon || this._originalIcon
+                                                : this._originalIcon)
+                            : null;
+                              if (icon === isc.Canvas._blankImgURL) return icon;
+
+    // If we have an icon and it changes with states, we need to reset the title
+    // (IE redraw) on state change.
+    if (icon && this.showIconState &&
+         (this.showDisabledIcon || this.showSelectedIcon || this.showRollOverIcon ||
+            this.showFocusedIcon || this.showDownIcon)) return true;
+
+    return false;
+}
 
 });
 
@@ -21824,23 +21954,31 @@ isc.builtinTypes =
                         returnValue = value.getFullYear() + "_" + (Math.floor(value.getMonth() / 3) + 1);
                         break;
                     case "monthAndYear":
-                        returnValue = value.getFullYear() + "_" + value.getMonth();
+                        returnValue = value.getFullYear() + "_" +
+                            isc.DateUtil.format(value, "MM");
                         break;
                     case "weekAndYear":
-                        returnValue = value.getFullYear() + "_" + value.getWeek();
+                        returnValue = value.getFullYear() + "_" +
+                            isc.DateUtil.format(value, "ww");
                         break;
                     case "date":
-                        returnValue = value.getFullYear() + "_" + value.getMonth() + "_" + value.getDate();
+                        returnValue = value.getFullYear() + "_" +
+                            isc.DateUtil.format(value, "MM") + "_" +
+                            isc.DateUtil.format(value, "dd");
                         break;
                     case "dayOfWeekAndYear":
                         var delta = isc.DateChooser.getPrototype().firstDayOfWeek;
                         var day = value.getDay() - delta;
                         if (day < 0) day += 7;
-                        returnValue = value.getFullYear() + "_" + value.getWeek() + "_" + day;
+                        returnValue = value.getFullYear() + "_" +
+                            isc.DateUtil.format(value, "ww") + "_" +
+                            day;
                         break;
                     case "dayOfMonthAndYear":
-                        returnValue = value.getFullYear() + "_" + value.getMonth() + "_" +
-                            value.getDate() + "_" + value.getDay();
+                        returnValue = value.getFullYear() + "_" +
+                            isc.DateUtil.format(value, "MM") + "_" +
+                            isc.DateUtil.format(value, "dd") + "_" +
+                            value.getDay();
                         break;
 
                     case "timezoneHours":
@@ -21873,7 +22011,7 @@ isc.builtinTypes =
                 (field.groupingMode || field._simpleType.defaultGroupingMode || null);
             // the field is a date and groupingModes is set
 
-            if (groupingMode && value != "-none-") {
+            if (groupingMode && value != "-none-" && value != null && record.groupValue != null) {
                 // check all possible values in the form {identified : return string}
                 // { week:"by week", month:"by month", year:"by year" }
                 // { dayOfWeek:"by day of week", dayOfMonth:"by day of month" }
@@ -22143,6 +22281,30 @@ isc.builtinTypes =
                 return value;
             } else {
                 return res;
+            }
+        },
+        compareValues : function(value1, value2, field) {
+            if (value1 == value2) {
+                // special case for equal values: if value1 is number
+                // and value2 is not, value1 "wins" and vice versa
+                var isNumber1 = isc.isA.Number(value1),
+                    isNumber2 = isc.isA.Number(value2);
+
+                // only value1 is number
+                if (isNumber1 && !isNumber2) return -1;
+
+                // only value2 is number
+                if (!isNumber1 && isNumber2) return 1;
+
+                // values are equal
+                return 0;
+            }
+
+            // no special rules for non-equal values
+            if (value1 > value2) {
+                return -1;
+            } else {
+                return 1;
             }
         }
     },
@@ -29500,14 +29662,38 @@ isc.NavPanel.addProperties({
     //<EditMode
 });
 isc._debugModules = (isc._debugModules != null ? isc._debugModules : []);isc._debugModules.push('Foundation');isc.checkForDebugAndNonDebugModules();isc._moduleEnd=isc._Foundation_end=(isc.timestamp?isc.timestamp():new Date().getTime());if(isc.Log&&isc.Log.logIsInfoEnabled('loadTime'))isc.Log.logInfo('Foundation module init time: ' + (isc._moduleEnd-isc._moduleStart) + 'ms','loadTime');delete isc.definingFramework;if (isc.Page) isc.Page.handleEvent(null, "moduleLoaded", { moduleName: 'Foundation', loadTime: (isc._moduleEnd-isc._moduleStart)});}else{if(window.isc && isc.Log && isc.Log.logWarn)isc.Log.logWarn("Duplicate load of module 'Foundation'.");}
+
 /*
- * Isomorphic SmartClient
- * Version v10.1p_2016-03-10 (2016-03-10)
- * Copyright(c) 1998 and beyond Isomorphic Software, Inc. All rights reserved.
- * "SmartClient" is a trademark of Isomorphic Software, Inc.
- *
- * licensing@smartclient.com
- *
- * http://smartclient.com/license
- */
+
+  SmartClient Ajax RIA system
+  Version v10.1p_2016-08-12/LGPL Deployment (2016-08-12)
+
+  Copyright 2000 and beyond Isomorphic Software, Inc. All rights reserved.
+  "SmartClient" is a trademark of Isomorphic Software, Inc.
+
+  LICENSE NOTICE
+     INSTALLATION OR USE OF THIS SOFTWARE INDICATES YOUR ACCEPTANCE OF
+     ISOMORPHIC SOFTWARE LICENSE TERMS. If you have received this file
+     without an accompanying Isomorphic Software license file, please
+     contact licensing@isomorphic.com for details. Unauthorized copying and
+     use of this software is a violation of international copyright law.
+
+  DEVELOPMENT ONLY - DO NOT DEPLOY
+     This software is provided for evaluation, training, and development
+     purposes only. It may include supplementary components that are not
+     licensed for deployment. The separate DEPLOY package for this release
+     contains SmartClient components that are licensed for deployment.
+
+  PROPRIETARY & PROTECTED MATERIAL
+     This software contains proprietary materials that are protected by
+     contract and intellectual property law. You are expressly prohibited
+     from attempting to reverse engineer this software or modify this
+     software for human readability.
+
+  CONTACT ISOMORPHIC
+     For more information regarding license rights and restrictions, or to
+     report possible license violations, please contact Isomorphic Software
+     by email (licensing@isomorphic.com) or web (www.isomorphic.com).
+
+*/
 

@@ -621,6 +621,9 @@ Button (also used as MenuButton base style)
 .headerItem,
 .headerItemDisabled,
 .headerItemError,
+.nativeSelectItem,
+.nativeSelectItemDisabled,
+.nativeSelectItemError,
 .staticTextItem,
 .staticTextItemDisabled,
 .staticTextItemError,
@@ -707,6 +710,7 @@ Button (also used as MenuButton base style)
     background:#FFFFFF;
     padding:2px;
     border:1px solid #bfbfbf;
+    border-radius: 0px;
 }
 .uploadItem,
 .uploadItemFocused,
@@ -736,6 +740,7 @@ Button (also used as MenuButton base style)
 .selectItemTextDisabledHint,
 .pickerSearchBoxDisabled,
 .pickerSearchBoxDisabledHint,
+.nativeSelectItemDisabled,
 .staticTextItemDisabled {
     color:#ACA899;
 }
@@ -1670,7 +1675,7 @@ Button (also used as MenuButton base style)
 }
 
 .simpleTile {
-    border:1px solid transparent;
+    border:3px solid transparent;
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
     border-radius: 3px;    

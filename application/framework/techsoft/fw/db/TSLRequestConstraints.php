@@ -11,12 +11,20 @@
  *
  * @author Carlos Arana Reategui
  * @since 19-Sep-2011
+ *
+ * Cambios : 16-Jul-2016
+ *  Soporte  para filtros de mayor , mayor o igual , menor y menor o igual.
  */
 class TSLRequestConstraints {
 
     // Contantes de filtro
     private static $_FILTER_EXACT = 'exact';
     private static $_FILTER_PARTIAL = 'partial';
+    private static $_FILTER_GREATERTHAN = 'greaterThan';
+    private static $_FILTER_LESSTHAN = 'lessThan';
+    private static $_FILTER_GREATEROREQUAL = 'greaterOrEqual';
+    private static $_FILTER_LESSOREQUAL = 'lessOrEqual';
+
     private $currentPage = -1;
     private $recordsPerPage = -1;
     private $startRow = 0;
@@ -334,6 +342,30 @@ class TSLRequestConstraints {
                     } else {
                         $str .= ' and "' . $field . '" =\'' . $value . '\' ';
                     }
+                } else if ($this->filterFields[$field . 'Type'] == TSLRequestConstraints::$_FILTER_GREATERTHAN) {
+                    if ($str === '') {
+                        $str .= ' "' . $field . '" >\'' . $value . '\'';
+                    } else {
+                        $str .= ' and "' . $field . '" >\'' . $value . '\' ';
+                    }
+                } else if ($this->filterFields[$field . 'Type'] == TSLRequestConstraints::$_FILTER_LESSTHAN) {
+                    if ($str === '') {
+                        $str .= ' "' . $field . '" <\'' . $value . '\'';
+                    } else {
+                        $str .= ' and "' . $field . '" <\'' . $value . '\' ';
+                    }
+                } else if ($this->filterFields[$field . 'Type'] == TSLRequestConstraints::$_FILTER_GREATEROREQUAL) {
+                    if ($str === '') {
+                        $str .= ' "' . $field . '" >=\'' . $value . '\'';
+                    } else {
+                        $str .= ' and "' . $field . '" >=\'' . $value . '\' ';
+                    }
+                } else if ($this->filterFields[$field . 'Type'] == TSLRequestConstraints::$_FILTER_LESSOREQUAL) {
+                    if ($str === '') {
+                        $str .= ' "' . $field . '" <=\'' . $value . '\'';
+                    } else {
+                        $str .= ' and "' . $field . '" <=\'' . $value . '\' ';
+                    }
                 } else {
                     if ($str === '') {
                         $str .= ' "' . $field . '" like \'%' . $value . '%\'';
@@ -367,6 +399,14 @@ class TSLRequestConstraints {
             // Por ahora se soporta exact y parcial
             if (strcasecmp($typeFilter, 'exact') == 0 || strcasecmp($typeFilter, 'equals') == 0) {
                 $this->filterFields[$filterField . 'Type'] = TSLRequestConstraints::$_FILTER_EXACT;
+            } else if (strcasecmp($typeFilter, 'greaterThan') == 0 ) {
+                $this->filterFields[$filterField . 'Type'] = TSLRequestConstraints::$_FILTER_GREATERTHAN;
+            } else if (strcasecmp($typeFilter, 'lessThan') == 0 ) {
+                $this->filterFields[$filterField . 'Type'] = TSLRequestConstraints::$_FILTER_LESSTHAN;
+            } else if (strcasecmp($typeFilter, 'greaterOrEqual') == 0 ) {
+                $this->filterFields[$filterField . 'Type'] = TSLRequestConstraints::$_FILTER_GREATEROREQUAL;
+            } else if (strcasecmp($typeFilter, 'lessOrEqual') == 0 ) {
+                $this->filterFields[$filterField . 'Type'] = TSLRequestConstraints::$_FILTER_LESSOREQUAL;
             } else {
                 $this->filterFields[$filterField . 'Type'] = TSLRequestConstraints::$_FILTER_PARTIAL;
             }

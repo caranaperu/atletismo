@@ -124,7 +124,7 @@ class UnidadMedidaModel extends \app\common\model\TSLAppCommonBaseModel {
         if (in_array($unidad_medida_tipo_u, UnidadMedidaModel::$_UM_TIPO)) {
             $this->unidad_medida_tipo = $unidad_medida_tipo_u;
         } else {
-            $this->unidad_medida_tipo_u = null;
+            $this->unidad_medida_tipo = null;
         }
     }
 

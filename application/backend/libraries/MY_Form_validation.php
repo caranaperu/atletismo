@@ -212,6 +212,22 @@ class MY_Form_validation extends CI_Form_validation {
          }
          return false;
      }
+
+    /**
+     * Verifica si un campo es mayor o igual  a otro.
+     *
+     * @param double $str el numero a validar.
+     * @param double el minimo numero admisible.
+     *
+     * @return boolean
+     */
+    public function greater_than_equal($str, $min) {
+        if (!is_numeric($str)) {
+            return FALSE;
+        }
+
+        return $str >= $min;
+    }
 }
 
 ?>

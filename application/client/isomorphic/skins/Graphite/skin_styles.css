@@ -2089,6 +2089,22 @@ ul {
 .headerItemDisabledRTL,
 .headerItemError,
 .headerItemErrorRTL,
+.nativeSelectItem,
+.nativeSelectItemRTL,
+.nativeSelectItemFocused,
+.nativeSelectItemFocusedRTL,
+.nativeSelectItemDisabled,
+.nativeSelectItemDisabledRTL,
+.nativeSelectItemError,
+.nativeSelectItemErrorRTL,
+.nativeSelectItemPending,
+.nativeSelectItemPendingRTL,
+.nativeSelectItemPendingFocused,
+.nativeSelectItemPendingFocusedRTL,
+.nativeSelectItemPendingDisabled,
+.nativeSelectItemPendingDisabledRTL,
+.nativeSelectItemPendingError,
+.nativeSelectItemPendingErrorRTL,
 .staticTextItem,
 .staticTextItemRTL,
 .staticTextItemFocused,
@@ -2938,6 +2954,10 @@ ul {
   text-overflow: ellipsis;
 }
 
+.nativeSelectItemDisabled,
+.nativeSelectItemDisabledRTL,
+.nativeSelectItemPendingDisabled,
+.nativeSelectItemPendingDisabledRTL,
 .staticTextItemDisabled,
 .staticTextItemDisabledRTL,
 .staticTextItemPendingDisabled,
@@ -3273,6 +3293,7 @@ select[disabled] option {
   text-overflow: ellipsis;
 }
 
+.pickListMenuAnimated,
 .scrollingMenuAnimated {
   -moz-transition: -moz-transform 350ms;
   -o-transition: -o-transform 350ms;

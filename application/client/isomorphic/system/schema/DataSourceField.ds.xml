@@ -209,5 +209,10 @@
         <sortByField type="string" />
         <columnCode type="string" xmlAttribute="true"/>
         <stringInBrowser type="boolean" xmlAttribute="true" />
+        <nillable type="boolean" />
+        <validOperators type="string" />
+        <fieldTypeProperty type="string" />
+        <moveTo type="string" />
+
 	</fields>
 </Object>

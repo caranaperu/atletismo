@@ -286,7 +286,7 @@ with (theWindow) {
                 nodeIcon:"[SKIN]file.png",
                 normalBaseStyle:"treeCell",
                 applyRowNumberStyle:false,
-                openerIconWidth:22,
+                openerIconSize:22,
                 openerImage:"[SKIN]opener.png",
                 sortAscendingImage:{src:"[SKINIMG]ListGrid/sort_ascending.png", width:9, height:6},
                 sortDescendingImage:{src:"[SKINIMG]ListGrid/sort_descending.png", width:9, height:6},
@@ -1549,7 +1549,7 @@ with (theWindow) {
 //----------------------------------------
     if (isc.TreeGrid) {
         isc.TreeGrid.addProperties({
-			openerIconWidth: 22,
+			openerIconSize: 22,
             folderIcon:"[SKIN]folder.png",
             nodeIcon:"[SKIN]file.png",
             manyItemsImage:"[SKIN]folder_file.png"
