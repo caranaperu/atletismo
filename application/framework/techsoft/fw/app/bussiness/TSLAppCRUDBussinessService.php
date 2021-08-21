@@ -95,7 +95,7 @@ abstract class TSLAppCRUDBussinessService extends \TSLStandardBussinessService {
         // Obtengo referencia a los constraints
         $constraints = &$dto->getConstraints();
         // Obtengo la sub operacion si existe
-        $subOperation = &$dto->getSubOperation();
+        $subOperation = $dto->getSubOperation();
 
         $model = &$this->getEmptyModel();
 

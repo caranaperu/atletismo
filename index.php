@@ -1,5 +1,6 @@
 <?php
 
+
 /*
  * ---------------------------------------------------------------
  * APPLICATION ENVIRONMENT
@@ -125,7 +126,10 @@ $application_folder = '/var/www/atletismo/application/backend';
  * es la lista de los directorios que incluyen los dao sin
  * el APPPATH el cual se apendeara automaticamente
  */
-$G_DAOPATHS = array('../framework/techsoft/fw/app/dao/impl', 'dao');
+$G_DAOPATHS = [
+    '../framework/techsoft/fw/app/dao/impl',
+    'dao'
+];
 
 
 // --------------------------------------------------------------------
@@ -144,15 +148,15 @@ if (defined('STDIN')) {
 }
 
 if (realpath($system_path) !== FALSE) {
-    $system_path = realpath($system_path) . '/';
+    $system_path = realpath($system_path).'/';
 }
 
 // ensure there's a trailing slash
-$system_path = rtrim($system_path, '/') . '/';
+$system_path = rtrim($system_path, '/').'/';
 
 // Is the system path correct?
 if (!is_dir($system_path)) {
-    exit("Your system folder path does not appear to be set correctly. Please open the following file and correct this: " . pathinfo(__FILE__, PATHINFO_BASENAME));
+    exit("Your system folder path does not appear to be set correctly. Please open the following file and correct this: ".pathinfo(__FILE__, PATHINFO_BASENAME));
 }
 
 /*
@@ -178,13 +182,13 @@ define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
 
 // The path to the "application" folder
 if (is_dir($application_folder)) {
-    define('APPPATH', $application_folder . '/');
+    define('APPPATH', $application_folder.'/');
 } else {
-    if (!is_dir(BASEPATH . $application_folder . '/')) {
-        exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
+    if (!is_dir(BASEPATH.$application_folder.'/')) {
+        exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: ".SELF);
     }
 
-    define('APPPATH', BASEPATH . $application_folder . '/');
+    define('APPPATH', BASEPATH.$application_folder.'/');
 }
 
 /*
@@ -195,7 +199,7 @@ if (is_dir($application_folder)) {
  * And away we go...
  *
  */
-require_once BASEPATH . 'core/CodeIgniter' . EXT;
+require_once BASEPATH.'core/CodeIgniter'.EXT;
 
 /* End of file index.php */
 /* Location: ./index.php */

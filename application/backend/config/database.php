@@ -48,8 +48,8 @@
 $active_group = 'default';
 $active_record = FALSE;
 
-$db['default']['hostname'] = '192.168.1.18';
-$db['default']['username'] = 'atluser';
+$db['default']['hostname'] = 'localhost';
+$db['default']['username'] = 'postgres';
 $db['default']['password'] = 'melivane';
 $db['default']['database'] = 'db_atletismo';
 $db['default']['dbdriver'] = 'postgre';
